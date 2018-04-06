@@ -58,7 +58,7 @@ pub fn refresh_db() -> CliResult {
             res
         });
     core.run(work).expect("failed … just failed");
-    println!("{}", style("  ✔  Updated local db {}").green());
+    println!("{}", style("  ✔ Updated local db.").green());
     Ok(())
 }
 
