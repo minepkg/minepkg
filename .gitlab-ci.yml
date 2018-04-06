@@ -22,6 +22,8 @@ linux packages:
   image: "tenzer/fpm:no-entrypoint"
   dependencies:
     - linux build
+  variables:
+    GIT_STRATEGY: none
   script:
     - mkdir -p ./source/usr/bin
     - cp target/release/mmm ./source/usr/bin
