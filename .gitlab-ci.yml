@@ -17,7 +17,7 @@ linux build:
     paths:
       - target/release/mmm
 
-package deb:
+linux packages:
   stage: package
   image: "tenzer/fpm:no-entrypoint"
   dependencies:
@@ -27,6 +27,10 @@ package deb:
     - cp target/release/mmm ./usr/bin
     # TODO: static version here has to be dynamic (tag probably)
     - fpm -s dir -t deb -n mmm -v 0.0.1 .
+    - fpm -s dir -t rpm -n mmm -v 0.0.1 .
+    - fpm -s dir -t pacman -n mmm -v 0.0.1 .
   artifacts:
     paths:
       - '*.deb'
+      - '*.rpm'
+      - '*.tar.gz' # pacman
