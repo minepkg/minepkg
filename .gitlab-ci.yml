@@ -1,0 +1,28 @@
+image: "rust:latest"
+
+stages:
+  - build
+  - package
+
+# Use cargo to test the project
+linux build:
+  stage: build
+  script:
+    - cargo build --release
+  artifacts:
+    paths:
+      - target/release/mmm
+
+package deb:
+  stage: package
+  image: "tenzer/fpm:no-entrypoint"
+  dependencies:
+    - linux build
+  script:
+    - mkdir ./usr/bin
+    - cp target/release/mmm ./usr/bin
+    # TODO: static version here has to be dynamic (tag probably)
+    - fpm -s dir -t deb -n mmm --config-files /etc/redis/redis.conf -v 0.0.1 .
+  artifacts:
+    paths:
+      - *.deb
