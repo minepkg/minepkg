@@ -28,9 +28,9 @@ linux packages:
     - mkdir -p ./source/usr/bin
     - cp target/release/mmm ./source/usr/bin
     # TODO: static version here has to be dynamic (tag probably)
-    - fpm -s dir -t deb -n mmm -v 0.0.1 ./source
-    - fpm -s dir -t rpm -n mmm -v 0.0.1 ./source
-    - fpm -s dir -t pacman -n mmm -v 0.0.1 ./source
+    - fpm -s dir -t deb -n mmm -v 0.0.1 ./source=/
+    - fpm -s dir -t rpm -n mmm -v 0.0.1 ./source=/
+    - fpm -s dir -t pacman -n mmm -v 0.0.1 ./source=/
   artifacts:
     paths:
       - '*.deb'
