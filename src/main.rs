@@ -35,8 +35,8 @@ fn main() {
             .alias("info"))
         .subcommand(SubCommand::with_name("refresh")
             .about("Fetches all mods that are available"))
-        .subcommand(SubCommand::with_name("list")
-            .about("lists all installed mods"))
+        // .subcommand(SubCommand::with_name("list")
+        //     .about("lists all installed mods"))
         .get_matches();
     
     let get_mod_val = |v| {
