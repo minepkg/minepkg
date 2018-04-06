@@ -21,7 +21,7 @@ package deb:
   dependencies:
     - linux build
   script:
-    - mkdir ./usr/bin
+    - mkdir -p ./usr/bin
     - cp target/release/mmm ./usr/bin
     # TODO: static version here has to be dynamic (tag probably)
     - fpm -s dir -t deb -n mmm --config-files /etc/redis/redis.conf -v 0.0.1 .
