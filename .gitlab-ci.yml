@@ -8,9 +8,11 @@ stages:
 linux build:
   stage: build
   script:
-    - rustup update nightly
     - rustup default nightly
     - cargo build --release
+  cache:
+    paths:
+      - target/release
   artifacts:
     paths:
       - target/release/mmm
