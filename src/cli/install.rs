@@ -2,16 +2,17 @@ use utils::*;
 use mc_instance;
 use dep_resolver;
 
-use std::fs::File;
-use std::io::Write;
-use std::io::Read;
-use futures::{Future, Stream};
-use futures;
 use console::style;
+use futures;
+use futures::{Future, Stream};
 use indicatif;
-use std;
-use reqwest;
 use local_db;
+use reqwest;
+use std;
+use std::borrow::Cow;
+use std::fs::File;
+use std::io::Read;
+use std::io::Write;
 
 pub fn install(name: &str) -> CliResult {
     println!("{}", style(" 📚 [1 / 3] Searching local mod DB").bold());
@@ -75,13 +76,19 @@ pub fn install_id(id: &str) -> CliResult {
             let pb = indicatif::ProgressBar::new(1_100_000);
             let mods_dir = &instance.mods_dir;
 
+            // fix mods not containing jar in the filename
+            let mut file_name = Cow::from(&mc_mod.file_name[..]);
+            if !file_name.ends_with(".jar") {
+                file_name.to_mut().push_str(".jar");
+            }
+
             // add them to the oter progress bars, and setup style
             let pb = progress.add(pb);
             &pb.set_style(
                 indicatif::ProgressStyle::default_bar()
                     .template(" {spinner}  {prefix:20!} {wide_bar} 📦"),
             );
-            &pb.set_prefix(&mc_mod.file_name);
+            &pb.set_prefix(&file_name);
             // now star the (download) request
             reqwest
                 .get(&mc_mod.download_url)
@@ -94,7 +101,7 @@ pub fn install_id(id: &str) -> CliResult {
                     };
                     pb.set_length(size);
                     // build the final file path here
-                    let file_name = mods_dir.clone().join(&mc_mod.file_name);
+                    let file_name = mods_dir.clone().join(file_name.as_ref());
                     let mut file = File::create(file_name).unwrap();
 
                     // write the file in chunks and update the progress bar
