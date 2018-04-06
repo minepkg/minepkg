@@ -10,6 +10,7 @@ linux build:
   script:
     - rustup default nightly
     - cargo build --release
+    - strip target/release/mmm
   cache:
     paths:
       - target/release
