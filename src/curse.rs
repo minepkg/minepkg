@@ -24,6 +24,7 @@ impl ModDb {
     /// Resolves the dependencies using the local DB ONLY
     /// Returns a `HashSet` including the mod you specified and all its (recursive) dependencies
     // currently not used
+    #[allow(dead_code)]
     pub fn resolve_dependencies(
         &self,
         file: &ModFile,
@@ -41,7 +42,7 @@ impl ModDb {
             })
             .flat_map(|dep| {
                 // let latest_release = dep.release_for_mc_version(version).expect("No release");
-                let f = dep.latest_file_for(version).expect("graaaaaaa");
+                let f = dep.latest_file_for(version).expect("no release");
                 let mut deps_from_dep = self.resolve_dependencies(f, version, false);
                 deps_from_dep.insert(dep);
                 deps_from_dep
