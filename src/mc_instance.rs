@@ -1,15 +1,10 @@
-// use std::collections::HashSet;
-// use std::hash::{Hash, Hasher};
-// use rayon::prelude::*;
-
+use serde_json;
 use std::error::Error;
 use std::fs::{self, File};
 use std::io;
 use std::io::prelude::*;
 use std::path::PathBuf;
 use version_compare::VersionCompare;
-
-use serde_json;
 
 mod multi_mc {
     #[derive(Deserialize, Debug)]

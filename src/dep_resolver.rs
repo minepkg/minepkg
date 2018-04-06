@@ -1,15 +1,15 @@
-use curse;
 use futures;
 use futures::{Future, Stream};
+use hyper_tls::HttpsConnector;
 use hyper;
 use hyper::client::HttpConnector;
-use hyper_tls::HttpsConnector;
 use serde_json;
-
 use std::cell::RefCell;
 use std::collections::HashSet;
 use std::error::Error;
 use std::rc::Rc;
+
+use curse;
 
 type HyperClient = hyper::Client<HttpsConnector<HttpConnector>>;
 

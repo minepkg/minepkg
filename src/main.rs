@@ -43,7 +43,7 @@ fn main() {
         matches.subcommand_matches(v).unwrap().values_of_lossy("MOD").unwrap().join(" ")
     };
 
-    mmm::ensure_app_dir();
+    mmm::cli_config::ensure_data_dir().expect("Creating or reading of the app dir failed");
     // TODO: those functions probably need params and stuff soon
     let result = match matches.subcommand_name() {
         Some("install") => mmm::install(&get_mod_val("install")),

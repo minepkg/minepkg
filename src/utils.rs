@@ -1,6 +1,6 @@
+use hyper_tls::HttpsConnector;
 use hyper::Client as HyperClient;
 use hyper::client::HttpConnector;
-use hyper_tls::HttpsConnector;
 use reqwest::unstable::async::Client;
 use std;
 use tokio_core::reactor::Core;

@@ -1,10 +1,10 @@
 use prettytable;
-use prettytable::Table;
 use prettytable::row::Row;
+use prettytable::Table;
 use rayon::prelude::*;
+use serde::de::{self, Visitor};
 use serde::Deserialize;
 use serde::Deserializer;
-use serde::de::{self, Visitor};
 use std::collections::HashSet;
 use std::convert::AsRef;
 use std::fmt;
