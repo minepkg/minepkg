@@ -29,3 +29,23 @@ EXAMPLES:
     mmm install ender io
     mmm install https://minecraft.curseforge.com/projects/journeymap
 ```
+
+## Building
+
+You will need Rust nigtly to compile mmm. 
+The easiest way to get Rust nightly is through [rustup](https://www.rustup.rs/).
+Simply run `rustup default nightly` to always use nightly.
+
+Or run `rustup update nightly` and `cargo +nightly <command>` if you do not want to change your default rust compiler version.
+
+After that you can build the project using `cargo build` or build and directly run it using `cargo run -- install journeymap`.
+
+### TLDR:
+
+```
+❯ rustup default nightly
+❯ git clone https://github.com/fiws/mmm.git
+❯ cd mmm
+❯ cargo build
+❯ ./target/debug/mmm --help
+```
