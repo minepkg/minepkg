@@ -1,6 +1,7 @@
 use utils::*;
 use mc_instance;
 use dep_resolver;
+use curse::Mod;
 
 use console::style;
 use futures;
@@ -33,14 +34,19 @@ pub fn install(name: &str) -> CliResult {
         _ => std::process::exit(1), // everything else aborts
     }
 
-    install_id(&found.id.to_string())?;
+    install_mod(&found)?;
     println!("{}", style(format!("  ✔ Successfully installed {}", found.name)).green());
     Ok(())
 }
 
 /// installs a mod by curse id
-pub fn install_id(id: &str) -> CliResult {
+pub fn install_mod(mc_mod: &Mod) -> CliResult {
+    let id = mc_mod.id.to_string();
     let instance = mc_instance::detect_instance().map_err(|_| "No Minecraft instance found")?;
+    // read the minepkg.toml and add our new dependency
+    let mut manifest = instance.manifest()?;
+    manifest.add_dependency(mc_mod);
+
     let mc_version = instance
         .mc_version()
         .ok_or("Your instance does not have minecraft installed (yet)")?;
@@ -126,5 +132,7 @@ pub fn install_id(id: &str) -> CliResult {
     core.run(futures::future::join_all(work))?;
     // all jobs ran, we stop the progress bar thread now
     handler.join().unwrap();
+    // last but not least, save the manifest changes
+    manifest.save()?;
     Ok(())
 }

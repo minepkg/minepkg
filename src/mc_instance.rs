@@ -1,10 +1,11 @@
 use serde_json;
-use std::error::Error;
+use failure::{Error, err_msg};
 use std::fs::{self, File};
 use std::io;
 use std::io::prelude::*;
 use std::path::PathBuf;
 use version_compare::VersionCompare;
+use manifest::{self, Manifest};
 
 mod multi_mc {
     #[derive(Deserialize, Debug)]
@@ -56,7 +57,7 @@ fn read_mmc_pack() -> Result<McInstance, io::Error> {
 }
 
 /// Looks for a vanilla launcher file structure
-pub fn read_vanilla_instance() -> Result<McInstance, Box<Error>> {
+pub fn read_vanilla_instance() -> Result<McInstance, Error> {
     let dir_iter = fs::read_dir("./versions")?;
     // TODO: lots of unwrap here – lots of bad stuff can happen
     let latest = dir_iter
@@ -70,7 +71,7 @@ pub fn read_vanilla_instance() -> Result<McInstance, Box<Error>> {
         );
         println!("Run this command with --mc-version <version> to overwrite this behaviour");
     }
-    let latest = latest.ok_or("You need to launch minecraft once")?;
+    let latest = latest.ok_or(err_msg("You need to launch minecraft once"))?;
     let mods_dir: PathBuf = ["versions", &latest, "mods"].iter().collect();
     println!("{:?}", mods_dir);
     Ok(McInstance {
@@ -80,7 +81,7 @@ pub fn read_vanilla_instance() -> Result<McInstance, Box<Error>> {
     })
 }
 
-pub fn detect_instance() -> Result<McInstance, Box<Error>> {
+pub fn detect_instance() -> Result<McInstance, Error> {
     read_mmc_pack() // try reading MultiMC instance first
         .or_else(|_| read_vanilla_instance()) // fallback to vanilla instance
 }
@@ -101,6 +102,36 @@ pub struct McInstance {
 impl McInstance {
     pub fn mc_version(&self) -> Option<&str> {
         self.version.as_ref().map(|v| &v[..])
+    }
+    /// helper to create a new manifest for our minecraft instance
+    fn new_manifest(&self) -> Result<Manifest, Error> {
+        let mut new = Manifest::default();
+        let version = &self.version.clone().ok_or(err_msg("Invalid MC instance"))?;
+        new.set_mc_version(&version);
+        Ok(new)
+    }
+    pub fn manifest(&self) -> Result<Manifest, Error> {
+        let manifest = manifest::read_local();
+
+        // TODO: this error handling looks sooo ugly
+        // This has to be easier
+
+        // reading the manifest failed?
+        if let Err(cause) = manifest {
+            // because of some io error?
+            if let Some(err) = cause.downcast_ref::<io::Error>() {
+                // because the file does not exists?
+                if err.kind() == io::ErrorKind::NotFound {
+                    self.new_manifest()
+                } else {
+                     Err(err_msg("Error reading your minepkg.toml"))
+                }
+            } else {
+                Err(err_msg("Invalid minepkg.toml manifest."))
+            }
+        } else {
+            manifest
+        }
     }
 }
 

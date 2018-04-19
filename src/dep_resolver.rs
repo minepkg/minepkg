@@ -20,6 +20,8 @@ pub struct DepResolver {
     /// HashSet containing the resolved dependencies.
     /// Will include the mod given to `resolve(mod_id)`
     pub resolved_deps: Rc<RefCell<HashSet<curse::ModFile>>>,
+    // soon:
+    //pub dependency_tree: Rc<RefCell<petgraph::Graph<curse::ModFile, u16>>>
 }
 
 impl DepResolver {

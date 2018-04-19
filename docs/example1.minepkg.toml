@@ -1,0 +1,74 @@
+# Specifies the format version
+# This field is REQUIRED
+# Implementers should refuse to work if required values are missing or invalid.
+version = 1
+
+# A generic "package" section (Table) describes the mod or modpack. It also inditifies it by a unique name.
+[package]
+# Specifies the type of this package.
+# There might be no need for this on the technical side.
+# But it might be a good idea to keep this anyway, to have some sort of separation.
+type = "modpack"
+
+# The name may NOT include spaces. It may ONLY consist of 
+# alphanumeric chars but can also include `-` and `_`
+# Should be unique. (But is there a way we can enforce this?)
+# This field is REQUIRED
+name = "examplepack"
+# The version number of this package. A preceeding `v` (like `v2.1.1`) should NOT
+# be allowed for consistency
+# The version may include prerelease information like `1.2.2-beta.0` or build
+# related information `1.2.1+B7382-2018`.
+version = "0.1.0"
+authors = ["John Doe <example@example.com>"]
+
+# These are global requirements that apply to all dependencies and the pack itself
+[requirements]
+# This is a semver version describing the required Minecraft version
+# The Minecraft version is binding and implementers should not install
+# Mods for non-matching Minecraft versions.
+# Modpack & Mod Authors are encuraged to use semver to allow a broader install range.
+# Plain version numbers just default to the `~` semver operator here. Allowing patches but not minor or major versions.
+# So `1.12.0` and `~1.12.0` are equal
+# This field is REQUIRED
+minecraft-version = "1.12.x"
+# This is a semver version describing the required forge version
+# The forge-version can be optional and should be determined by installed mods
+# or fallback to the latest stable version for the specified Minecraft version
+forge-version = "0.1.0"
+
+# While "mods" might be more user friendly here, "dependencies" is more universal.
+# This will allow mods including an `minepkg.toml` to reuse the same syntax without
+# feeling akward
+[dependencies]
+
+# Borrowed some npm syntax here. `curse:` specifies to use CurseForge to download this mod
+# Implementers should force the user to include the source for now.
+# The more verbose syntax is intentional. CurseForge should not be default (for now)
+# because it lacks certain features like installing mods by actual version and because of the
+# closed proprietary nature of it.
+journeymap = "curse:journeymap"
+
+# In the Future:
+# The default install source should allow version lookups like this:
+# journeymap = "1.4.2"
+# This bit is borrowed from cargo: Version numbers without any operators
+# should default to `^<version>` (caret operator) which only includes non-breaking changes
+# so writing "1.4.2" should be eqaual to "^1.4.2"
+# Version 1 of this format should include support for the following semver features:
+# journeymap = "^1.0.0" – caret operator (default)
+# journeymap = "~1.0.0" – tilde operator
+# journeymap = "2.0.1-beta.2" – prerelease
+# journeymap = "1.0.0 - 3.0.0" – range
+# journeymap = "1.x.x" – range
+# https://github.com/npm/node-semver#ranges provides a good explanation of the operators mentioned above
+
+enderio = "curse:enderio"
+storage-drawers = "curse:storage-drawers"
+# version locked (by file specification)
+# This syntax only is valid for CurseForge
+biomes-o-plenty = "curse:biomes-o-plenty/BiomesOPlenty-1.12.2-7.0.1.2325-universal.jar"
+
+
+[replace]
+enderio = "github:example/patched-enderio@5.0.2"

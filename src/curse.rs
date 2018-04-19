@@ -111,6 +111,11 @@ impl AsRef<[u8]> for Mod {
 }
 
 impl Mod {
+    /// Gets the slug name (out of the URL)
+    pub fn slug(&self) -> &str {
+        let start = self.web_site_url.rfind('/').expect("curse: url without '/' ?!") + 1;
+        &self.web_site_url[start..]
+    }
     /// Gets the (latest) release for the specified minecraft version
     pub fn release_for_mc_version(&self, version: &str) -> Option<&GameVersionRelease> {
         // TODO: filter by release type
