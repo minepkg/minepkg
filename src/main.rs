@@ -3,7 +3,7 @@ extern crate clap;
 extern crate console;
 use clap::{App, Arg, SubCommand};
 
-extern crate mmm;
+extern crate minepkg;
 
 fn main() {
     let mod_name_arg = Arg::with_name("MOD")
@@ -12,11 +12,11 @@ fn main() {
         .multiple(true)
         .index(1);
 
-    let matches = App::new("mmm")
+    let matches = App::new("minepkg")
         .version(crate_version!())
-        .author("Filip Weiss. <mmm+me@fiws.net>")
+        .author("Filip Weiss. <minepkg+me@fiws.net>")
         .about("Minecraft Mod Manager at your service.")
-        .after_help("EXAMPLES:\n    mmm install ender io\n    mmm install https://minecraft.curseforge.com/projects/journeymap")
+        .after_help("EXAMPLES:\n    minepkg install ender io\n    minepkg install https://minecraft.curseforge.com/projects/journeymap")
         // TODO: verbosity setting would be nice
         // .arg(Arg::with_name("v")
         //     .short("v")
@@ -43,14 +43,14 @@ fn main() {
         matches.subcommand_matches(v).unwrap().values_of_lossy("MOD").unwrap().join(" ")
     };
 
-    mmm::cli_config::ensure_data_dir().expect("Creating or reading of the app dir failed");
+    minepkg::cli_config::ensure_data_dir().expect("Creating or reading of the app dir failed");
     // TODO: those functions probably need params and stuff soon
     let result = match matches.subcommand_name() {
-        Some("install") => mmm::install(&get_mod_val("install")),
-        Some("search") => mmm::search(&get_mod_val("search")),
-        Some("show") => mmm::show(&get_mod_val("show")),
-        Some("refresh") => mmm::refresh_db(),
-        // Some("list") => mmm::list(),
+        Some("install") => minepkg::install(&get_mod_val("install")),
+        Some("search") => minepkg::search(&get_mod_val("search")),
+        Some("show") => minepkg::show(&get_mod_val("show")),
+        Some("refresh") => minepkg::refresh_db(),
+        // Some("list") => minepkg::list(),
         Some(_) | None => {
             println!("{}", matches.usage());
             Ok(())

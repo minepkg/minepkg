@@ -1,5 +1,5 @@
 [package]
-name = "mmm"
+name = "minepkg"
 version = "0.1.0"
 authors = ["Filip Weiss <me@fiws.net>"]
 

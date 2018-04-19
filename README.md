@@ -1,18 +1,18 @@
 <p align="center">
-  <img width="720" src="https://i.imgur.com/Z9ctRZH.gif" alt="mmm install preview" />
+  <img width="720" src="https://i.imgur.com/Z9ctRZH.gif" alt="minepkg install preview" />
 </p>
 
 
 ## Usage
 
 ```
-❯ mmm --help
-mmm 0.1.0
-Filip Weiss. <mmm+me@fiws.net>
+❯ minepkg --help
+minepkg 0.1.0
+Filip Weiss. <minepkg+me@fiws.net>
 Minecraft Mod Manager at your service.
 
 USAGE:
-    mmm [SUBCOMMAND]
+    minepkg [SUBCOMMAND]
 
 FLAGS:
     -h, --help       Prints help information
@@ -26,13 +26,13 @@ SUBCOMMANDS:
     show       Find a single mod, and display info about it
 
 EXAMPLES:
-    mmm install ender io
-    mmm install https://minecraft.curseforge.com/projects/journeymap
+    minepkg install ender io
+    minepkg install https://minecraft.curseforge.com/projects/journeymap
 ```
 
 ## Building
 
-You will need Rust nigtly to compile mmm. 
+You will need Rust nigtly to compile minepkg. 
 The easiest way to get Rust nightly is through [rustup](https://www.rustup.rs/).
 Simply run `rustup default nightly` to always use nightly.
 
@@ -44,8 +44,8 @@ After that you can build the project using `cargo build` or build and directly r
 
 ```
 ❯ rustup default nightly
-❯ git clone https://github.com/fiws/mmm.git
-❯ cd mmm
+❯ git clone https://github.com/fiws/minepkg.git
+❯ cd minepkg
 ❯ cargo build
-❯ ./target/debug/mmm --help
+❯ ./target/debug/minepkg --help
 ```

@@ -10,13 +10,13 @@ linux build:
   script:
     - rustup default nightly
     - cargo build --release
-    - strip target/release/mmm
+    - strip target/release/minepkg
   cache:
     paths:
       - target/release
   artifacts:
     paths:
-      - target/release/mmm
+      - target/release/minepkg
 
 linux packages:
   stage: package
@@ -27,11 +27,11 @@ linux packages:
     GIT_STRATEGY: none
   script:
     - mkdir -p ./source/usr/bin
-    - cp target/release/mmm ./source/usr/bin
+    - cp target/release/minepkg ./source/usr/bin
     # TODO: static version here has to be dynamic (tag probably)
-    - fpm -s dir -C ./source -t deb -n mmm -v 0.0.1 .
-    - fpm -s dir -C ./source -t rpm -n mmm -v 0.0.1 .
-    - fpm -s dir -C ./source -t pacman -n mmm -v 0.0.1 .
+    - fpm -s dir -C ./source -t deb -n minepkg -v 0.0.1 .
+    - fpm -s dir -C ./source -t rpm -n minepkg -v 0.0.1 .
+    - fpm -s dir -C ./source -t pacman -n minepkg -v 0.0.1 .
   artifacts:
     paths:
       - '*.deb'
