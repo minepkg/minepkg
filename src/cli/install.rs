@@ -15,31 +15,66 @@ use std::fs::File;
 use std::io::Read;
 use std::io::Write;
 
-pub fn install(name: &str) -> CliResult {
+fn confirm(msg: String) {
+    // this is inefficient, but duh
+    print!("{}", msg);
+    std::io::stdout().flush().unwrap();
+    let input: u8 = std::io::stdin()
+        .bytes()
+        .next()
+        .and_then(|result| result.ok()).expect("What the hell did you type in there?");
+    
+    match input {
+        10 | 121 | 89 => (), // Y y and Enter
+        _ => std::process::exit(1), // everything else aborts
+    }
+}
+
+pub fn install(name: Option<String>) -> CliResult {
+    if let Some(name) = name { install_single(&name) }
+    else { install_modpack() }
+}
+
+pub fn install_modpack() -> CliResult {
+    let instance = mc_instance::detect_instance().map_err(|_| "No Minecraft instance found")?;
+    // read the minepkg.toml and add our new dependency
+    let mut manifest = instance.manifest()?;
+    let db = local_db::read_or_download().expect("Problems reading mod db");
+    println!("{}", style(" 📔 [1 / 3] Reading local modpack").bold());
+
+    let mut to_be_installed: Vec<&Mod> = Vec::new();
+    for dep in manifest.dependencies() {
+        let mc_mod = db.find_by_slug(dep.name)
+            .ok_or(format!("Mod '{}' not found in local db.", dep.name))?;
+        println!("    requires {} from CurseForge", mc_mod.name);
+        to_be_installed.push(mc_mod);
+    }
+
+    // prompt user to confirm installation
+    confirm(format!("\n    Install {} packages? [Y/n] ", style(&to_be_installed.len()).bold()));
+    for dep in to_be_installed {
+        install_mod(dep)?;
+    }
+
+    println!("{}", style(format!("  ✔ Successfully installed {} modpack", manifest.name())).green());
+    Ok(())
+}
+
+pub fn install_single(name: &str) -> CliResult {
     println!("{}", style(" 📚 [1 / 3] Searching local mod DB").bold());
     let name = name.to_lowercase();
     let db = local_db::read_or_download().expect("Problems reading mod db");
     let found = &db.wonky_find(&name).ok_or("No mod found")?;
 
     // prompt user to confirm installation
-    print!("\n    Install {} from CurseForge? [Y/n] ", style(&found.name).bold());
-    std::io::stdout().flush().unwrap();
-    let input: u8 = std::io::stdin()
-        .bytes()
-        .next()
-        .and_then(|result| result.ok()).expect("What the hell did you type in there?");
-
-    match input {
-        10 | 121 | 89 => (), // Y y and Enter
-        _ => std::process::exit(1), // everything else aborts
-    }
+    confirm(format!("\n    Install {} from CurseForge? [Y/n] ", style(&found.name).bold()));
 
     install_mod(&found)?;
     println!("{}", style(format!("  ✔ Successfully installed {}", found.name)).green());
     Ok(())
 }
 
-/// installs a mod by curse id
+/// installs a mod
 pub fn install_mod(mc_mod: &Mod) -> CliResult {
     let id = mc_mod.id.to_string();
     let instance = mc_instance::detect_instance().map_err(|_| "No Minecraft instance found")?;

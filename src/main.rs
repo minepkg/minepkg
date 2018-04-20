@@ -8,7 +8,6 @@ extern crate minepkg;
 fn main() {
     let mod_name_arg = Arg::with_name("MOD")
         .help("The mod name, id or URL")
-        .required(true)
         .multiple(true)
         .index(1);
 
@@ -39,16 +38,20 @@ fn main() {
         //     .about("lists all installed mods"))
         .get_matches();
     
-    let get_mod_val = |v| {
+    let get_required_mod_val= |v| {
         matches.subcommand_matches(v).unwrap().values_of_lossy("MOD").unwrap().join(" ")
+    };
+
+    let get_mod_val = |v| {
+        matches.subcommand_matches(v).unwrap().values_of_lossy("MOD").map(|v| v.join(" "))
     };
 
     minepkg::cli_config::ensure_data_dir().expect("Creating or reading of the app dir failed");
     // TODO: those functions probably need params and stuff soon
     let result = match matches.subcommand_name() {
-        Some("install") => minepkg::install(&get_mod_val("install")),
-        Some("search") => minepkg::search(&get_mod_val("search")),
-        Some("show") => minepkg::show(&get_mod_val("show")),
+        Some("install") => minepkg::install(get_mod_val("install")),
+        Some("search") => minepkg::search(&get_required_mod_val("search")),
+        Some("show") => minepkg::show(&get_required_mod_val("show")),
         Some("refresh") => minepkg::refresh_db(),
         // Some("list") => minepkg::list(),
         Some(_) | None => {

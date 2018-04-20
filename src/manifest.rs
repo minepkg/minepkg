@@ -1,4 +1,4 @@
-use toml_edit::{Document, value};
+use toml_edit::{Document, value, Value};
 use std::fs::File;
 use std::io::prelude::*;
 use failure::Error;
@@ -15,6 +15,17 @@ pub struct Manifest {
     doc: Document,
 }
 
+#[derive(Debug)]
+pub enum Provider {
+    Curse,
+}
+
+#[derive(Debug)]
+pub struct Dependency<'a> {
+    pub provider: Provider,
+    pub name: &'a str,
+}
+
 impl Manifest {
     pub fn add_dependency(&mut self, mc_mod: &Mod) {
         let slug = &mc_mod.slug();
@@ -22,6 +33,22 @@ impl Manifest {
     }
     pub fn set_mc_version(&mut self, version: &str) {
         self.doc["requirements"]["minecraft-version"] = value(version.clone());
+    }
+    pub fn dependencies(&self) -> Vec<Dependency> {
+        let iter = self.doc["dependencies"].as_table()
+            .expect("invalid modpack dependencies")
+            .iter();
+        iter.map(|entry| {
+            let mut value = entry.1.as_str().unwrap().split(':');
+            let provider = match value.next().unwrap() {
+                "curse" => Provider::Curse,
+                _ => panic!("unsupported provider"),
+            };
+            Dependency { provider, name: value.next().unwrap() }
+        }).collect()
+    }
+    pub fn name(&self) -> &str {
+        self.doc["package"]["name"].as_str().expect("modpack has no name")
     }
     pub fn required_mc_version(&self) -> VersionReq {
         self.doc["requirements"]["minecraft-version"].as_str()
@@ -61,28 +88,8 @@ impl Manifest {
 
 pub fn read_local() -> Result<Manifest, Error> {
     let mut file = File::open("./minepkg.toml")?;
-    println!("got a file");
     let mut content = String::new();
     file.read_to_string(&mut content)?;
     let doc = content.parse::<Document>()?;
     Ok(Manifest { doc })
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let source = include_str!("../tests/fixtures/example1.minepkg.toml");
-        let mut doc = source.parse::<Document>().expect("invalid doc");
-        println!("{:?}", doc["dependencies"]);
-        doc["dependencies"]["grainerIO"] = value("curse:garinerIO");
-        doc["dependencies"]["enderio"] = value("github:enderio");
-        for idk in doc["dependencies"].as_table().unwrap().iter() {
-            println!("{:?}", idk);
-            println!("----------------");
-        }
-        println!("{}", doc);
-    }
 }
