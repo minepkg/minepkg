@@ -1,9 +1,23 @@
+#![feature(box_patterns)]
+
 #[macro_use]
 extern crate clap;
+
+extern crate app_dirs2;
+extern crate bzip2;
 extern crate console;
+extern crate futures;
+extern crate hyper;
+extern crate indicatif;
+extern crate reqwest;
+extern crate serde_json;
+extern crate serde;
+extern crate snap;
+
 use clap::{App, Arg, SubCommand};
 
 extern crate minepkg;
+mod cli;
 
 fn main() {
     let mod_name_arg = Arg::with_name("MOD")
@@ -46,14 +60,14 @@ fn main() {
         matches.subcommand_matches(v).unwrap().values_of_lossy("MOD").map(|v| v.join(" "))
     };
 
-    minepkg::cli_config::ensure_data_dir().expect("Creating or reading of the app dir failed");
+    cli::cli_config::ensure_data_dir().expect("Creating or reading of the app dir failed");
     // TODO: those functions probably need params and stuff soon
     let result = match matches.subcommand_name() {
-        Some("install") => minepkg::install(get_mod_val("install")),
-        Some("search") => minepkg::search(&get_required_mod_val("search")),
-        Some("show") => minepkg::show(&get_required_mod_val("show")),
-        Some("refresh") => minepkg::refresh_db(),
-        // Some("list") => minepkg::list(),
+        Some("install") => cli::install(get_mod_val("install")),
+        Some("search") => cli::search(&get_required_mod_val("search")),
+        Some("show") => cli::show(&get_required_mod_val("show")),
+        Some("refresh") => cli::refresh_db(),
+        // Some("list") => cli::list(),
         Some(_) | None => {
             println!("{}", matches.usage());
             Ok(())

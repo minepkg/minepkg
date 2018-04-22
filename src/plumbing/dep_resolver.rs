@@ -9,7 +9,7 @@ use std::collections::HashSet;
 use std::error::Error;
 use std::rc::Rc;
 
-use curse;
+use plumbing::curse;
 
 type HyperClient = hyper::Client<HttpsConnector<HttpConnector>>;
 

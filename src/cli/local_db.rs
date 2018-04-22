@@ -1,7 +1,6 @@
 use bzip2;
-use cli_config::get_data_dir;
+use cli::cli_config::get_data_dir;
 use console::style;
-use curse::ModDb;
 use futures::{Future, Stream};
 use hyper;
 use indicatif;
@@ -10,7 +9,9 @@ use snap;
 use std;
 use std::fs::File;
 use std::io::prelude::*;
-use utils::*;
+
+use minepkg::curse::ModDb;
+use minepkg::utils::*;
 
 const DB_URL: &str = "https://clientupdate-v6.cursecdn.com/feed/addons/432/v10/complete.json.bz2";
 const DB_PATH: &str = "complete.json.sz";

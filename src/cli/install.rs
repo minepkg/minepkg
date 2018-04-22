@@ -1,19 +1,21 @@
-use utils::*;
-use mc_instance;
-use dep_resolver;
-use curse::Mod;
-
 use console::style;
 use futures;
 use futures::{Future, Stream};
 use indicatif;
-use local_db;
 use reqwest;
 use std;
 use std::borrow::Cow;
 use std::fs::File;
 use std::io::Read;
 use std::io::Write;
+
+use cli::local_db;
+use minepkg::{
+    curse::Mod,
+    dep_resolver,
+    mc_instance,
+    utils::*,
+};
 
 fn confirm(msg: String) {
     // this is inefficient, but duh
@@ -38,7 +40,7 @@ pub fn install(name: Option<String>) -> CliResult {
 pub fn install_modpack() -> CliResult {
     let instance = mc_instance::detect_instance().map_err(|_| "No Minecraft instance found")?;
     // read the minepkg.toml and add our new dependency
-    let mut manifest = instance.manifest()?;
+    let manifest = instance.manifest()?;
     let db = local_db::read_or_download().expect("Problems reading mod db");
     println!("{}", style(" 📔 [1 / 3] Reading local modpack").bold());
 

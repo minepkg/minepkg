@@ -1,6 +1,6 @@
-use curse::{Mod, PrintAsTable};
-use local_db;
-use utils::CliResult;
+use cli::local_db;
+use minepkg::curse::{Mod, PrintAsTable};
+use minepkg::utils::CliResult;
 
 /// searched the local mod db for a given string
 pub fn search(name: &str) -> CliResult {

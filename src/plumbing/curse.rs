@@ -10,7 +10,7 @@ use std::convert::AsRef;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 
-use utils;
+use plumbing::utils;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "PascalCase")]

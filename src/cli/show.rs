@@ -1,5 +1,5 @@
-use local_db;
-use utils::CliResult;
+use cli::local_db;
+use minepkg::utils::CliResult;
 
 pub fn show(name: &str) -> CliResult {
     let db = local_db::read_or_download().expect("Problems reading mod db");

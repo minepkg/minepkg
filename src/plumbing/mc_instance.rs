@@ -5,7 +5,7 @@ use std::io;
 use std::io::prelude::*;
 use std::path::PathBuf;
 use version_compare::VersionCompare;
-use manifest::{self, Manifest};
+use plumbing::manifest::{self, Manifest};
 
 mod multi_mc {
     #[derive(Deserialize, Debug)]
@@ -53,6 +53,7 @@ fn read_mmc_pack() -> Result<McInstance, io::Error> {
         flavour: Flavour::MultiMC,
         version: pack.mc_version().map(|v| String::from(v)),
         mods_dir: mods_dir.join("mods"),
+        manifest: None,
     })
 }
 
@@ -78,6 +79,7 @@ pub fn read_vanilla_instance() -> Result<McInstance, Error> {
         flavour: Flavour::Vanilla,
         version: Some(latest),
         mods_dir,
+        manifest: None,
     })
 }
 
@@ -97,6 +99,7 @@ pub struct McInstance {
     flavour: Flavour,
     version: Option<String>,
     pub mods_dir: PathBuf,
+    manifest: Option<Manifest>,
 }
 
 impl McInstance {
@@ -111,13 +114,14 @@ impl McInstance {
         Ok(new)
     }
     pub fn manifest(&self) -> Result<Manifest, Error> {
+        // already loaded the manifest
+        // if let Some(ref manifest) = self.manifest { return Ok(manifest) }
         let manifest = manifest::read_local();
 
         // TODO: this error handling looks sooo ugly
         // This has to be easier
-
         // reading the manifest failed?
-        if let Err(cause) = manifest {
+        let manifest = if let Err(cause) = manifest {
             // because of some io error?
             if let Some(err) = cause.downcast_ref::<io::Error>() {
                 // because the file does not exists?
@@ -131,7 +135,10 @@ impl McInstance {
             }
         } else {
             manifest
-        }
+        };
+        manifest
+        // self.manifest = Some(manifest?);
+        // Ok(self.manifest.as_mut().unwrap())
     }
 }
 

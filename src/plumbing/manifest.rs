@@ -1,14 +1,15 @@
-use toml_edit::{Document, value, Value};
+use toml_edit::{Document, value};
 use std::fs::File;
 use std::io::prelude::*;
 use failure::Error;
 use std::env::current_dir;
-use curse::Mod;
+use semver::Version;
+use semver::VersionReq;
+
+use plumbing::Mod;
 
 static MANIFEST_TEMPLATE: &str = include_str!("./minepkg-template.toml");
 
-use semver::Version;
-use semver::VersionReq;
 
 #[derive(Debug)]
 pub struct Manifest {
