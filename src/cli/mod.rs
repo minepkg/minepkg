@@ -2,6 +2,7 @@ mod install;
 mod local_db;
 mod search;
 mod show;
+mod fancy_log;
 
 // hmm … don't like the look of this
 pub use self::install::*;

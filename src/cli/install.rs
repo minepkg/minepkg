@@ -10,6 +10,7 @@ use std::io::Read;
 use std::io::Write;
 
 use cli::local_db;
+use cli::fancy_log::Logger;
 use minepkg::{
     curse::Mod,
     dep_resolver,
@@ -42,47 +43,55 @@ pub fn install_modpack() -> CliResult {
     // read the minepkg.toml and add our new dependency
     let manifest = instance.manifest()?;
     let db = local_db::read_or_download().expect("Problems reading mod db");
-    println!("{}", style(" 📔 [1 / 3] Reading local modpack").bold());
+
+    let l = Logger::with_emoji_headline("📔", "[1 / 3] Reading local modpack");
 
     let mut to_be_installed: Vec<&Mod> = Vec::new();
     for dep in manifest.dependencies() {
         let mc_mod = db.find_by_slug(dep.name)
             .ok_or(format!("Mod '{}' not found in local db.", dep.name))?;
-        println!("    requires {} from CurseForge", mc_mod.name);
+        l.log(format!("requires {} from CurseForge", mc_mod.name));
         to_be_installed.push(mc_mod);
     }
 
     // prompt user to confirm installation
     confirm(format!("\n    Install {} packages? [Y/n] ", style(&to_be_installed.len()).bold()));
-    for dep in to_be_installed {
-        install_mod(dep)?;
-    }
 
-    println!("{}", style(format!("  ✔ Successfully installed {} modpack", manifest.name())).green());
+    install_mods(&to_be_installed[..]);
+
+    l.empty_line();
+    l.emoji_success_headline("✅", format!("Successfully installed {} modpack", manifest.name()));
     Ok(())
 }
 
 pub fn install_single(name: &str) -> CliResult {
-    println!("{}", style(" 📚 [1 / 3] Searching local mod DB").bold());
+    let l = Logger::with_emoji_headline("📚",  "[1 / 3] Searching local mod DB");
+
     let name = name.to_lowercase();
     let db = local_db::read_or_download().expect("Problems reading mod db");
     let found = &db.wonky_find(&name).ok_or("No mod found")?;
 
+    let instance = mc_instance::detect_instance().map_err(|_| "No Minecraft instance found")?;
+
     // prompt user to confirm installation
     confirm(format!("\n    Install {} from CurseForge? [Y/n] ", style(&found.name).bold()));
 
-    install_mod(&found)?;
-    println!("{}", style(format!("  ✔ Successfully installed {}", found.name)).green());
+    // read the minepkg.toml and add our new dependency
+    let mut manifest = instance.manifest()?;
+    manifest.add_dependency(found);
+
+    install_mods(&[&found])?;
+    manifest.save();
+    l.empty_line();
+    l.emoji_success_headline("✅", format!("Successfully installed {}", found.name));
     Ok(())
 }
 
-/// installs a mod
-pub fn install_mod(mc_mod: &Mod) -> CliResult {
-    let id = mc_mod.id.to_string();
+/// installs given mods with all dependencies
+pub fn install_mods(mc_mods: &[&Mod]) -> CliResult {
+    // TODO: this is already loaded by previous functions
+    // make install_mods an instance method?
     let instance = mc_instance::detect_instance().map_err(|_| "No Minecraft instance found")?;
-    // read the minepkg.toml and add our new dependency
-    let mut manifest = instance.manifest()?;
-    manifest.add_dependency(mc_mod);
 
     let mc_version = instance
         .mc_version()
@@ -94,23 +103,20 @@ pub fn install_mod(mc_mod: &Mod) -> CliResult {
     } = AsyncToolbox::new();
 
     // resolve dependencies
-    println!("{}", style(" 🔎 [2 / 3] Resolving Dependencies").bold());
+    let nest = Logger::with_emoji_headline("🔎", "[2 / 3] Resolving Dependencies");
     let mut dep_resolver = dep_resolver::DepResolver::new({ hyper });
     dep_resolver.set_mc_version(mc_version.to_string());
-    let work = dep_resolver.resolve(&String::from(id));
+    let work = mc_mods.iter().map(|mc_mod| dep_resolver.resolve(&String::from(mc_mod.id.to_string())));
+    let work = futures::future::join_all(work);
     core.run(work)?;
 
     let to_install = dep_resolver.resolved_deps.borrow();
     for mc_mod in to_install.iter() {
-        println!("    requires {}", mc_mod.file_name);
+        nest.log(format!("requires {}", mc_mod.file_name));
     }
 
     // install them
-    println!("{}", style(format!(
-            " 🚚 [3 / 3] Downloading {} mods",
-            to_install.len()
-        )).bold()
-    );
+    nest.emoji_headline("🚚", format!("[3 / 3] Downloading {} mods", to_install.len()));
     let progress = indicatif::MultiProgress::new();
     let work: Vec<_> = to_install
         .iter()
@@ -169,7 +175,5 @@ pub fn install_mod(mc_mod: &Mod) -> CliResult {
     core.run(futures::future::join_all(work))?;
     // all jobs ran, we stop the progress bar thread now
     handler.join().unwrap();
-    // last but not least, save the manifest changes
-    manifest.save()?;
     Ok(())
 }
