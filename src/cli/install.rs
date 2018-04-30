@@ -57,7 +57,7 @@ pub fn install_modpack() -> CliResult {
     // prompt user to confirm installation
     confirm(format!("\n    Install {} packages? [Y/n] ", style(&to_be_installed.len()).bold()));
 
-    install_mods(&to_be_installed[..]);
+    install_mods(&to_be_installed[..])?;
 
     l.empty_line();
     l.emoji_success_headline("✅", format!("Successfully installed {} modpack", manifest.name()));
@@ -81,7 +81,7 @@ pub fn install_single(name: &str) -> CliResult {
     manifest.add_dependency(found);
 
     install_mods(&[&found])?;
-    manifest.save();
+    manifest.save()?;
     l.empty_line();
     l.emoji_success_headline("✅", format!("Successfully installed {}", found.name));
     Ok(())

@@ -2,8 +2,6 @@
 
 #[macro_use]
 extern crate clap;
-#[macro_use]
-extern crate lazy_static;
 
 extern crate app_dirs2;
 extern crate bzip2;

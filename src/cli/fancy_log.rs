@@ -1,4 +1,3 @@
-use std::sync::{RwLock};
 use std::fmt::Display;
 use console::style;
 
