@@ -27,5 +27,5 @@ failure = "0.1.1"
 lazy_static = "1.0.2"
 
 [dependencies.reqwest]
-version = "0.8.6"
+version = "0.8.8"
 features = ["unstable"]
