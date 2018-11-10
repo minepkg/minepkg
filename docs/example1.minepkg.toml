@@ -19,6 +19,7 @@ name = "examplepack"
 # be allowed for consistency
 # The version may include prerelease information like `1.2.2-beta.0` or build
 # related information `1.2.1+B7382-2018`.
+# Idea: do not icrement / include the version by hand. Use GitHub releases
 version = "0.1.0"
 authors = ["John Doe <example@example.com>"]
 
@@ -40,6 +41,7 @@ forge-version = "0.1.0"
 # While "mods" might be more user friendly here, "dependencies" is more universal.
 # This will allow mods including an `minepkg.toml` to reuse the same syntax without
 # feeling akward
+# This also makes it possible to use other modpacks as dependency
 [dependencies]
 
 # Borrowed some npm syntax here. `curse:` specifies to use CurseForge to download this mod
@@ -47,28 +49,28 @@ forge-version = "0.1.0"
 # The more verbose syntax is intentional. CurseForge should not be default (for now)
 # because it lacks certain features like installing mods by actual version and because of the
 # closed proprietary nature of it.
-journeymap = "curse:journeymap"
+rftools = "curse:224641"
 
 # In the Future:
 # The default install source should allow version lookups like this:
-# journeymap = "1.4.2"
-# This bit is borrowed from cargo: Version numbers without any operators
-# should default to `^<version>` (caret operator) which only includes non-breaking changes
-# so writing "1.4.2" should be eqaual to "^1.4.2"
+# rftools = "~1.4.2"
+# This reads install 1.4.x (so any patch release is allowed)
+
 # Version 1 of this format should include support for the following semver features:
-# journeymap = "^1.0.0" – caret operator (default)
-# journeymap = "~1.0.0" – tilde operator
-# journeymap = "2.0.1-beta.2" – prerelease
-# journeymap = "1.0.0 - 3.0.0" – range
-# journeymap = "1.x.x" – range
+# rftools = "^1.0.0" – caret operator (default)
+# rftools = "~1.0.0" – tilde operator
+# rftools = "2.0.1-beta.2" – prerelease
+# rftools = "1.0.0 - 3.0.0" – range
+# rftools = "1.x.x" – range
 # https://github.com/npm/node-semver#ranges provides a good explanation of the operators mentioned above
 
-enderio = "curse:enderio"
-storage-drawers = "curse:storage-drawers"
+enderio = "curse:64578"
+storage-drawers = "curse:223852"
 # version locked (by file specification)
 # This syntax only is valid for CurseForge
-biomes-o-plenty = "curse:biomes-o-plenty/BiomesOPlenty-1.12.2-7.0.1.2325-universal.jar"
+biomes-o-plenty = "curse:220318"
 
 
+# TBD
 [replace]
 enderio = "github:example/patched-enderio@5.0.2"

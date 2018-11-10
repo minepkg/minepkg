@@ -1,22 +1,16 @@
-image: "rust:latest"
+image: "go:latest"
 
 stages:
   - build
   - package
 
-# Use cargo to test the project
 linux build:
   stage: build
   script:
-    - rustup default nightly
-    - cargo build --release
-    - strip target/release/minepkg
-  cache:
-    paths:
-      - target/release
+    - go build -ldflags="-s -w" -o ./out/minepkg
   artifacts:
     paths:
-      - target/release/minepkg
+      - out/minepkg
 
 linux packages:
   stage: package
@@ -27,7 +21,7 @@ linux packages:
     GIT_STRATEGY: none
   script:
     - mkdir -p ./source/usr/bin
-    - cp target/release/minepkg ./source/usr/bin
+    - cp out/minepkg ./source/usr/bin
     # TODO: static version here has to be dynamic (tag probably)
     - fpm -s dir -C ./source -t deb -n minepkg -v 0.0.1 .
     - fpm -s dir -C ./source -t rpm -n minepkg -v 0.0.1 .

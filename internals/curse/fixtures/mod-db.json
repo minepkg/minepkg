@@ -1,0 +1,421 @@
+{
+    "data": [{
+            "Attachments": [{
+                "Description": "The (Temporary) Logo For The Project.\n",
+                "IsDefault": false,
+                "ThumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/5/967/310/172/INVINCI.jpg",
+                "Title": "Logo",
+                "Url": "https://media.forgecdn.net/attachments/5/967/INVINCI.jpg"
+            }],
+            "Authors": [{
+                "Name": "EB547",
+                "Url": "https://www.curseforge.com/members/EB547.aspx"
+            }],
+            "Categories": [{
+                "Id": 411,
+                "Name": "Mobs",
+                "URL": "https:/www.curseforge.com/mc-mods/minecraft/category/world-mobs"
+            }],
+            "CategorySection": {
+                "GameID": 432,
+                "ID": 6,
+                "InitialInclusionPattern": ".",
+                "Name": "Mods",
+                "PackageType": "mod",
+                "Path": "mods"
+            },
+            "CommentCount": 0,
+            "DefaultFileId": 538070,
+            "DownloadCount": 1753.0,
+            "GameId": 432,
+            "GamePopularityRank": 19722,
+            "GameVersionLatestFiles": [
+
+            ],
+            "IconId": 1,
+            "Id": 31259,
+            "InstallCount": 0,
+            "IsFeatured": 0,
+            "LatestFiles": [{
+                    "AlternateFileId": 0,
+                    "Dependencies": [
+
+                    ],
+                    "DownloadURL": "https://files.forgecdn.net/files/538/65/gi.class",
+                    "FileDate": "2011-08-25T21:46:22.773",
+                    "FileName": "gi.class",
+                    "FileNameOnDisk": "gi.class",
+                    "FileStatus": "normal",
+                    "GameVersion": [
+
+                    ],
+                    "Id": 538065,
+                    "IsAlternate": false,
+                    "IsAvailable": true,
+                    "Modules": [
+
+                    ],
+                    "PackageFingerprint": 2196237340,
+                    "ReleaseType": "alpha"
+                },
+                {
+                    "AlternateFileId": 0,
+                    "Dependencies": [
+
+                    ],
+                    "DownloadURL": "https://files.forgecdn.net/files/538/68/gi.class",
+                    "FileDate": "2011-08-25T22:08:37.81",
+                    "FileName": "gi.class",
+                    "FileNameOnDisk": "gi.class",
+                    "FileStatus": "normal",
+                    "GameVersion": [
+
+                    ],
+                    "Id": 538068,
+                    "IsAlternate": false,
+                    "IsAvailable": true,
+                    "Modules": [
+
+                    ],
+                    "PackageFingerprint": 908462252,
+                    "ReleaseType": "beta"
+                },
+                {
+                    "AlternateFileId": 0,
+                    "Dependencies": [
+
+                    ],
+                    "DownloadURL": "https://files.forgecdn.net/files/538/70/gi.class",
+                    "FileDate": "2011-08-25T22:17:00.313",
+                    "FileName": "gi.class",
+                    "FileNameOnDisk": "gi.class",
+                    "FileStatus": "normal",
+                    "GameVersion": [
+
+                    ],
+                    "Id": 538070,
+                    "IsAlternate": false,
+                    "IsAvailable": true,
+                    "Modules": [
+
+                    ],
+                    "PackageFingerprint": 701109231,
+                    "ReleaseType": "release"
+                }
+            ],
+            "Likes": 0,
+            "Name": "Invinci-Dogs [MC1.7.3]",
+            "PackageType": "mod",
+            "PopularityScore": 5.7995,
+            "PrimaryAuthorName": "EB547",
+            "PrimaryCategoryAvatarUrl": "https://media.forgecdn.net/avatars/6/53/635351500195070414.png",
+            "PrimaryCategoryId": 411,
+            "PrimaryCategoryName": "Mobs",
+            "Rating": 0,
+            "Stage": "alpha",
+            "Status": "normal",
+            "Summary": "Makes it so scruffy can't snuff it.",
+            "WebSiteURL": "https://www.curseforge.com/minecraft/mc-mods/invinci-dogs-ssp"
+        },
+        {
+            "Attachments": [{
+                    "Description": "",
+                    "IsDefault": false,
+                    "ThumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/28/201/310/172/recepty_armorupdate.png",
+                    "Title": "SaltyMod_Armor_Update",
+                    "Url": "https://media.forgecdn.net/attachments/28/201/recepty_armorupdate.png"
+                },
+                {
+                    "Description": "",
+                    "IsDefault": false,
+                    "ThumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/28/200/310/172/recepty_foodupdate.png",
+                    "Title": "SaltyMod_Food_Update",
+                    "Url": "https://media.forgecdn.net/attachments/28/200/recepty_foodupdate.png"
+                },
+                {
+                    "Description": "",
+                    "IsDefault": false,
+                    "ThumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/28/206/310/172/recepty_worldupdate.png",
+                    "Title": "SaltyMod_World_Update",
+                    "Url": "https://media.forgecdn.net/attachments/28/206/recepty_worldupdate.png"
+                },
+                {
+                    "Description": "",
+                    "IsDefault": false,
+                    "ThumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/28/208/310/172/saltymod_crystalfarm.jpg",
+                    "Title": "SaltyMod_CrystalFarm",
+                    "Url": "https://media.forgecdn.net/attachments/28/208/saltymod_crystalfarm.jpg"
+                },
+                {
+                    "Description": "",
+                    "IsDefault": false,
+                    "ThumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/31/349/310/172/recepty_foodupdate_2.png",
+                    "Title": "SaltyMod_Food_Update_2",
+                    "Url": "https://media.forgecdn.net/attachments/31/349/recepty_foodupdate_2.png"
+                },
+                {
+                    "Description": "",
+                    "IsDefault": false,
+                    "ThumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/30/624/310/172/2016-01-08_22.png",
+                    "Title": "SaltyMod_SaltExtractor",
+                    "Url": "https://media.forgecdn.net/attachments/30/624/2016-01-08_22.png"
+                },
+                {
+                    "Description": "",
+                    "IsDefault": false,
+                    "ThumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/28/207/310/172/saltymod_block_update.jpg",
+                    "Title": "SaltyMod_Block_Update",
+                    "Url": "https://media.forgecdn.net/attachments/28/207/saltymod_block_update.jpg"
+                },
+                {
+                    "Description": "",
+                    "IsDefault": false,
+                    "ThumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/28/209/310/172/saltymod_saltlake.jpg",
+                    "Title": "SaltyMod_SaltLake",
+                    "Url": "https://media.forgecdn.net/attachments/28/209/saltymod_saltlake.jpg"
+                },
+                {
+                    "Description": "",
+                    "IsDefault": false,
+                    "ThumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/34/594/310/172/recepty_update_env.png",
+                    "Title": "Environment_Update",
+                    "Url": "https://media.forgecdn.net/attachments/34/594/recepty_update_env.png"
+                },
+                {
+                    "Description": "",
+                    "IsDefault": false,
+                    "ThumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/34/586/310/172/recepty_update_1.png",
+                    "Title": "SaltyMod_Food_Update_3",
+                    "Url": "https://media.forgecdn.net/attachments/34/586/recepty_update_1.png"
+                },
+                {
+                    "Description": "",
+                    "IsDefault": false,
+                    "ThumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/28/710/310/172/2015-11-17_21.png",
+                    "Title": "SaltMod_Saltwort cultivation",
+                    "Url": "https://media.forgecdn.net/attachments/28/710/2015-11-17_21.png"
+                },
+                {
+                    "Description": "",
+                    "IsDefault": true,
+                    "ThumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/23/843/256/256/635748613494901002.png",
+                    "Title": "635748613494901002.png",
+                    "Url": "https://media.forgecdn.net/avatars/23/843/635748613494901002.png"
+                }
+            ],
+            "Authors": [{
+                "Name": "Liahim85",
+                "Url": "https://www.curseforge.com/members/Liahim85.aspx"
+            }],
+            "Categories": [{
+                    "Id": 436,
+                    "Name": "Food",
+                    "URL": "https:/www.curseforge.com/mc-mods/minecraft/category/mc-food"
+                },
+                {
+                    "Id": 416,
+                    "Name": "Farming",
+                    "URL": "https:/www.curseforge.com/mc-mods/minecraft/category/technology-farming"
+                },
+                {
+                    "Id": 408,
+                    "Name": "Ores and Resources",
+                    "URL": "https:/www.curseforge.com/mc-mods/minecraft/category/world-ores-resources"
+                },
+                {
+                    "Id": 424,
+                    "Name": "Cosmetic",
+                    "URL": "https:/www.curseforge.com/mc-mods/minecraft/category/cosmetic"
+                },
+                {
+                    "Id": 434,
+                    "Name": "Armor, Tools, and Weapons",
+                    "URL": "https:/www.curseforge.com/mc-mods/minecraft/category/armor-weapons-tools"
+                }
+            ],
+            "CategorySection": {
+                "GameID": 432,
+                "ID": 6,
+                "InitialInclusionPattern": ".",
+                "Name": "Mods",
+                "PackageType": "mod",
+                "Path": "mods"
+            },
+            "CommentCount": 0,
+            "DefaultFileId": 2528226,
+            "DownloadCount": 67003.0,
+            "GameId": 432,
+            "GamePopularityRank": 1827,
+            "GameVersionLatestFiles": [{
+                    "FileType": "release",
+                    "GameVesion": "1.11.2",
+                    "ProjectFileID": 2453264,
+                    "ProjectFileName": "SaltyMod_1.11.2_b.jar"
+                },
+                {
+                    "FileType": "release",
+                    "GameVesion": "1.12.2",
+                    "ProjectFileID": 2528226,
+                    "ProjectFileName": "SaltyMod_1.12.1_e_.jar"
+                },
+                {
+                    "FileType": "release",
+                    "GameVesion": "1.12.1",
+                    "ProjectFileID": 2528226,
+                    "ProjectFileName": "SaltyMod_1.12.1_e_.jar"
+                },
+                {
+                    "FileType": "release",
+                    "GameVesion": "1.12",
+                    "ProjectFileID": 2495939,
+                    "ProjectFileName": "SaltyMod_1.12.1_d.jar"
+                },
+                {
+                    "FileType": "release",
+                    "GameVesion": "1.10.2",
+                    "ProjectFileID": 2528225,
+                    "ProjectFileName": "SaltyMod-1.10.2-1.8.d_.jar"
+                },
+                {
+                    "FileType": "release",
+                    "GameVesion": "1.10",
+                    "ProjectFileID": 2313198,
+                    "ProjectFileName": "SaltyMod-1.10-1.8.c_beta-1_.jar"
+                },
+                {
+                    "FileType": "release",
+                    "GameVesion": "1.7.10",
+                    "ProjectFileID": 2528224,
+                    "ProjectFileName": "SaltyMod-1.7.10-1.8.c_.jar"
+                },
+                {
+                    "FileType": "release",
+                    "GameVesion": "1.8.9",
+                    "ProjectFileID": 2313701,
+                    "ProjectFileName": "SaltyMod-1.8.8-1.8.9-1.8.c-1.jar"
+                },
+                {
+                    "FileType": "release",
+                    "GameVesion": "1.8.8",
+                    "ProjectFileID": 2313701,
+                    "ProjectFileName": "SaltyMod-1.8.8-1.8.9-1.8.c-1.jar"
+                },
+                {
+                    "FileType": "release",
+                    "GameVesion": "1.8",
+                    "ProjectFileID": 2313700,
+                    "ProjectFileName": "SaltyMod-1.8-1.8.c-1.jar"
+                },
+                {
+                    "FileType": "beta",
+                    "GameVesion": "1.8",
+                    "ProjectFileID": 2270460,
+                    "ProjectFileName": "SaltyMod-1.8-1.5.a.jar"
+                },
+                {
+                    "FileType": "release",
+                    "GameVesion": "1.9.4",
+                    "ProjectFileID": 2313087,
+                    "ProjectFileName": "SaltyMod-1.9.4-1.8.c_beta-4_.jar"
+                },
+                {
+                    "FileType": "release",
+                    "GameVesion": "1.9",
+                    "ProjectFileID": 2313086,
+                    "ProjectFileName": "SaltyMod-1.9-1.8.c_beta-1_.jar"
+                }
+            ],
+            "IconId": 1,
+            "Id": 234840,
+            "InstallCount": 0,
+            "IsFeatured": 0,
+            "LatestFiles": [{
+                    "AlternateFileId": 0,
+                    "Dependencies": [
+
+                    ],
+                    "DownloadURL": "https://files.forgecdn.net/files/2528/226/SaltyMod_1.12.1_e_.jar",
+                    "FileDate": "2018-02-05T05:47:41.69",
+                    "FileName": "SaltyMod_1.12.1_e_.jar",
+                    "FileNameOnDisk": "SaltyMod_1.12.1_e_.jar",
+                    "FileStatus": "semiNormal",
+                    "GameVersion": [
+                        "1.12.2",
+                        "1.12.1"
+                    ],
+                    "Id": 2528226,
+                    "IsAlternate": false,
+                    "IsAvailable": true,
+                    "Modules": [{
+                            "Fingerprint": 1933219571,
+                            "Foldername": "assets"
+                        },
+                        {
+                            "Fingerprint": 364944209,
+                            "Foldername": "mcmod.info"
+                        },
+                        {
+                            "Fingerprint": 2464251221,
+                            "Foldername": "META-INF"
+                        },
+                        {
+                            "Fingerprint": 3742914107,
+                            "Foldername": "ru"
+                        }
+                    ],
+                    "PackageFingerprint": 3478600712,
+                    "ReleaseType": "release"
+                },
+                {
+                    "AlternateFileId": 0,
+                    "Dependencies": [
+
+                    ],
+                    "DownloadURL": "https://files.forgecdn.net/files/2270/460/SaltyMod-1.8-1.5.a.jar",
+                    "FileDate": "2015-12-12T15:15:45.147",
+                    "FileName": "SaltyMod-1.8-1.5.a.jar",
+                    "FileNameOnDisk": "SaltyMod-1.8-1.5.a.jar",
+                    "FileStatus": "normal",
+                    "GameVersion": [
+                        "1.8"
+                    ],
+                    "Id": 2270460,
+                    "IsAlternate": false,
+                    "IsAvailable": true,
+                    "Modules": [{
+                            "Fingerprint": 2464251221,
+                            "Foldername": "META-INF"
+                        },
+                        {
+                            "Fingerprint": 2345445599,
+                            "Foldername": "ru"
+                        },
+                        {
+                            "Fingerprint": 1666352772,
+                            "Foldername": "mcmod.info"
+                        },
+                        {
+                            "Fingerprint": 232341192,
+                            "Foldername": "assets"
+                        }
+                    ],
+                    "PackageFingerprint": 2667281365,
+                    "ReleaseType": "beta"
+                }
+            ],
+            "Likes": 0,
+            "Name": "SaltyMod",
+            "PackageType": "mod",
+            "PopularityScore": 647.1461,
+            "PrimaryAuthorName": "Liahim85",
+            "PrimaryCategoryAvatarUrl": "https://media.forgecdn.net/avatars/6/49/635351499265510402.png",
+            "PrimaryCategoryId": 436,
+            "PrimaryCategoryName": "Food",
+            "Rating": 0,
+            "Stage": "alpha",
+            "Status": "normal",
+            "Summary": "Food, blocks, farming, armor ... All the salt!",
+            "WebSiteURL": "https://www.curseforge.com/minecraft/mc-mods/saltymod"
+        }
+    ]
+}
