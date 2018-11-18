@@ -16,11 +16,8 @@ import (
 
 	"github.com/fiws/minepkg/internals/instances"
 	"github.com/manifoldco/promptui"
-
 	"github.com/logrusorgru/aurora"
-
 	"github.com/docker/docker/pkg/stdcopy"
-
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
