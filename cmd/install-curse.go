@@ -13,7 +13,7 @@ import (
 	"github.com/manifoldco/promptui"
 )
 
-func installFromCurse(args []string, instance *instances.McInstance) {
+func installFromCurse(name string, instance *instances.McInstance) {
 
 	task := logger.NewTask(3)
 	task.Step("📚", "Searching local mod DB.")
@@ -21,7 +21,7 @@ func installFromCurse(args []string, instance *instances.McInstance) {
 
 	// TODO: better search!
 	mods := curse.Filter(db.Mods, func(m curse.Mod) bool {
-		return strings.HasPrefix(strings.ToLower(m.Name), strings.Join(args, " "))
+		return strings.HasPrefix(strings.ToLower(m.Slug), name)
 	})
 
 	choosenMod := chooseMod(mods, task)

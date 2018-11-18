@@ -31,13 +31,24 @@ var installCmd = &cobra.Command{
 			return
 		}
 
-		// looks like a source zip file. install from source
-		if strings.HasPrefix(args[0], "https://") && strings.HasSuffix(args[0], ".zip") {
-			installFromSource(args[0], instance)
-			return
+		firstArg := args[0]
+		if strings.HasPrefix(firstArg, "https://") {
+			switch {
+			// got a curseforge url
+			case strings.HasPrefix(firstArg, "https://minecraft.curseforge.com/projects/"):
+				projectname := firstArg[42:] // url minus first bits (just the name)
+				installFromCurse(projectname, instance)
+				return
+
+			// looks like a source zip file. install from source
+			case strings.HasSuffix(firstArg, ".zip"):
+				installFromSource(args[0], instance)
+				return
+			}
+			logger.Fail("Sorry. Don't know what to do with that url")
 		}
 
 		// fallback to curseforge
-		installFromCurse(args, instance)
+		installFromCurse(strings.Join(args, " "), instance)
 	},
 }

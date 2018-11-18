@@ -24,7 +24,8 @@ var rootCmd = &cobra.Command{
 
 Examples:
   minepkg install rftools
-  minepkg install https://minecraft.curseforge.com/projects/storage-drawers.
+  minepkg install https://minecraft.curseforge.com/projects/storage-drawers
+  minepkg install https://github.com/McJtyMods/XNet/archive/1.12.zip
 `,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
