@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -18,7 +19,7 @@ import (
 )
 
 const dbPath = "https://clientupdate-v6.cursecdn.com/feed/addons/432/v10/complete.json.bz2"
-const finalLocation = "complete.json.zst"
+const fileName = "complete.json.zst"
 
 type modDB struct {
 	Mods []curse.Mod `json:"data"`
@@ -64,8 +65,13 @@ func refreshDb() {
 	// 2. decompress the response (bzip2)
 	decompressor := bzip2.NewReader(proxy)
 
+	if err := os.MkdirAll(globalDir, 1755); err != nil {
+		panic(err)
+	}
+
+	targetPath := filepath.Join(globalDir, fileName)
 	// 3. compress it again using zst and write it to our destination file
-	destinationFile, err := os.Create(finalLocation)
+	destinationFile, err := os.Create(targetPath)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -105,7 +111,7 @@ func parseDb(b []byte) *modDB {
 }
 
 func readDbOrDownload() *modDB {
-	file, err := ioutil.ReadFile("./complete.json.zst")
+	file, err := ioutil.ReadFile(filepath.Join(globalDir, fileName))
 	if err != nil {
 		fmt.Println("There is no local mod db yet! Downloading now …")
 		refreshDb()
