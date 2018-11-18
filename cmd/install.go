@@ -40,6 +40,11 @@ var installCmd = &cobra.Command{
 			return
 		}
 
+		if strings.HasPrefix(args[0], "https://") && strings.HasSuffix(args[0], ".zip") {
+			installFromSource(args[0], instance)
+			return
+		}
+
 		task := logger.NewTask(3)
 		task.Step("📚", "Searching local mod DB.")
 		db := readDbOrDownload()

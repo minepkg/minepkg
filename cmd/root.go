@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/fiws/minepkg/internals/cmdlog"
 
@@ -13,6 +14,7 @@ import (
 
 var cfgFile string
 var logger *cmdlog.Logger = cmdlog.New()
+var globalDir = "/tmp"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -81,6 +83,12 @@ func Execute() {
 }
 
 func init() {
+	home, err := homedir.Dir()
+	if err != nil {
+		panic(err)
+	}
+
+	globalDir = filepath.Join(home, ".minepkg")
 	rootCmd.AddCommand(refreshCmd)
 	// rootCmd.AddCommand(searchCmd)
 	rootCmd.AddCommand(installCmd)

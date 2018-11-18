@@ -73,6 +73,16 @@ func (m *McInstance) Download(mod *manifest.ResolvedMod) error {
 	return nil
 }
 
+// Add a new mod using a reader
+func (m *McInstance) Add(name string, r io.Reader) error {
+	dest, err := os.Create(path.Join(m.ModsDirectory, name))
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(dest, r)
+	return err
+}
+
 // DetectInstance tries to detect a minecraft instance
 // returning it, if succesfull
 func DetectInstance() (*McInstance, error) {

@@ -62,6 +62,25 @@ type Manifest struct {
 	Dependencies `toml:"dependencies"`
 }
 
+type ParsedDependency struct {
+	Provider string
+	Target   string
+	Meta     string
+}
+
+func (d *Dependencies) Parsed() []ParsedDependency {
+	parsed := make([]ParsedDependency, len(*d))
+
+	i := 0
+	for _, dep := range *d {
+		splited := strings.SplitN(dep, ":", 1)
+		parsed[i] = ParsedDependency{Provider: splited[0], Target: splited[1]}
+		i++
+	}
+
+	return parsed
+}
+
 // FullDependencies returns all dependencies including dependencies
 // specified in external toml files (Package.Extends)
 func (m *Manifest) FullDependencies() (*Dependencies, error) {
