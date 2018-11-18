@@ -9,7 +9,7 @@ import (
 )
 
 var installCmd = &cobra.Command{
-	Use:     "install [name/url/id ...]",
+	Use:     "install [name/url/id]",
 	Short:   "installz packages",
 	Long:    `Just install them packages noaw`,
 	Aliases: []string{"isntall", "i"},

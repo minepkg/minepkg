@@ -12,9 +12,21 @@ linux build:
     paths:
       - out/minepkg
 
+windows build:
+  image: karalabe/xgo-latest:latest
+  stage: build
+  script:
+    - CC=x86_64-w64-mingw32-gcc-posix CXX=x86_64-w64-mingw32-g++-posix GOOS=windows GOARCH=amd64 CGO_ENABLED=1 CGO_CFLAGS="$CGO_NTDEF" CGO_CXXFLAGS="$CGO_NTDEF"
+    - go build -ldflags="-s -w" -o ./out/minepkg.exe
+  artifacts:
+    paths:
+      - out/minepkg.exe
+
 linux packages:
   stage: package
   image: "tenzer/fpm:no-entrypoint"
+  only:
+    - /^v\d+\.\d+\.\d+-?.*$/
   dependencies:
     - linux build
   variables:
@@ -22,10 +34,9 @@ linux packages:
   script:
     - mkdir -p ./source/usr/bin
     - cp out/minepkg ./source/usr/bin
-    # TODO: static version here has to be dynamic (tag probably)
-    - fpm -s dir -C ./source -t deb -n minepkg -v 0.0.1 .
-    - fpm -s dir -C ./source -t rpm -n minepkg -v 0.0.1 .
-    - fpm -s dir -C ./source -t pacman -n minepkg -v 0.0.1 .
+    - fpm -s dir -C ./source -t deb -n minepkg -v $CI_COMMIT_REF_NAME .
+    - fpm -s dir -C ./source -t rpm -n minepkg -v $CI_COMMIT_REF_NAME .
+    - fpm -s dir -C ./source -t pacman -n minepkg -v $CI_COMMIT_REF_NAME .
   artifacts:
     paths:
       - '*.deb'

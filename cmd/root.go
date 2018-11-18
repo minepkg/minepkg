@@ -18,8 +18,9 @@ var globalDir = "/tmp"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "minepkg",
-	Short: "Minepkg at your service.",
+	Version: "0.0.1",
+	Use:     "minepkg",
+	Short:   "Minepkg at your service.",
 	Long: `Manage Minecraft mods with ease.
 
 Examples:
@@ -98,7 +99,6 @@ func init() {
 
 	// Global flags
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.minepkg-config.toml)")
-
 }
 
 // initConfig reads in config file and ENV variables if set.
