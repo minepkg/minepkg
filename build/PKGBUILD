@@ -1,7 +1,7 @@
 # Maintainer: Filip Weiss <minepkg+me@fiws.net>
 
 pkgname=minepkg
-pkgver=0.1.0
+pkgver=0.0.1
 pkgrel=1
 pkgdesc="Installs and manages Minecraft mods in style"
 arch=('x86_64')
@@ -11,14 +11,17 @@ groups=()
 depends=()
 makedepends=('go')
 optdepends=()
-source=("https://github.com/fiws/$pkgname/tags/$pkgname-$pkgver.tar.xz")
+source=("https://github.com/fiws/$pkgname/archive/v$pkgver-beta.tar.gz")
+sha1sums=("67c59d7f04555b22a08e0bf611a91822ea817c9b")
 
 build() {
-  cd "$srcdir/$pkgname-$pkgver"
-  go build -ldflags="-s -w" -o ./out/minepkg
+  cd "$srcdir/$pkgname-$pkgver-beta"
+  echo "building"
+  go build -ldflags="-s -w" -o ./out/minepkg main.go
+  echo "built!"
 }
 
 package() {
-  cd "$srcdir/$pkgname-$pkgver"
+  cd "$srcdir/$pkgname-$pkgver-beta"
   install -Dm755 "out/minepkg" "$pkgdir/usr/bin/minepkg"
 }
