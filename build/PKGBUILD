@@ -3,7 +3,7 @@
 pkgname=minepkg
 pkgver=0.0.1
 pkgrel=1
-pkgdesc="Installs and manages Minecraft mods in style"
+pkgdesc="Installs and manages Minecraft mods with ease"
 arch=('x86_64')
 url="https://github.com/fiws/minepkg"
 license=('MIT')

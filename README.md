@@ -1,7 +1,7 @@
 <p align="center">
   <img width="220" src="./assets/logo.svg" alt="minepkg" />
   <div align="center">
-    minepkg is a package manager design to install minecraft mods and modpacks.
+    minepkg is a package manager designed to install Minecraft mods and modpacks.
   </div>
 </p>
 
@@ -9,10 +9,10 @@
 
 ## Features
 
-* Installing mods from CurseForge (with dependency resolution)
-* Compiling mods from source zip files with docker
+* Installs mods from CurseForge (with dependency resolution)
+* Compiles mods from source zip files (eg. from GitHub) with docker
 * Saves your installed mods in a sharable `minepkg.toml`
-* `minepkg.toml` modpacks can extend other modpacks
+  * `minepkg.toml` modpacks can extend other modpacks
 * Works with vanilla and MultiMC instances (MultiMC support is unofficial)
 
 ## Usage
@@ -23,7 +23,7 @@ Manage Minecraft mods with ease.
 
 Examples:
   minepkg install rftools
-  minepkg install https://minecraft.curseforge.com/projects/storage-drawers.
+  minepkg install https://minecraft.curseforge.com/projects/storage-drawers
 
 Usage:
   minepkg [command]
