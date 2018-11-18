@@ -8,6 +8,9 @@ linux build:
   stage: build
   script:
     - go build -ldflags="-s -w" -o ./out/minepkg
+  cache:
+    paths:
+      - /go
   artifacts:
     paths:
       - out/minepkg
@@ -18,8 +21,10 @@ windows build:
     entrypoint: ["/bin/bash"]
   stage: build
   script:
-    - CC=x86_64-w64-mingw32-gcc-posix CXX=x86_64-w64-mingw32-g++-posix GOOS=windows GOARCH=amd64 CGO_ENABLED=1 CGO_CFLAGS="$CGO_NTDEF" CGO_CXXFLAGS="$CGO_NTDEF"
-    - go build -ldflags="-s -w" -o ./out/minepkg.exe
+    - CC=x86_64-w64-mingw32-gcc-posix CXX=x86_64-w64-mingw32-g++-posix GOOS=windows GOARCH=amd64 CGO_ENABLED=1 CGO_CFLAGS="$CGO_NTDEF" CGO_CXXFLAGS="$CGO_NTDEF" go build -ldflags="-s -w" -o ./out/minepkg.exe
+  cache:
+    paths:
+      - /go
   artifacts:
     paths:
       - out/minepkg.exe
