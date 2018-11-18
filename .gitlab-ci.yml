@@ -18,7 +18,7 @@ linux build:
 windows build:
   image:
     name: karalabe/xgo-latest:latest
-    entrypoint: ["/bin/bash", "-l", "-c"]
+    entrypoint: ["/bin/bash", "-c"]
   stage: build
   script:
     - CC=x86_64-w64-mingw32-gcc-posix CXX=x86_64-w64-mingw32-g++-posix 
