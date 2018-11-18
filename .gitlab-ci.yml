@@ -13,7 +13,9 @@ linux build:
       - out/minepkg
 
 windows build:
-  image: karalabe/xgo-latest:latest
+  image:
+    name: karalabe/xgo-latest:latest
+    entrypoint: ["/bin/bash"]
   stage: build
   script:
     - CC=x86_64-w64-mingw32-gcc-posix CXX=x86_64-w64-mingw32-g++-posix GOOS=windows GOARCH=amd64 CGO_ENABLED=1 CGO_CFLAGS="$CGO_NTDEF" CGO_CXXFLAGS="$CGO_NTDEF"
