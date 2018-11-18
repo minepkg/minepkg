@@ -7,18 +7,18 @@ stages:
 linux build:
   stage: build
   script:
+    - cp ./.cache/ /go/pkg/mod
     - go build -ldflags="-s -w" -o ./out/minepkg
+    - cp /go/pkg/mod ./.cache/
   cache:
     paths:
-      - /go
+      - ./cache
   artifacts:
     paths:
       - out/minepkg
 
 windows build:
-  image:
-    name: karalabe/xgo-latest:latest
-    entrypoint: ["/bin/bash", "-c"]
+  image: dockercore/golang-cross
   stage: build
   script:
     - echo "hello"
