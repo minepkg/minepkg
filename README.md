@@ -1,7 +1,19 @@
 <p align="center">
-  <img width="720" src="https://i.imgur.com/BRfIa9b.gif" alt="minepkg install preview" />
+  <img width="220" src="./assets/logo.svg" alt="minepkg" />
+  <div align="center">
+    minepkg is a package manager design to install minecraft mods and modpacks.
+  </div>
 </p>
 
+---
+
+## Features
+
+* Installing mods from CurseForge (with dependency resolution)
+* Compiling mods from source zip files with docker
+* Saves your installed mods in a sharable `minepkg.toml`
+* `minepkg.toml` modpacks can extend other modpacks
+* Works with vanilla and MultiMC instances (MultiMC support is unofficial)
 
 ## Usage
 
@@ -27,7 +39,14 @@ Flags:
   -h, --help            help for minepkg
 
 Use "minepkg [command] --help" for more information about a command.
+
 ```
+
+## Demo
+
+<p align="center">
+  <img width="720" src="https://i.imgur.com/BRfIa9b.gif" alt="minepkg install preview" />
+</p>
 
 ## Building
 
@@ -41,3 +60,7 @@ git clone https://github.com/fiws/minepkg.git
 cd minepkg
 go run main.go --help
 ```
+
+## Thanks to
+
+* dries007 for [cursemeta](https://github.com/dries007/CurseMeta) – used to talk to CurseForge API
