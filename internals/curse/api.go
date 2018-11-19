@@ -9,13 +9,11 @@ import (
 
 const baseAPI = "https://staging_cursemeta.dries007.net/api/v3/direct"
 
-func idToString(i uint32) string {
-	return strconv.Itoa(int(i))
-}
+var client = &http.Client{}
 
 // FetchMod gets a single mod from metacurse
 func FetchMod(id uint32) (*Mod, error) {
-	res, _ := http.Get(baseAPI + "/addon/" + idToString(id))
+	res, _ := ghettoGet(baseAPI + "/addon/" + idToString(id))
 	b, _ := ioutil.ReadAll(res.Body)
 
 	mod := Mod{}
@@ -29,7 +27,7 @@ func FetchMod(id uint32) (*Mod, error) {
 
 // FetchModFiles gets all files from a single mod
 func FetchModFiles(id uint32) ([]ModFile, error) {
-	res, _ := http.Get(baseAPI + "/addon/" + idToString(id) + "/files")
+	res, _ := ghettoGet(baseAPI + "/addon/" + idToString(id) + "/files")
 	b, _ := ioutil.ReadAll(res.Body)
 
 	var modFiles []ModFile
@@ -39,4 +37,18 @@ func FetchModFiles(id uint32) ([]ModFile, error) {
 	}
 
 	return modFiles, nil
+}
+
+func idToString(i uint32) string {
+	return strconv.Itoa(int(i))
+}
+
+// ghettoGet is a helper that does a get request and also sets the User-Agent header
+func ghettoGet(url string) (*http.Response, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", "minepkg (https://github.com/fiws/minepkg)")
+	return client.Do(req)
 }
