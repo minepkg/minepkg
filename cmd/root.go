@@ -72,6 +72,9 @@ func init() {
 	}
 	globalDir = filepath.Join(home, ".minepkg")
 
+	// TODO: remove this after a few releases (fixes #61)
+	os.Chmod(globalDir, 0755)
+
 	rootCmd.AddCommand(installCmd)
 	rootCmd.AddCommand(refreshCmd)
 	rootCmd.AddCommand(completionCmd)
