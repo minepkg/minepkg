@@ -16,10 +16,8 @@ windows build:
   image: dockercore/golang-cross
   stage: build
   script:
-    - echo "hello"
-    - CC=x86_64-w64-mingw32-gcc-posix CXX=x86_64-w64-mingw32-g++-posix 
-    - GOOS=windows GOARCH=amd64 CGO_ENABLED=1
-    - go build -ldflags="-s -w" -o ./out/minepkg.exe
+    - echo "building for windows"
+    - CC=x86_64-w64-mingw32-gcc-posix CXX=x86_64-w64-mingw32-g++-posix GOOS=windows GOARCH=amd64 CGO_ENABLED=1 go build -ldflags="-s -w" -o ./out/minepkg.exe
   artifacts:
     paths:
       - out/minepkg.exe
