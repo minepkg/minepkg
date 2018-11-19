@@ -65,7 +65,7 @@ func refreshDb() {
 	// 2. decompress the response (bzip2)
 	decompressor := bzip2.NewReader(proxy)
 
-	if err := os.MkdirAll(globalDir, 1755); err != nil {
+	if err := os.MkdirAll(globalDir, 0755); err != nil {
 		panic(err)
 	}
 
