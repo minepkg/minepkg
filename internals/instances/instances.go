@@ -23,6 +23,8 @@ var (
 	FlavourVanilla uint8 = 1
 	// FlavourMMC is a minecraft instance initiated with MultiMC
 	FlavourMMC uint8 = 2
+	// FlavourServer is a server side instance
+	FlavourServer uint8 = 1
 
 	// ErrorNoInstance is returned if no mc instance was found
 	ErrorNoInstance = errors.New("Could not find minecraft instance in this directory")
@@ -88,15 +90,21 @@ func (m *McInstance) Add(name string, r io.Reader) error {
 func DetectInstance() (*McInstance, error) {
 	entries, _ := ioutil.ReadDir("./")
 
+	modsDir := "mods"
+
 	// TODO: wow, this is one ugly .includes()
 	var flavour uint8
 	for _, entry := range entries {
 		switch entry.Name() {
 		case "mmc-pack.json":
 			flavour = FlavourMMC
+			modsDir = detectMmcModsDir(entries)
 			break
 		case "versions":
 			flavour = FlavourVanilla
+			break
+		case "server.properties":
+			flavour = FlavourServer
 			break
 		}
 	}
@@ -112,7 +120,7 @@ func DetectInstance() (*McInstance, error) {
 
 	return &McInstance{
 		Flavour:       flavour,
-		ModsDirectory: detectMmcModsDir(entries),
+		ModsDirectory: modsDir,
 		Manifest:      manifest,
 	}, nil
 }
