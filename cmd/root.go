@@ -18,7 +18,7 @@ var globalDir = "/tmp"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Version: "0.0.1-beta",
+	Version: "0.0.1",
 	Use:     "minepkg",
 	Short:   "Minepkg at your service.",
 	Long: `Manage Minecraft mods with ease.
