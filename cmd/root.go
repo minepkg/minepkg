@@ -28,26 +28,7 @@ Examples:
   minepkg install https://minecraft.curseforge.com/projects/storage-drawers
   minepkg install https://github.com/McJtyMods/XNet/archive/1.12.zip
 `,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
 }
-
-// var searchCmd = &cobra.Command{
-// 	Use:   "search",
-// 	Short: "Searches local db for given mod",
-// 	Long:  `Bla bla long.`,
-// 	Args:  cobra.MinimumNArgs(1),
-// 	Run: func(cmd *cobra.Command, args []string) {
-// 		fmt.Println("hello")
-// 		db := readDbOrDownload()
-
-// 		mods := curse.Filter(db.Mods, func(m curse.Mod) bool {
-// 			return strings.HasPrefix(strings.ToLower(m.Name), strings.Join(args, " "))
-// 		})
-// 		fmt.Printf("%+v", mods)
-// 	},
-// }
 
 var refreshCmd = &cobra.Command{
 	Use:   "refresh",
@@ -89,16 +70,15 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-
 	globalDir = filepath.Join(home, ".minepkg")
-	rootCmd.AddCommand(refreshCmd)
-	// rootCmd.AddCommand(searchCmd)
+
 	rootCmd.AddCommand(installCmd)
+	rootCmd.AddCommand(refreshCmd)
 	rootCmd.AddCommand(completionCmd)
 	cobra.OnInitialize(initConfig)
 
 	// Global flags
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.minepkg-config.toml)")
+	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.minepkg/config.toml)")
 }
 
 // initConfig reads in config file and ENV variables if set.

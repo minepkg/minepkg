@@ -35,7 +35,6 @@ Available Commands:
   refresh     Fetches all mods that are available
 
 Flags:
-      --config string   config file (default is $HOME/.minepkg-config.toml)
   -h, --help            help for minepkg
 
 Use "minepkg [command] --help" for more information about a command.
@@ -52,8 +51,6 @@ Use "minepkg [command] --help" for more information about a command.
 
 Requires go 1.11+. Don't use your GOPATH.
 Just `go run main.go [commands]` or `go build -o out/minepkg`
-
-### Example
 
 ```
 git clone https://github.com/fiws/minepkg.git
