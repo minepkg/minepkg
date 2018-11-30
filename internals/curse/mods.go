@@ -12,6 +12,11 @@ var (
 	// ReleaseTypeAlpha indicates a alpha release
 	ReleaseTypeAlpha uint8 = 3
 
+	// PackageTypeModpack indicates a modpack
+	PackageTypeModpack uint8 = 5
+	// PackageTypeMod indicates a single mod
+	PackageTypeMod uint8 = 6
+
 	// DependencyTypeRequired indicates a required dependency
 	DependencyTypeRequired uint8 = 1
 	// DependencyTypeOptional indicates a optional dependency
@@ -31,6 +36,7 @@ type Mod struct {
 	WebsiteURL    string    `json:"webSiteURL"`
 	DownloadCount float32   `json:"downloadCount"`
 	LastReleases  []Release `json:"gameVersionLatestFiles"`
+	PackageType   uint32    `json:packageType`
 }
 
 // Identifier returns the Slug, for the minepkg.toml
@@ -41,6 +47,18 @@ func (m *Mod) Identifier() string {
 // String returns a string that can be used to install this mod again
 func (m *Mod) String() string {
 	return "curse:" + idToString(m.ID)
+}
+
+// FindRelease returns the latest downloadable version for the given version
+func FindRelease(m []ModFile, version string) *ModFile {
+	for _, mod := range m {
+		for _, v := range mod.GameVersion {
+			if v == version {
+				return &mod
+			}
+		}
+	}
+	return nil
 }
 
 // Filter returns filtered mods

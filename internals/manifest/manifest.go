@@ -125,6 +125,10 @@ func (m *Manifest) FullDependencies() (*Dependencies, error) {
 
 // AddDependency adds a new dependency to the manifest
 func (m *Manifest) AddDependency(d Dependency) {
+	if m.Dependencies == nil {
+		fmt.Println("[dependencies] was not initialized. This should not happen. Please report this")
+		m.Dependencies = make(map[string]string)
+	}
 	m.Dependencies[d.Identifier()] = d.String()
 }
 

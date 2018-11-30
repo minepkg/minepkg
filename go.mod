@@ -6,6 +6,7 @@ require (
 	github.com/DataDog/zstd v1.3.4
 	github.com/Microsoft/go-winio v0.4.11 // indirect
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
+	github.com/blang/semver v3.5.1+incompatible
 	github.com/briandowns/spinner v0.0.0-20181029155426-195c31b675a7
 	github.com/buger/jsonparser v0.0.0-20181115193947-bf1c66bbce23
 	github.com/cheggaaa/pb v1.0.26

@@ -9,9 +9,11 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/blang/semver"
 	"github.com/fiws/minepkg/internals/manifest"
 	"github.com/logrusorgru/aurora"
 	"github.com/stoewer/go-strcase"
@@ -28,12 +30,12 @@ var (
 
 	// ErrorNoInstance is returned if no mc instance was found
 	ErrorNoInstance = errors.New("Could not find minecraft instance in this directory")
+	ErrorNoVersion  = errors.New("Could not detect minecraft version")
 )
 
 // McInstance describes a locally installed minecraft instance
 type McInstance struct {
 	Flavour       uint8
-	Version       string
 	ModsDirectory string
 	Manifest      *manifest.Manifest
 }
@@ -47,10 +49,12 @@ func (m *McInstance) Desc() string {
 	default:
 		flavourText = "Vanilla"
 	}
+	manifest := m.Manifest
+
 	flavourText = fmt.Sprintf(" ⌂ %s ", flavourText)
-	version := fmt.Sprintf(" MC %s ", m.Manifest.Requirements.MinecraftVersion)
-	depCount := fmt.Sprintf(" %d deps ", len(m.Manifest.Dependencies))
-	name := fmt.Sprintf(" 📦 %s ", m.Manifest.Package.Name)
+	version := fmt.Sprintf(" MC %s ", manifest.Requirements.MinecraftVersion)
+	depCount := fmt.Sprintf(" %d deps ", len(manifest.Dependencies))
+	name := fmt.Sprintf(" 📦 %s ", manifest.Package.Name)
 	build := []string{
 		aurora.BgBrown(flavourText).String(),
 		aurora.BgGray(version).Black().String(),
@@ -92,7 +96,6 @@ func DetectInstance() (*McInstance, error) {
 
 	modsDir := "mods"
 
-	// TODO: wow, this is one ugly .includes()
 	var flavour uint8
 	for _, entry := range entries {
 		switch entry.Name() {
@@ -113,38 +116,64 @@ func DetectInstance() (*McInstance, error) {
 		return nil, ErrorNoInstance
 	}
 
-	manifest, err := getManifest()
+	instance := &McInstance{
+		Flavour:       flavour,
+		ModsDirectory: modsDir,
+	}
+
+	err := instance.initManifest()
 	if err != nil {
 		return nil, err
 	}
 
-	return &McInstance{
-		Flavour:       flavour,
-		ModsDirectory: modsDir,
-		Manifest:      manifest,
-	}, nil
+	return instance, nil
 }
 
-func getManifest() (*manifest.Manifest, error) {
+// Version returns the minecraft version of the instance
+func (m *McInstance) Version() semver.Version {
+	switch m.Flavour {
+	case FlavourVanilla:
+		entries, _ := ioutil.ReadDir("./version")
+		versions := make(semver.Versions, len(entries))
+		for i, version := range entries {
+			versions[i] = semver.MustParse(version.Name())
+		}
+		sort.Sort(versions)
+		return versions[0]
+	default:
+		return semver.MustParse("1.12.2")
+	}
+}
+
+// initManifest sets the manifest file or creates one
+func (m *McInstance) initManifest() error {
 	minepkg, err := ioutil.ReadFile("./minepkg.toml")
 	if err != nil {
-		m := manifest.New()
+		manifest := manifest.New()
 		wd, err := os.Getwd()
 		if err != nil {
-			return nil, err
+			return err
 		}
 		name := filepath.Base(wd)
+		version := m.Version().String()
+		if version == "" {
+			return ErrorNoVersion
+		}
 
-		m.Package.Name = strcase.KebabCase(name)
-		return m, nil
+		manifest.Package.Name = strcase.KebabCase(name)
+		manifest.Requirements.MinecraftVersion = m.Version().String()
+		m.Manifest = manifest
+		return nil
 	}
 
 	manifest := manifest.Manifest{}
 	_, err = toml.Decode(string(minepkg), &manifest)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &manifest, nil
+
+	m.Manifest = &manifest
+	return nil
 }
 
 func detectMmcModsDir(e []os.FileInfo) string {
