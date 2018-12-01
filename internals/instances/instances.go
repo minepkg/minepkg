@@ -1,6 +1,7 @@
 package instances
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -18,6 +19,8 @@ import (
 	"github.com/logrusorgru/aurora"
 	"github.com/stoewer/go-strcase"
 )
+
+const compatMMCFormat = 1
 
 var (
 	// FlavourVanilla is a vanilla minecraft instance
@@ -140,6 +143,19 @@ func (m *McInstance) Version() semver.Version {
 		}
 		sort.Sort(versions)
 		return versions[0]
+	case FlavourMMC:
+		pack := mmcPack{}
+		raw, _ := ioutil.ReadFile("./mmc-pack.json")
+		json.Unmarshal(raw, &pack)
+		if pack.FormatVersion != compatMMCFormat {
+			panic("incompatible MMC version. Open a bug for minepkg")
+		}
+		for _, comp := range pack.Components {
+			if comp.UID == "net.minecraft" {
+				return semver.MustParse(comp.Version)
+			}
+		}
+		fallthrough
 	default:
 		return semver.MustParse("1.12.2")
 	}
@@ -161,7 +177,7 @@ func (m *McInstance) initManifest() error {
 		}
 
 		manifest.Package.Name = strcase.KebabCase(name)
-		manifest.Requirements.MinecraftVersion = m.Version().String()
+		manifest.Requirements.MinecraftVersion = version
 		m.Manifest = manifest
 		return nil
 	}
@@ -185,4 +201,14 @@ func detectMmcModsDir(e []os.FileInfo) string {
 	}
 
 	return ""
+}
+
+type mmcPack struct {
+	FormatVersion uint32         `json:"formatVersion"`
+	Components    []mmcComponent `json:"components"`
+}
+
+type mmcComponent struct {
+	UID     string `json:"uid"`
+	Version string `json:"version"`
 }
