@@ -65,7 +65,7 @@ func FindRelease(m []ModFile, version string) *ModFile {
 	}
 	// sort by newest id (hack to sort by date)
 	sort.Slice(m, func(i, j int) bool {
-		return m[i].ID < m[j].ID
+		return m[i].ID > m[j].ID
 	})
 
 	for _, mod := range m {
