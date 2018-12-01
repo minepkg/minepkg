@@ -2,6 +2,9 @@ package curse
 
 import (
 	"sort"
+	"unicode"
+
+	"github.com/Masterminds/semver"
 )
 
 var (
@@ -36,7 +39,7 @@ type Mod struct {
 	WebsiteURL    string    `json:"webSiteURL"`
 	DownloadCount float32   `json:"downloadCount"`
 	LastReleases  []Release `json:"gameVersionLatestFiles"`
-	PackageType   uint32    `json:packageType`
+	PackageType   uint8     `json:packageType`
 }
 
 // Identifier returns the Slug, for the minepkg.toml
@@ -51,9 +54,24 @@ func (m *Mod) String() string {
 
 // FindRelease returns the latest downloadable version for the given version
 func FindRelease(m []ModFile, version string) *ModFile {
+	// prepend default ~ to plain version numbers
+	// TODO: do not do this here
+	if unicode.IsDigit(rune(version[0])) {
+		version = "~" + version
+	}
+	constraint, err := semver.NewConstraint(version)
+	if err != nil {
+		panic("invalid minecraft version requirement in minepkg.toml: " + version)
+	}
+	// sort by newest id (hack to sort by date)
+	sort.Slice(m, func(i, j int) bool {
+		return m[i].ID < m[j].ID
+	})
+
 	for _, mod := range m {
 		for _, v := range mod.GameVersion {
-			if v == version {
+			version := semver.MustParse(v)
+			if constraint.Check(version) {
 				return &mod
 			}
 		}

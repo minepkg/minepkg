@@ -14,7 +14,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
-	"github.com/blang/semver"
+	"github.com/Masterminds/semver"
 	"github.com/fiws/minepkg/internals/manifest"
 	"github.com/logrusorgru/aurora"
 	"github.com/stoewer/go-strcase"
@@ -33,7 +33,8 @@ var (
 
 	// ErrorNoInstance is returned if no mc instance was found
 	ErrorNoInstance = errors.New("Could not find minecraft instance in this directory")
-	ErrorNoVersion  = errors.New("Could not detect minecraft version")
+	// ErrorNoVersion is returned if no mc version was detected
+	ErrorNoVersion = errors.New("Could not detect minecraft version")
 )
 
 // McInstance describes a locally installed minecraft instance
@@ -133,11 +134,11 @@ func DetectInstance() (*McInstance, error) {
 }
 
 // Version returns the minecraft version of the instance
-func (m *McInstance) Version() semver.Version {
+func (m *McInstance) Version() *semver.Version {
 	switch m.Flavour {
 	case FlavourVanilla:
 		entries, _ := ioutil.ReadDir("./version")
-		versions := make(semver.Versions, len(entries))
+		versions := make(semver.Collection, len(entries))
 		for i, version := range entries {
 			versions[i] = semver.MustParse(version.Name())
 		}
@@ -175,6 +176,8 @@ func (m *McInstance) initManifest() error {
 		if version == "" {
 			return ErrorNoVersion
 		}
+		// replace patch with placeholder
+		version = version[:len(version)-1] + "x"
 
 		manifest.Package.Name = strcase.KebabCase(name)
 		manifest.Requirements.MinecraftVersion = version

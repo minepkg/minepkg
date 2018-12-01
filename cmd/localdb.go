@@ -90,6 +90,7 @@ func parseDb(b []byte) *modDB {
 	jsonparser.ArrayEach(b, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 		name, _ := jsonparser.GetString(value, "Name")
 		url, _ := jsonparser.GetString(value, "WebSiteURL")
+		packageType, _ := jsonparser.GetInt(value, "PackageType")
 		id, _ := jsonparser.GetInt(value, "Id")
 		rawDl, dataType, _, _ := jsonparser.Get(value, "DownloadCount")
 
@@ -104,6 +105,7 @@ func parseDb(b []byte) *modDB {
 			Slug:          slug,
 			ID:            uint32(id),
 			DownloadCount: downloadCount,
+			PackageType:   uint8(packageType),
 		})
 	}, "data")
 

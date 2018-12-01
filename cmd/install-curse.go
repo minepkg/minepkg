@@ -29,12 +29,12 @@ func installFromCurse(name string, instance *instances.McInstance) {
 	task.Step("🔎", "Resolving Dependencies")
 	resolver := curse.NewResolver()
 
-	instance.Manifest.AddDependency(choosenMod)
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond) // Build our new spinner
 	s.Prefix = "  "
 	s.Suffix = "  Resolving " + choosenMod.Slug
 	s.Start()
-	resolver.Resolve(choosenMod.ID, instance.Manifest.Requirements.MinecraftVersion)
+	instance.Manifest.AddDependency(choosenMod)
+	resolver.ResolvePackage(choosenMod, instance.Manifest.Requirements.MinecraftVersion)
 	resolved := resolver.Resolved
 	s.Stop()
 
