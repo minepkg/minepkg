@@ -3,6 +3,7 @@ image: "golang:latest"
 stages:
   - build
   - package
+  - release
 
 linux build:
   stage: build
@@ -42,3 +43,26 @@ linux packages:
       - '*.deb'
       - '*.rpm'
       - '*.pkg.tar.xz' # pacman
+
+github release:
+  stage: release
+  only:
+    - /^v\d+\.\d+\.\d+-?.*$/
+  script:
+    - go get github.com/aktau/github-release
+    - github-release release \
+      --user fiws \
+      --repo minepkg \
+      --tag $CI_COMMIT_REF_NAME
+    - github-release upload \
+      --user fiws \
+      --repo minepkg \
+      --tag $CI_COMMIT_REF_NAME \
+      --name "minepkg-linux-amd64" \
+      --file out/minepkg
+    - github-release upload \
+      --user fiws \
+      --repo minepkg \
+      --tag $CI_COMMIT_REF_NAME \
+      --name "minepkg-windows-amd64" \
+      --file out/minepkg.exe
