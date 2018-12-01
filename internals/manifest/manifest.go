@@ -45,8 +45,7 @@ type Dependency interface {
 	fmt.Stringer        // used as `data` in `name = "[data]"` inside the minepkg.toml
 }
 
-type Dependencies map[string]string
-
+// Manifest is a collection of data that describes a mod a modpack
 type Manifest struct {
 	Version int `toml:"version"`
 	Package struct {
@@ -62,12 +61,18 @@ type Manifest struct {
 	Dependencies `toml:"dependencies"`
 }
 
+// Dependencies are the dependencies of a mod or modpack
+type Dependencies map[string]string
+
+// ParsedDependency is returned by `Parsed` to make installing
+// Dependencies easier
 type ParsedDependency struct {
 	Provider string
 	Target   string
 	Meta     string
 }
 
+// Parsed returns a `ParsedDependency` slice including all dependencies
 func (d *Dependencies) Parsed() []ParsedDependency {
 	parsed := make([]ParsedDependency, len(*d))
 

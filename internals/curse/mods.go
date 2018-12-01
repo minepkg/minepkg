@@ -39,7 +39,7 @@ type Mod struct {
 	WebsiteURL    string    `json:"webSiteURL"`
 	DownloadCount float32   `json:"downloadCount"`
 	LastReleases  []Release `json:"gameVersionLatestFiles"`
-	PackageType   uint8     `json:packageType`
+	PackageType   uint8     `json:"packageType"`
 }
 
 // Identifier returns the Slug, for the minepkg.toml
@@ -95,12 +95,14 @@ func SortByDownloadCount(m []Mod) {
 	sort.Slice(m, less)
 }
 
+// Release is a curseforge Release of a package (not used for the most part)
 type Release struct {
 	FileType    string `json:"releaseType"`
 	ID          uint32 `json:"projectFileID"`
 	GameVersion string `json:"gameVersion"`
 }
 
+// ModFile is a released version of a given package
 type ModFile struct {
 	ID             uint32          `json:"id"`
 	FileName       string          `json:"fileName"`
@@ -112,6 +114,7 @@ type ModFile struct {
 	GameVersion    []string        `json:"gameVersion"`
 }
 
+// ModDependency is a dependency required for a given ModFile
 type ModDependency struct {
 	AddOnID uint32 `json:"addonId"`
 	Type    uint8  `json:"type"`
