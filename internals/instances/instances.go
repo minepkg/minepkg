@@ -140,14 +140,25 @@ func DetectInstance() (*McInstance, error) {
 	return instance, nil
 }
 
+// AvailableVersions returns all available versions
+// TODO: return error
+func (m *McInstance) AvailableVersions() []string {
+	entries, _ := ioutil.ReadDir("./versions")
+	versions := make([]string, len(entries))
+	for i, entry := range entries {
+		versions[i] = entry.Name()
+	}
+	return versions
+}
+
 // Version returns the minecraft version of the instance
 func (m *McInstance) Version() *semver.Version {
 	switch m.Flavour {
 	case FlavourVanilla:
-		entries, _ := ioutil.ReadDir("./version")
+		entries := m.AvailableVersions()
 		versions := make(semver.Collection, len(entries))
 		for i, version := range entries {
-			versions[i] = semver.MustParse(version.Name())
+			versions[i] = semver.MustParse(version)
 		}
 		// sort by highest version first
 		sort.Sort(sort.Reverse(versions))

@@ -7,6 +7,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var version string
+var listVersions bool
+
 var launchCmd = &cobra.Command{
 	Use:     "launch",
 	Short:   "Launch a minecraft instance",
@@ -17,10 +20,25 @@ var launchCmd = &cobra.Command{
 		if err != nil {
 			logger.Fail("Instance problem: " + err.Error())
 		}
+		// list versions instead of launching
+		if listVersions == true {
+			logger.Headline("Available Versions:")
+			for _, version := range instance.AvailableVersions() {
+				logger.Log(" - " + version)
+			}
+			return
+		}
+
+		// launch instance
 		fmt.Printf("Launching %s\n", instance.Desc())
 		err = instance.Launch()
 		if err != nil {
 			logger.Fail(err.Error())
 		}
 	},
+}
+
+func init() {
+	// launchCmd.Flags().StringVarP(&version, "run-version", "r", "", "Version to start. Uses the latest compatible if not present")
+	launchCmd.Flags().BoolVarP(&listVersions, "list-versions", "", false, "List available versions instead of starting minecraft")
 }

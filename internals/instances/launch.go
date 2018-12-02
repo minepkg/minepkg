@@ -105,7 +105,7 @@ func (m *McInstance) Launch() error {
 		v("auth_uuid"), profiles.SelectedUser.Profile, // profile id
 		v("auth_access_token"), profile.AccessToken,
 		v("user_type"), "mojang", // unsure about this one (legacy mc login flag?)
-		v("version_type"), instr.Type, // unsure about this one (legacy mc login flag?)
+		v("version_type"), instr.Type, // release / snapshot … etc
 	)
 	args := replacer.Replace(instr.MinecraftArguments)
 
