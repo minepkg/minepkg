@@ -40,6 +40,7 @@ var (
 // McInstance describes a locally installed minecraft instance
 type McInstance struct {
 	Flavour       uint8
+	Directory     string
 	ModsDirectory string
 	Manifest      *manifest.Manifest
 }
@@ -120,12 +121,18 @@ func DetectInstance() (*McInstance, error) {
 		return nil, ErrorNoInstance
 	}
 
+	wd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+
 	instance := &McInstance{
 		Flavour:       flavour,
 		ModsDirectory: modsDir,
+		Directory:     wd,
 	}
 
-	err := instance.initManifest()
+	err = instance.initManifest()
 	if err != nil {
 		return nil, err
 	}
@@ -142,8 +149,9 @@ func (m *McInstance) Version() *semver.Version {
 		for i, version := range entries {
 			versions[i] = semver.MustParse(version.Name())
 		}
-		sort.Sort(versions)
-		return versions[0]
+		// sort by highest version first
+		sort.Sort(sort.Reverse(versions))
+		return versions[0] // assume this is the version wanted
 	case FlavourMMC:
 		pack := mmcPack{}
 		raw, _ := ioutil.ReadFile("./mmc-pack.json")
@@ -158,6 +166,7 @@ func (m *McInstance) Version() *semver.Version {
 		}
 		fallthrough
 	default:
+		// fallback to 1.12.2 (?!)
 		return semver.MustParse("1.12.2")
 	}
 }
