@@ -12,13 +12,16 @@ import (
 	"github.com/spf13/viper"
 )
 
+// MinepkgVersion is a constant of the current minepkg version
+const MinepkgVersion = "0.0.2"
+
 var cfgFile string
 var logger *cmdlog.Logger = cmdlog.New()
 var globalDir = "/tmp"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Version: "0.0.2",
+	Version: MinepkgVersion,
 	Use:     "minepkg",
 	Short:   "Minepkg at your service.",
 	Long: `Manage Minecraft mods with ease.
@@ -76,6 +79,7 @@ func init() {
 	os.Chmod(globalDir, 0755)
 
 	rootCmd.AddCommand(installCmd)
+	rootCmd.AddCommand(launchCmd)
 	rootCmd.AddCommand(refreshCmd)
 	rootCmd.AddCommand(completionCmd)
 	cobra.OnInitialize(initConfig)
