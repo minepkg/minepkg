@@ -13,7 +13,7 @@ import (
 )
 
 // MinepkgVersion is a constant of the current minepkg version
-const MinepkgVersion = "0.0.2"
+const MinepkgVersion = "0.0.3"
 
 var cfgFile string
 var logger *cmdlog.Logger = cmdlog.New()
