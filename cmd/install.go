@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/fiws/minepkg/internals/instances"
@@ -24,6 +25,11 @@ var installCmd = &cobra.Command{
 			logger.Log("Report bugs to http://github.com/fiws/minepkg/issues")
 		}
 		fmt.Println() // empty line
+
+		// create mod dir if not already present
+		if err := os.MkdirAll(instance.ModsDirectory, 0755); err != nil {
+			panic(err)
+		}
 
 		// no args: installing minepkg.toml dependencies
 		if len(args) == 0 {

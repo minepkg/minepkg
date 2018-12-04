@@ -34,9 +34,12 @@ func installFromCurse(name string, instance *instances.McInstance) {
 	s.Suffix = "  Resolving " + choosenMod.Slug
 	s.Start()
 	instance.Manifest.AddDependency(choosenMod)
-	resolver.ResolvePackage(choosenMod, instance.Manifest.Requirements.MinecraftVersion)
+	err := resolver.ResolvePackage(choosenMod, instance.Manifest.Requirements.MinecraftVersion)
 	resolved := resolver.Resolved
 	s.Stop()
+	if err != nil {
+		logger.Fail(err.Error())
+	}
 
 	for _, mod := range resolved {
 		task.Log(fmt.Sprintf("requires %s", mod.FileName))

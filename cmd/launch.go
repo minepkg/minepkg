@@ -24,7 +24,7 @@ var launchCmd = &cobra.Command{
 		if listVersions == true {
 			logger.Headline("Available Versions:")
 			for _, version := range instance.AvailableVersions() {
-				logger.Log(" - " + version)
+				logger.Log(" - " + version.String())
 			}
 			return
 		}

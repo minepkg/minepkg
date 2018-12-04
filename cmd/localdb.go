@@ -116,10 +116,11 @@ func readDbOrDownload() *modDB {
 	file, err := ioutil.ReadFile(filepath.Join(globalDir, fileName))
 	if err != nil {
 		fmt.Println("There is no local mod db yet! Downloading now …")
+		err = nil
 		refreshDb()
-		file, err = ioutil.ReadFile("./complete.json.zst")
+		file, err = ioutil.ReadFile(filepath.Join(globalDir, fileName))
 		if err != nil {
-			fmt.Println("Refreshing DB failed")
+			fmt.Println("Refreshing DB failed: " + err.Error())
 			os.Exit(-1)
 		}
 	}

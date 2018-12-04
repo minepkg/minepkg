@@ -1,7 +1,6 @@
 package instances
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -10,14 +9,12 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/BurntSushi/toml"
-	"github.com/Masterminds/semver"
 	"github.com/fiws/minepkg/internals/manifest"
 	"github.com/logrusorgru/aurora"
-	"github.com/stoewer/go-strcase"
+	strcase "github.com/stoewer/go-strcase"
 )
 
 const compatMMCFormat = 1
@@ -138,48 +135,6 @@ func DetectInstance() (*McInstance, error) {
 	}
 
 	return instance, nil
-}
-
-// AvailableVersions returns all available versions
-// TODO: return error
-func (m *McInstance) AvailableVersions() []string {
-	entries, _ := ioutil.ReadDir("./versions")
-	versions := make([]string, len(entries))
-	for i, entry := range entries {
-		versions[i] = entry.Name()
-	}
-	return versions
-}
-
-// Version returns the minecraft version of the instance
-func (m *McInstance) Version() *semver.Version {
-	switch m.Flavour {
-	case FlavourVanilla:
-		entries := m.AvailableVersions()
-		versions := make(semver.Collection, len(entries))
-		for i, version := range entries {
-			versions[i] = semver.MustParse(version)
-		}
-		// sort by highest version first
-		sort.Sort(sort.Reverse(versions))
-		return versions[0] // assume this is the version wanted
-	case FlavourMMC:
-		pack := mmcPack{}
-		raw, _ := ioutil.ReadFile("./mmc-pack.json")
-		json.Unmarshal(raw, &pack)
-		if pack.FormatVersion != compatMMCFormat {
-			panic("incompatible MMC version. Open a bug for minepkg")
-		}
-		for _, comp := range pack.Components {
-			if comp.UID == "net.minecraft" {
-				return semver.MustParse(comp.Version)
-			}
-		}
-		fallthrough
-	default:
-		// fallback to 1.12.2 (?!)
-		return semver.MustParse("1.12.2")
-	}
 }
 
 // initManifest sets the manifest file or creates one

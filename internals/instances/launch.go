@@ -11,7 +11,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"sort"
 	"strings"
 	"time"
 
@@ -94,7 +93,8 @@ func (m *McInstance) Launch() error {
 		cpArgs = append(cpArgs, filepath.Join(libDir, lib.Downloads.Artifact.Path))
 	}
 	// finally append the minecraft.jar
-	cpArgs = append(cpArgs, filepath.Join(m.Directory, "versions", version, version+".jar"))
+	mcJar := filepath.Join(m.Directory, "versions", version, version+".jar")
+	cpArgs = append(cpArgs, mcJar)
 
 	replacer := strings.NewReplacer(
 		v("auth_player_name"), profile.Profiles[profileID].DisplayName,
@@ -114,10 +114,10 @@ func (m *McInstance) Launch() error {
 		"-Djava.library.path=" + tmpDir,
 		"-Dminecraft.launcher.brand=minepkg",
 		// "-Dminecraft.launcher.version=" + "0.0.2", // TODO: implement!
-		"-Dminecraft.client.jar=/home/fiws/.minecraft/versions/1.12.2/1.12.2.jar",
+		"-Dminecraft.client.jar=" + mcJar,
 		"-cp",
 		strings.Join(cpArgs, ":"),
-		"-Xmx2G",
+		"-Xmx2G", // TODO: option!
 		"-XX:+UnlockExperimentalVMOptions",
 		"-XX:+UseG1GC",
 		"-XX:G1NewSizePercent=20",
@@ -195,16 +195,8 @@ func (m *McInstance) getLaunchInstructions(v string) (*launchInstructions, error
 }
 
 func (m *McInstance) verstionToLaunch() (string, error) {
-	entries, err := ioutil.ReadDir(filepath.Join(m.Directory, "versions"))
-	if err != nil {
-		return "", err
-	}
 	constraint, _ := semver.NewConstraint(m.Manifest.Requirements.MinecraftVersion)
-	versions := make(semver.Collection, len(entries))
-	for i, version := range entries {
-		versions[i] = semver.MustParse(version.Name())
-	}
-	sort.Sort(sort.Reverse(versions))
+	versions := m.AvailableVersions()
 
 	// find newest compatible version
 	for _, v := range versions {

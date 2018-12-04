@@ -79,7 +79,7 @@ func init() {
 	os.Chmod(globalDir, 0755)
 
 	rootCmd.AddCommand(installCmd)
-	rootCmd.AddCommand(launchCmd)
+	// rootCmd.AddCommand(launchCmd)
 	rootCmd.AddCommand(refreshCmd)
 	rootCmd.AddCommand(completionCmd)
 	cobra.OnInitialize(initConfig)

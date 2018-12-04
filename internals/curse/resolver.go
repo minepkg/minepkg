@@ -18,18 +18,21 @@ type Resolver struct {
 }
 
 // ResolveMultiple resolved multiple mods
-func (r *Resolver) ResolveMultiple(ids []uint32, version string) {
+func (r *Resolver) ResolveMultiple(ids []uint32, version string) error {
 	for _, id := range ids {
-		r.Resolve(id, version)
+		err := r.Resolve(id, version)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // ResolvePackage accepts mods or modepacks to resolve
-func (r *Resolver) ResolvePackage(mod *Mod, version string) {
+func (r *Resolver) ResolvePackage(mod *Mod, version string) error {
 	// resolve mods the usuall way
 	if mod.PackageType != PackageTypeModpack {
-		r.Resolve(mod.ID, version)
-		return
+		return r.Resolve(mod.ID, version)
 	}
 
 	// Modpacks require a bit of extra logic
@@ -53,23 +56,23 @@ func (r *Resolver) ResolvePackage(mod *Mod, version string) {
 		depIds[i] = dep.ProjectID
 	}
 
-	r.ResolveMultiple(depIds, version)
+	return r.ResolveMultiple(depIds, version)
 }
 
 // Resolve find all dependencies from the given `id`
 // and adds it to the `resolved` map. Nothing is returned
-func (r *Resolver) Resolve(id uint32, version string) {
-	var resolve func(id uint32)
-	resolve = func(id uint32) {
+func (r *Resolver) Resolve(id uint32, version string) error {
+	var resolve func(id uint32) error
+	resolve = func(id uint32) error {
 		_, ok := r.Resolved[id]
 		if ok == true {
-			return
+			return nil
 		}
 
 		modFiles, _ := FetchModFiles(id)
 		matchingRelease := FindRelease(modFiles, version)
 		if matchingRelease == nil {
-			panic(fmt.Sprintf("Mod with id %d does not support mc version %s", id, version))
+			return fmt.Errorf("Mod with id %d does not support mc version %s", id, version)
 		}
 
 		r.Resolved[id] = manifest.ResolvedMod{
@@ -87,9 +90,10 @@ func (r *Resolver) Resolve(id uint32, version string) {
 			}
 		}
 		wg.Wait()
+		return nil
 	}
 
-	resolve(id)
+	return resolve(id)
 }
 
 // NewResolver returns a new resolver
