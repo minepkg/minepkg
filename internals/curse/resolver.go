@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/fiws/minepkg/internals/manifest"
+	"github.com/fiws/minepkg/pkg/manifest"
 )
 
 // Resolver resolves given the mods of given dependencies

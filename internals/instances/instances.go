@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
-	"github.com/fiws/minepkg/internals/manifest"
+	"github.com/fiws/minepkg/pkg/manifest"
 	"github.com/logrusorgru/aurora"
 	strcase "github.com/stoewer/go-strcase"
 )
