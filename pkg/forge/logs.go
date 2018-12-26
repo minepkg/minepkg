@@ -4,6 +4,8 @@ import (
 	"errors"
 	"regexp"
 	"strings"
+
+	"github.com/fiws/minepkg/pkg/logparser"
 )
 
 // ErrorUnknown is returned if the error could not be parsed
@@ -38,7 +40,7 @@ func (e ErrorMissingMods) Error() string {
 // ParseException tries to parse an Exception in a LogLine
 // currently only returns a `ErrorMissingMods` if possible
 // returns a `ErrorUnknown` otherwise
-func ParseException(l *LogLine) error {
+func ParseException(l *logparser.LogLine) error {
 	r := regexp.MustCompile(`net.minecraftforge.fml.common.MissingModsException: Mod (.+) \((.+)\) requires \[(.+)\]$`)
 
 	found := r.FindStringSubmatch(l.Message)
