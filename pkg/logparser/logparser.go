@@ -23,7 +23,7 @@ func (l LogLine) String() string {
 		return l.Message
 	}
 	return fmt.Sprintf(
-		"[%s] [%s/%s] [%s]: %s",
+		"[%s] [%s/%s] [%s]: %s\n",
 		l.Time.Format(timeFormat),
 		l.Thread,
 		l.Level,
