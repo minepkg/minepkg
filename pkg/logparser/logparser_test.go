@@ -18,7 +18,10 @@ func TestParseLine(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ParseLine(tt.arg)
+			line := ParseLine(tt.arg)
+			if line.String() != tt.arg {
+				t.Fatalf("Input \"%s\" did not produce same output: %s → %s", tt.name, tt.arg, line.String())
+			}
 		})
 	}
 }
