@@ -38,27 +38,57 @@ minecraft-version = "1.12.x"
 
 `
 
+const (
+	// TypeMod indicates a package containing a single mod
+	TypeMod = "mod"
+	// TypeModpack indicates a package containing a list of mods (modpack)
+	TypeModpack = "modpack"
+)
+
+// Manifest is a collection of data that describes a mod a modpack
+type Manifest struct {
+	// ManifestVersion specifies the format version
+	// This field is REQUIRED
+	ManifestVersion int `toml:"manifestVersion"`
+	Package         struct {
+		Description string `toml:"description"`
+		// Name is the name of the package. It may NOT include spaces. It may ONLY consist of
+		// alphanumeric chars but can also include `-` and `_`
+		// Should be unique. (This will be enforced by the minepkg api)
+		// This field is REQUIRED
+		Name string `toml:"name"`
+		// Type should be one of `TypeMod` ("mod") or `TypeModpack` ("modpack")
+		Type string `toml:"type"`
+		// Version is the version number of this package. A preceeding `v` (like `v2.1.1`) should NOT
+		// be allowed for consistency
+		// The version may include prerelease information like `1.2.2-beta.0` or build
+		// related information `1.2.1+B7382-2018`.
+		Version string   `toml:"version"`
+		Extends []string `toml:"extends"`
+	} `toml:"package"`
+	Requirements struct {
+		// MinecraftVersion is a semver version describing the required Minecraft version
+		// The Minecraft version is binding and implementers should not install
+		// Mods for non-matching Minecraft versions.
+		// Modpack & Mod Authors are encuraged to use semver to allow a broader install range.
+		// Plain version numbers just default to the `~` semver operator here. Allowing patches but not minor or major versions.
+		// So `1.12.0` and `~1.12.0` are equal
+		// This field is REQUIRED
+		MinecraftVersion string `toml:"minecraft-version"`
+	} `toml:"requirements"`
+	// Dependencies lists runtime dependencies of this package
+	Dependencies `toml:"dependencies"`
+	// Hooks should help mod developers to ease publishing
+	Hooks struct {
+		Build string `toml:"build"`
+	} `toml:"hooks"`
+}
+
 // Dependency defines a dependency that can be saved and installed from
 // the minepkg.toml
 type Dependency interface {
 	Identifier() string // Identifier is the (unique) name of the dependency
 	fmt.Stringer        // used as `data` in `name = "[data]"` inside the minepkg.toml
-}
-
-// Manifest is a collection of data that describes a mod a modpack
-type Manifest struct {
-	Version int `toml:"version"`
-	Package struct {
-		Description string   `toml:"description"`
-		Name        string   `toml:"name"`
-		Type        string   `toml:"type"`
-		Version     string   `toml:"version"`
-		Extends     []string `toml:"extends"`
-	} `toml:"package"`
-	Requirements struct {
-		MinecraftVersion string `toml:"minecraft-version"`
-	} `toml:"requirements"`
-	Dependencies `toml:"dependencies"`
 }
 
 // Dependencies are the dependencies of a mod or modpack
