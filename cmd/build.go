@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"io/ioutil"
 	"os/exec"
+	"runtime"
 	"time"
 
 	"github.com/briandowns/spinner"
@@ -44,8 +45,11 @@ var buildCmd = &cobra.Command{
 			logger.Log("Using default build step (gradle --build-cache build)")
 		}
 
-		// TODO: I don't think this i multi platform
 		build := exec.Command("sh", []string{"-c", buildScript}...)
+		// TODO: test this … weird thing
+		if runtime.GOOS == "windows" {
+			build = exec.Command("cmd", []string{"/C", buildScript}...)
+		}
 		stdout, _ := build.StdoutPipe()
 		err = build.Start()
 		if err != nil {
