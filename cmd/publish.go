@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"github.com/briandowns/spinner"
+	"time"
+	"bufio"
 	"regexp"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4"
@@ -23,7 +26,7 @@ import (
 
 // doomRegex: (\d+\.\d+\.\d-)?(\d+\.\d+\.\d)(.+)?
 var semverDoom = regexp.MustCompile(`(\d+\.\d+\.\d-)?(\d+\.\d+\.\d)(.+)?`)
-var apiURL = "https://test-api.minepkg.io/v1/"
+var apiURL = "https://test-api.minepkg.io/v1"
 
 var publishCmd = &cobra.Command{
 	Use:   "publish",
@@ -136,7 +139,7 @@ var publishCmd = &cobra.Command{
 		buildScript := "gradle --build-cache build"
 		if m.Hooks.Build != "" {
 			tasks.Log("Using custom build hook")
-			tasks.Log("» " + m.Hooks.Build)
+			tasks.Log(" » " + m.Hooks.Build)
 			buildScript = m.Hooks.Build
 		} else {
 			tasks.Log("Using default build step (gradle --build-cache build)")
@@ -144,16 +147,34 @@ var publishCmd = &cobra.Command{
 
 		// TODO: I don't think this i multi platform
 		build := exec.Command("sh", []string{"-c", buildScript}...)
-		build.Stdout = os.Stdout
-		build.Stderr = os.Stderr
-		err = build.Run()
-		if err != nil {
-			tasks.Fail("Build step failed. Aborting")
+		// TODO: stderr !!!
+		bStdout, _ := build.StdoutPipe()
+		scanner := bufio.NewScanner(bStdout)
+
+		s := spinner.New(spinner.CharSets[9], 100*time.Millisecond) // Build our new spinner
+		s.Prefix = " "
+		s.Start()
+		s.Suffix = " [no build output yet]"
+
+		startTime := time.Now()
+		build.Start()
+
+		for scanner.Scan() {
+			s.Suffix = " " + scanner.Text()
 		}
+		bStdout.Close()
+		err = build.Wait()
+		if err != nil {
+			// TODO: output logs or something
+			logger.Fail("Build step failed. Aborting")
+		}
+		s.Suffix = ""
+		s.Stop()
 
-		tasks.Log("Finished custom build hook")
+		logger.Info(" ✓ Finished build in " + time.Now().Sub(startTime).String())
+
+		// find se jar
 		tasks.Log("Finding jar file")
-
 		jar := findJar()
 
 		logger.Info("Using " + jar)

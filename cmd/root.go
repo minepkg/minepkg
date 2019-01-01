@@ -80,6 +80,7 @@ func init() {
 
 	rootCmd.AddCommand(installCmd)
 	rootCmd.AddCommand(publishCmd)
+	rootCmd.AddCommand(buildCmd)
 	// rootCmd.AddCommand(launchCmd)
 	rootCmd.AddCommand(refreshCmd)
 	rootCmd.AddCommand(completionCmd)
