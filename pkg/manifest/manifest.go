@@ -63,24 +63,31 @@ type Manifest struct {
 		// be allowed for consistency
 		// The version may include prerelease information like `1.2.2-beta.0` or build
 		// related information `1.2.1+B7382-2018`.
-		Version string   `toml:"version"`
-		Extends []string `toml:"extends"`
+		Version  string   `toml:"version"`
+		Provides []string `toml:"provides"`
+		Extends  []string `toml:"extends"`
 	} `toml:"package"`
 	Requirements struct {
-		// MinecraftVersion is a semver version describing the required Minecraft version
+		// Minecraft is a semver version string describing the required Minecraft version
 		// The Minecraft version is binding and implementers should not install
 		// Mods for non-matching Minecraft versions.
 		// Modpack & Mod Authors are encuraged to use semver to allow a broader install range.
 		// Plain version numbers just default to the `~` semver operator here. Allowing patches but not minor or major versions.
 		// So `1.12.0` and `~1.12.0` are equal
 		// This field is REQUIRED
-		MinecraftVersion string `toml:"minecraft-version"`
+		Minecraft string `toml:"minecraft"`
+		// Forge is the minimum forge version required
+		// no semver here, because forge does not follow semver
+		Forge string `toml:"forge,omitempty"`
+		// Fabric  is a semver version string describing the required Fabric version
+		// Only one of `Forge` or `Fabric` may be used
+		Fabric string `toml:"fabric,omitempty"`
 	} `toml:"requirements"`
 	// Dependencies lists runtime dependencies of this package
 	Dependencies `toml:"dependencies"`
 	// Hooks should help mod developers to ease publishing
 	Hooks struct {
-		Build string `toml:"build"`
+		Build string `toml:"build,omitempty"`
 	} `toml:"hooks"`
 }
 

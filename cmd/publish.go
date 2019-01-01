@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"regexp"
+	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4"
 	"archive/zip"
 	"bytes"
 	"io"
@@ -18,10 +21,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// doomRegex: (\d+\.\d+\.\d-)?(\d+\.\d+\.\d)(.+)?
+var semverDoom = regexp.MustCompile(`(\d+\.\d+\.\d-)?(\d+\.\d+\.\d)(.+)?`)
+var apiURL = "https://test-api.minepkg.io/v1/"
+
 var publishCmd = &cobra.Command{
 	Use:   "publish",
 	Short: "Publishes a local mod in the current directory",
 	Run: func(cmd *cobra.Command, args []string) {
+		
+		// overwrite api
+		// TODO: don't do that here
+		if customAPI := os.Getenv("MINEPKG_API"); customAPI != "" {
+			apiURL = customAPI
+		}
 		tasks := logger.NewTask(3)
 		tasks.Step("📚", "Preparing Publish")
 
@@ -37,6 +50,13 @@ var publishCmd = &cobra.Command{
 			logger.Fail(err.Error())
 		}
 
+		switch {
+		case m.Requirements.Minecraft == "":
+			logger.Fail("Your minepkg.toml is missing a minecraft version under [requirements]")
+		case m.Requirements.Forge == "" && m.Requirements.Fabric == "":
+			logger.Fail("Your minepkg.toml is missing either forge or fabric in [requirements]")
+		}
+
 		if m.Package.Type != manifest.TypeMod {
 			logger.Fail("Only mod can be published (for now)")
 		}
@@ -50,7 +70,7 @@ var publishCmd = &cobra.Command{
 		client := &http.Client{}
 
 		logger.Log("Checking Access rights")
-		req, _ := http.NewRequest("GET", "https://test-api.minepkg.io/v1/projects/"+m.Package.Name, nil)
+		req, _ := http.NewRequest("GET", apiURL+"/projects/"+m.Package.Name, nil)
 		req.Header.Add("Authorization", "Bearer "+token)
 		res, err := client.Do(req)
 		if err != nil {
@@ -67,30 +87,77 @@ var publishCmd = &cobra.Command{
 			logger.Fail("Do not have write access for " + m.Package.Name)
 		}
 
+		tasks.Log("Determening version to publish")
+		if m.Package.Version == "" {
+			version := m.Package.Version
+			repo, err := git.PlainOpen("./")
+			if err != nil {
+				logger.Fail("Can't fallback to git tag version (not a valid git repo)")
+			}
+			iter, err := repo.Tags()
+
+			// TODO: warn user about quirks match
+			iter.ForEach(func (ref *plumbing.Reference) error {
+				tagName := string(ref.Name())[10:]
+
+				matches := semverDoom.FindStringSubmatch(tagName)
+				switch len(matches){
+				case 3:
+					version = matches[2]
+				case 4:
+					version = matches[2] + "+" + matches[3][1:]
+				}
+				
+				return nil
+			})
+
+			m.Package.Version = version
+			logger.Info("Found version " + version)
+		} else {
+			tasks.Log("Using version number in minepkg.toml")
+		}
+
+		// check if version exists
+		{
+			req, _ := http.NewRequest("GET", apiURL+"/projects/"+m.Package.Name+"@"+m.Package.Version, nil)
+			req.Header.Add("Authorization", "Bearer "+token)
+			res, err := client.Do(req)
+			if err != nil {
+				logger.Fail(err.Error())
+			}
+			if res.StatusCode != http.StatusNotFound {
+				// TODO: check for other problems here!
+				logger.Fail("Release already exists!")
+			}
+		}
+
 		tasks.Step("🏗", "Building")
 
-		build := "gradle build"
+		buildScript := "gradle --build-cache build"
 		if m.Hooks.Build != "" {
-			tasks.Log("Using custom publish hook")
+			tasks.Log("Using custom build hook")
 			tasks.Log("» " + m.Hooks.Build)
-			build = m.Hooks.Build
+			buildScript = m.Hooks.Build
 		} else {
-			tasks.Log("Using default build step (gradle build)")
+			tasks.Log("Using default build step (gradle --build-cache build)")
 		}
 
 		// TODO: I don't think this i multi platform
-		publishCmd := exec.Command("sh", []string{"-c", build}...)
-		publishCmd.Stdout = os.Stdout
-		publishCmd.Stderr = os.Stderr
+		build := exec.Command("sh", []string{"-c", buildScript}...)
+		build.Stdout = os.Stdout
+		build.Stderr = os.Stderr
+		err = build.Run()
+		if err != nil {
+			tasks.Fail("Build step failed. Aborting")
+		}
 
-		publishCmd.Run()
 		tasks.Log("Finished custom build hook")
 		tasks.Log("Finding jar file")
 
 		jar := findJar()
 
-		logger.Info("using " + jar)
-		logger.Info("checking for embedded minepkg.toml")
+		logger.Info("Using " + jar)
+		logger.Log("Checking for embedded minepkg.toml")
 		r, err := zip.OpenReader(jar)
 		if err != nil {
 			logger.Fail("Broken jar file: " + err.Error())
@@ -118,7 +185,7 @@ var publishCmd = &cobra.Command{
 
 		file, err := os.Open("tmp-minepkg-package.jar")
 		stat, _ := file.Stat()
-		upload, _ := http.NewRequest("POST", "https://test-api.minepkg.io/v1/projects/"+m.Package.Name+"/release-package", file)
+		upload, _ := http.NewRequest("PUT", apiURL+"/projects/"+m.Package.Name+"@"+m.Package.Version, file)
 		upload.Header.Add("Authorization", "Bearer "+token)
 		upload.Header.Add("Content-Type", "application/java-archive")
 		// next line is great

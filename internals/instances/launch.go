@@ -195,7 +195,7 @@ func (m *McInstance) getLaunchInstructions(v string) (*launchInstructions, error
 }
 
 func (m *McInstance) verstionToLaunch() (string, error) {
-	constraint, _ := semver.NewConstraint(m.Manifest.Requirements.MinecraftVersion)
+	constraint, _ := semver.NewConstraint(m.Manifest.Requirements.Minecraft)
 	versions := m.AvailableVersions()
 
 	// find newest compatible version

@@ -41,7 +41,7 @@ func installManifest(instance *instances.McInstance) {
 	s.Start()
 	for _, mod := range mods {
 		s.Suffix = "  Resolving " + mod.Slug
-		resolver.Resolve(mod.ID, instance.Manifest.Requirements.MinecraftVersion)
+		resolver.Resolve(mod.ID, instance.Manifest.Requirements.Minecraft)
 	}
 	s.Stop()
 	resolved := resolver.Resolved

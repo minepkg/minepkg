@@ -54,7 +54,7 @@ func (m *McInstance) Desc() string {
 	manifest := m.Manifest
 
 	flavourText = fmt.Sprintf(" ⌂ %s ", flavourText)
-	version := fmt.Sprintf(" MC %s ", manifest.Requirements.MinecraftVersion)
+	version := fmt.Sprintf(" MC %s ", manifest.Requirements.Minecraft)
 	depCount := fmt.Sprintf(" %d deps ", len(manifest.Dependencies))
 	name := fmt.Sprintf(" 📦 %s ", manifest.Package.Name)
 	build := []string{
@@ -155,7 +155,7 @@ func (m *McInstance) initManifest() error {
 		version = version[:len(version)-1] + "x"
 
 		manifest.Package.Name = strcase.KebabCase(name)
-		manifest.Requirements.MinecraftVersion = version
+		manifest.Requirements.Minecraft = version
 		m.Manifest = manifest
 		return nil
 	}
