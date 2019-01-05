@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"golang.org/x/crypto/ssh/terminal"
+	"github.com/fiws/minepkg/pkg/api"
 	"github.com/briandowns/spinner"
 	"time"
 	"bufio"
@@ -12,11 +14,9 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 
 	"github.com/BurntSushi/toml"
 	"github.com/fiws/minepkg/pkg/manifest"
@@ -65,30 +65,32 @@ var publishCmd = &cobra.Command{
 		}
 
 		tasks.Log("Checking Authentication")
-		token := os.Getenv("MINEPKG_API_TOKEN")
-		if token == "" {
-			logger.Fail("Missing MINEPKG_API_TOKEN environment variable!")
+		// token := os.Getenv("MINEPKG_API_TOKEN")
+		// if token == "" {
+		// 	logger.Fail("Missing MINEPKG_API_TOKEN environment variable!")
+		// }
+		if apiClient.JWT == "" {
+			logger.Warn("You need to login first")
+			loginCmd.Execute()
 		}
 
-		client := &http.Client{}
-
 		logger.Log("Checking Access rights")
-		req, _ := http.NewRequest("GET", apiURL+"/projects/"+m.Package.Name, nil)
-		req.Header.Add("Authorization", "Bearer "+token)
-		res, err := client.Do(req)
+		_, err = apiClient.GetProject(m.Package.Name)
+
+		if err == api.ErrorNotFound {
+			logger.Fail(
+				"Project does not exists. Should ask you if you want to create it … but not yet.")
+		}
+
 		if err != nil {
 			logger.Fail(err.Error())
 		}
 
-		if res.StatusCode != http.StatusOK {
-			// TODO: check for other problems here!
-			logger.Fail("Response not ok: " + res.Status)
-		}
-
-		if res.Header.Get("mpkg-write-access") == "" {
-			// TODO: check for other problems here!
-			logger.Fail("Do not have write access for " + m.Package.Name)
-		}
+		// TODO: reimplement!
+		// if res.Header.Get("mpkg-write-access") == "" {
+		// 	// TODO: check for other problems here!
+		// 	logger.Fail("Do not have write access for " + m.Package.Name)
+		// }
 
 		tasks.Log("Determening version to publish")
 		if m.Package.Version == "" {
@@ -122,15 +124,14 @@ var publishCmd = &cobra.Command{
 
 		// check if version exists
 		{
-			req, _ := http.NewRequest("GET", apiURL+"/projects/"+m.Package.Name+"@"+m.Package.Version, nil)
-			req.Header.Add("Authorization", "Bearer "+token)
-			res, err := client.Do(req)
-			if err != nil {
-				logger.Fail(err.Error())
-			}
-			if res.StatusCode != http.StatusNotFound {
-				// TODO: check for other problems here!
+			_, err := apiClient.GetRelease(m.Package.Name, m.Package.Version)
+
+			switch {
+			case err == nil:
 				logger.Fail("Release already exists!")
+			case err != nil && err != api.ErrorNotFound:
+				// unknown error
+				logger.Fail(err.Error())
 			}
 		}
 
@@ -159,8 +160,9 @@ var publishCmd = &cobra.Command{
 		startTime := time.Now()
 		build.Start()
 
+		maxTextWidth := terminalWidth() - 4 // spinner + spaces
 		for scanner.Scan() {
-			s.Suffix = " " + scanner.Text()
+			s.Suffix = " " + truncateString(scanner.Text(), maxTextWidth)
 		}
 		bStdout.Close()
 		err = build.Wait()
@@ -205,22 +207,20 @@ var publishCmd = &cobra.Command{
 		tasks.Step("☁", "Uploading package")
 
 		file, err := os.Open("tmp-minepkg-package.jar")
-		stat, _ := file.Stat()
-		upload, _ := http.NewRequest("PUT", apiURL+"/projects/"+m.Package.Name+"@"+m.Package.Version, file)
-		upload.Header.Add("Authorization", "Bearer "+token)
-		upload.Header.Add("Content-Type", "application/java-archive")
-		// next line is great
-		upload.Header.Add("Content-Length", strconv.Itoa(int(stat.Size())))
-		uploadRes, err := client.Do(upload)
+		_, err = apiClient.PutRelease(m.Package.Name, m.Package.Version, file)
+		//stat, _ := file.Stat()
+		// upload, _ := http.NewRequest("PUT", apiURL+"/projects/"+m.Package.Name+"@"+m.Package.Version, file)
+		// upload.Header.Add("Authorization", "Bearer "+token)
+		// upload.Header.Add("Content-Type", "application/java-archive")
+		// // next line is great
+		// upload.Header.Add("Content-Length", strconv.Itoa(int(stat.Size())))
+		// uploadRes, err := client.Do(upload)
 
 		if err != nil {
 			logger.Fail(err.Error())
 		}
 
-		if uploadRes.StatusCode != http.StatusCreated {
-			// TODO: check for other problems here!
-			logger.Fail("Response not ok: " + uploadRes.Status)
-		}
+		logger.Info("Released " + m.Package.Version)
 
 		logger.Info("Release succesfully published")
 	},
@@ -261,6 +261,23 @@ func injectManifest(r *zip.ReadCloser, m *manifest.Manifest) error {
 		}
 	}
 	return w.Close()
+}
+
+func terminalWidth() int {
+	fd := int(os.Stdout.Fd())
+	termWidth, _, _ := terminal.GetSize(fd)
+	return termWidth
+}
+
+func truncateString(str string, num int) string {
+	bnoden := str
+	if len(str) > num {
+		if num > 3 {
+			num -= 3
+		}
+		bnoden = str[0:num] + "..."
+	}
+	return bnoden
 }
 
 func findJar() string {

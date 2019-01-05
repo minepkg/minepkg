@@ -1,9 +1,13 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/fiws/minepkg/pkg/api"
 
 	"github.com/fiws/minepkg/internals/cmdlog"
 
@@ -18,6 +22,7 @@ const MinepkgVersion = "0.0.3"
 var cfgFile string
 var logger *cmdlog.Logger = cmdlog.New()
 var globalDir = "/tmp"
+var apiClient = api.New()
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -75,9 +80,18 @@ func init() {
 	}
 	globalDir = filepath.Join(home, ".minepkg")
 
+	// check if user is logged in
+	if rawCreds, err := ioutil.ReadFile(filepath.Join(globalDir, "credentials.json")); err == nil {
+		creds := api.AuthResponse{}
+		json.Unmarshal(rawCreds, &creds)
+		apiClient.JWT = creds.Token
+		apiClient.User = creds.User
+	}
+
 	// TODO: remove this after a few releases (fixes #61)
 	os.Chmod(globalDir, 0755)
 
+	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(installCmd)
 	rootCmd.AddCommand(publishCmd)
 	rootCmd.AddCommand(buildCmd)

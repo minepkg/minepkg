@@ -42,6 +42,7 @@ require (
 	github.com/spf13/viper v1.2.1
 	github.com/stoewer/go-strcase v1.0.2
 	golang.org/x/arch v0.0.0-20181203225421-5a4828bb7045 // indirect
+	golang.org/x/crypto v0.0.0-20180904163835-0709b304e793
 	golang.org/x/sys v0.0.0-20181116161606-93218def8b18 // indirect
 	golang.org/x/time v0.0.0-20181108054448-85acf8d2951c // indirect
 	google.golang.org/grpc v1.16.0 // indirect
