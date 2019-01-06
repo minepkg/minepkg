@@ -28,6 +28,16 @@ import (
 var semverDoom = regexp.MustCompile(`(\d+\.\d+\.\d-)?(\d+\.\d+\.\d)(.+)?`)
 var apiURL = "https://test-api.minepkg.io/v1"
 
+var (
+	dry bool
+	skipBuild bool
+)
+
+func init() {
+	publishCmd.Flags().BoolVarP(&dry, "dry", "", false, "Dry run without publishing")
+	publishCmd.Flags().BoolVarP(&skipBuild, "skip-build", "", false, "Skips building the package")
+}
+
 var publishCmd = &cobra.Command{
 	Use:   "publish",
 	Short: "Publishes a local mod in the current directory",
@@ -71,15 +81,14 @@ var publishCmd = &cobra.Command{
 		// }
 		if apiClient.JWT == "" {
 			logger.Warn("You need to login first")
-			loginCmd.Execute()
+			login()
 		}
 
-		logger.Log("Checking Access rights")
+		logger.Log("Checking access rights")
 		_, err = apiClient.GetProject(m.Package.Name)
 
 		if err == api.ErrorNotFound {
-			logger.Fail(
-				"Project does not exists. Should ask you if you want to create it … but not yet.")
+			logger.Fail("Project does not exists. Should ask you if you want to create it … but not yet.")
 		}
 
 		if err != nil {
@@ -93,8 +102,10 @@ var publishCmd = &cobra.Command{
 		// }
 
 		tasks.Log("Determening version to publish")
-		if m.Package.Version == "" {
-			version := m.Package.Version
+		switch {
+		case m.Package.Version != "":
+			tasks.Log("Using version number in minepkg.toml")
+		default:
 			repo, err := git.PlainOpen("./")
 			if err != nil {
 				logger.Fail("Can't fallback to git tag version (not a valid git repo)")
@@ -103,26 +114,23 @@ var publishCmd = &cobra.Command{
 
 			// TODO: warn user about quirks match
 			iter.ForEach(func (ref *plumbing.Reference) error {
-				tagName := string(ref.Name())[10:]
-
-				matches := semverDoom.FindStringSubmatch(tagName)
-				switch len(matches){
-				case 3:
-					version = matches[2]
-				case 4:
-					version = matches[2] + "+" + matches[3][1:]
+				match := versionFromTag(ref)
+				if match != "" {
+					m.Package.Version = match
 				}
 				
 				return nil
 			})
 
-			m.Package.Version = version
-			logger.Info("Found version " + version)
-		} else {
-			tasks.Log("Using version number in minepkg.toml")
+			logger.Info("  Found version from git " + m.Package.Version)
+		}
+
+		if m.Package.Version == "" {
+			logger.Fail("Could not determine version to publish")
 		}
 
 		// check if version exists
+		logger.Log("Checking if release exists")
 		{
 			_, err := apiClient.GetRelease(m.Package.Name, m.Package.Version)
 
@@ -137,43 +145,47 @@ var publishCmd = &cobra.Command{
 
 		tasks.Step("🏗", "Building")
 
-		buildScript := "gradle --build-cache build"
-		if m.Hooks.Build != "" {
-			tasks.Log("Using custom build hook")
-			tasks.Log(" » " + m.Hooks.Build)
-			buildScript = m.Hooks.Build
+		if skipBuild != true {
+			buildScript := "gradle --build-cache build"
+			if m.Hooks.Build != "" {
+				tasks.Log("Using custom build hook")
+				tasks.Log(" running " + m.Hooks.Build)
+				buildScript = m.Hooks.Build
+			} else {
+				tasks.Log("Using default build step (gradle --build-cache build)")
+			}
+	
+			// TODO: I don't think this i multi platform
+			build := exec.Command("sh", []string{"-c", buildScript}...)
+			// TODO: stderr !!!
+			bStdout, _ := build.StdoutPipe()
+			scanner := bufio.NewScanner(bStdout)
+	
+			s := spinner.New(spinner.CharSets[9], 100*time.Millisecond) // Build our new spinner
+			s.Prefix = " "
+			s.Start()
+			s.Suffix = " [no build output yet]"
+	
+			startTime := time.Now()
+			build.Start()
+	
+			maxTextWidth := terminalWidth() - 4 // spinner + spaces
+			for scanner.Scan() {
+				s.Suffix = " " + truncateString(scanner.Text(), maxTextWidth)
+			}
+			bStdout.Close()
+			err = build.Wait()
+			if err != nil {
+				// TODO: output logs or something
+				logger.Fail("Build step failed. Aborting")
+			}
+			s.Suffix = ""
+			s.Stop()
+	
+			logger.Info(" ✓ Finished build in " + time.Now().Sub(startTime).String())
 		} else {
-			tasks.Log("Using default build step (gradle --build-cache build)")
+			logger.Info("Skipped build")
 		}
-
-		// TODO: I don't think this i multi platform
-		build := exec.Command("sh", []string{"-c", buildScript}...)
-		// TODO: stderr !!!
-		bStdout, _ := build.StdoutPipe()
-		scanner := bufio.NewScanner(bStdout)
-
-		s := spinner.New(spinner.CharSets[9], 100*time.Millisecond) // Build our new spinner
-		s.Prefix = " "
-		s.Start()
-		s.Suffix = " [no build output yet]"
-
-		startTime := time.Now()
-		build.Start()
-
-		maxTextWidth := terminalWidth() - 4 // spinner + spaces
-		for scanner.Scan() {
-			s.Suffix = " " + truncateString(scanner.Text(), maxTextWidth)
-		}
-		bStdout.Close()
-		err = build.Wait()
-		if err != nil {
-			// TODO: output logs or something
-			logger.Fail("Build step failed. Aborting")
-		}
-		s.Suffix = ""
-		s.Stop()
-
-		logger.Info(" ✓ Finished build in " + time.Now().Sub(startTime).String())
 
 		// find se jar
 		tasks.Log("Finding jar file")
@@ -206,23 +218,18 @@ var publishCmd = &cobra.Command{
 
 		tasks.Step("☁", "Uploading package")
 
-		file, err := os.Open("tmp-minepkg-package.jar")
-		_, err = apiClient.PutRelease(m.Package.Name, m.Package.Version, file)
-		//stat, _ := file.Stat()
-		// upload, _ := http.NewRequest("PUT", apiURL+"/projects/"+m.Package.Name+"@"+m.Package.Version, file)
-		// upload.Header.Add("Authorization", "Bearer "+token)
-		// upload.Header.Add("Content-Type", "application/java-archive")
-		// // next line is great
-		// upload.Header.Add("Content-Length", strconv.Itoa(int(stat.Size())))
-		// uploadRes, err := client.Do(upload)
+		if dry == true {
+			logger.Info("Skipping upload because this is a dry run")
+			os.Exit(0)
+		}
 
-		if err != nil {
+		// upload tha file
+		file, err := os.Open("tmp-minepkg-package.jar")	
+		if _, err = apiClient.PutRelease(m.Package.Name, m.Package.Version, file); err != nil {
 			logger.Fail(err.Error())
 		}
 
-		logger.Info("Released " + m.Package.Version)
-
-		logger.Info("Release succesfully published")
+		logger.Info(" ✓ Released " + m.Package.Version)
 	},
 }
 
@@ -262,6 +269,20 @@ func injectManifest(r *zip.ReadCloser, m *manifest.Manifest) error {
 	}
 	return w.Close()
 }
+
+func versionFromTag(ref *plumbing.Reference) string {
+	tagName := string(ref.Name())[10:]
+
+	var version string
+	matches := semverDoom.FindStringSubmatch(tagName)
+	switch len(matches){
+	case 3:
+		version = matches[2]
+	case 4:
+		version = matches[2] + "+" + matches[3][1:]
+	}
+	return version
+} 
 
 func terminalWidth() int {
 	fd := int(os.Stdout.Fd())

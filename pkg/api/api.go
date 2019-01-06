@@ -12,7 +12,9 @@ import (
 const baseAPI = "https://test-api.minepkg.io/v1"
 
 var (
-	ErrorNotFound   = errors.New("Resource not found")
+	// ErrorNotFound gets returned when a 404 occured
+	ErrorNotFound = errors.New("Resource not found")
+	// ErrorBadRequest gets returned when a 400 occured
 	ErrorBadRequest = errors.New("Bad Request")
 )
 
