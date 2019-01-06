@@ -92,6 +92,7 @@ func init() {
 	os.Chmod(globalDir, 0755)
 
 	rootCmd.AddCommand(loginCmd)
+	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(installCmd)
 	rootCmd.AddCommand(publishCmd)
 	rootCmd.AddCommand(buildCmd)
