@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"github.com/fiws/minepkg/pkg/api"
+	"context"
 	"github.com/BurntSushi/toml"
 	"bytes"
 	"github.com/fiws/minepkg/pkg/manifest"
@@ -23,10 +25,12 @@ var projectName = regexp.MustCompile(`^([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])$`)
 
 var (
 	force bool
+	loader string
 )
 
 func init() {
-	initCmd.Flags().BoolVarP(&dry, "force", "f", false, "Overwrite all the things")
+	initCmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite all the things")
+	initCmd.Flags().StringVarP(&loader, "loader", "l", "forge", "Set the required loader to forge or fabric.")
 }
 
 var initCmd = &cobra.Command{
@@ -39,6 +43,10 @@ var initCmd = &cobra.Command{
 
 		man := manifest.Manifest{}
 
+		loader = strings.ToLower(loader)
+		if loader != "forge" && loader != "fabric" {
+			logger.Fail("Allowed values for loader option: forge or fabric")
+		}
 		var (
 			emptyDir bool
 			gitRepo bool
@@ -46,12 +54,31 @@ var initCmd = &cobra.Command{
 
 		_ = emptyDir
 
+		// chVersions := make(chan *instances.MinecraftReleaseResponse)
+		// go func(ch chan *instances.MinecraftReleaseResponse)  {
+		// 	res, err := instances.GetMinecraftReleases(context.TODO())
+		// 	if err != nil {
+		// 		logger.Fail(err.Error())
+		// 	}
+		// 	ch <- res
+		// 	}(chVersions)
+			
+		chForgeVersions := make(chan *api.ForgeVersionResponse)
+		go func(ch chan *api.ForgeVersionResponse) {
+			res, err := apiClient.GetForgeVersions(context.TODO())
+			if err != nil {
+				logger.Fail(err.Error())
+			}
+			ch <- res
+		}(chForgeVersions)
+
 		if _, err := git.PlainOpen("./"); err == nil {
 			gitRepo = true
 		}
 
 		wd, _ := os.Getwd()
-		namePrompt := promptui.Prompt{
+
+		man.Package.Name = stringPrompt(&promptui.Prompt{
 			Label: "Project name",
 			Default: strcase.KebabCase(filepath.Base(wd)),
 			Validate: func(s string) error {
@@ -67,30 +94,21 @@ var initCmd = &cobra.Command{
 				}
 				return nil
 			},
-		}
-
-		if name, err := namePrompt.Run(); err != nil {
-			stahp()
-		} else {
-			man.Package.Name = name
-		}
+		})
 
 		// use git tags is the default for git repos
 		vDefault := "N"
 		if gitRepo {
 			vDefault = "Y"
 		}
-		gitVersionPrompt := promptui.Prompt{
+		
+		useGitTags := boolPrompt(&promptui.Prompt {
 			Label: "Use git tags for versioning",
 			Default: vDefault,
 			IsConfirm: true,
-		}
-		_, err := gitVersionPrompt.Run()
-		if err != nil && err.Error() == "^C" {
-			stahp()
-		}
+		})
 
-		if err != nil {
+		if useGitTags == false {
 			versionPrompt := promptui.Prompt{
 				Label: "Version",
 				Default: "1.0.0",
@@ -110,17 +128,72 @@ var initCmd = &cobra.Command{
 				man.Package.Version = version
 			}
 		}
+		
+		// res := <- chVersions
+
+		modType := stringPrompt(&promptui.Prompt{
+			Label: "Is this a Forge or a Fabric mod?",
+			Default: "Forge",
+			// TODO: validation
+		})
+		modType = strings.ToLower(modType)
+
+		if loader == "forge" {
+			forgeReleases := <- chForgeVersions
+			man.Requirements.Forge = stringPrompt(&promptui.Prompt{
+				Label: "Minimum Forge version",
+				Default: forgeReleases.Versions[0].Version,
+				// TODO: validation
+			})
+
+			man.Requirements.Minecraft = stringPrompt(&promptui.Prompt{
+				Label: "Supported Minecraft version",
+				Default: forgeReleases.Versions[0].McVersion,
+				// TODO: validation
+			})
+		} else {
+			man.Requirements.Forge = stringPrompt(&promptui.Prompt{
+				Label: "Minimum Fabric version",
+				// TODO: validation
+			})
+			man.Requirements.Minecraft = stringPrompt(&promptui.Prompt{
+				Label: "Supported Minecraft version",
+				Default: "1.14.x",
+				// TODO: validation
+			})
+		}
 
 		// generate toml
 		buf := bytes.Buffer{}
 		if err := toml.NewEncoder(&buf).Encode(man); err != nil {
 			logger.Fail(err.Error())
 		}
-		if err := ioutil.WriteFile("minepkg.toml", buf.Bytes(), 755); err != nil {
+		if err := ioutil.WriteFile("minepkg.toml", buf.Bytes(), 0755); err != nil {
 			logger.Fail(err.Error())
 		}
 		logger.Info(" ✓ Created minepkg.toml")
 	},
+}
+
+func stringPrompt(prompt *promptui.Prompt) string {
+	res, err := prompt.Run()
+	if err != nil {
+		fmt.Println("Aborting")
+		os.Exit(1)
+	}
+	return res
+}
+
+func boolPrompt(prompt *promptui.Prompt) bool {
+	_, err := prompt.Run()
+	if err != nil {
+		if err.Error() == "^C" {
+			fmt.Println("Aborting")
+			os.Exit(1)
+		}
+		return false
+	}
+	return true
 }
 
 func stahp() {

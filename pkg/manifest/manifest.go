@@ -63,7 +63,9 @@ type Manifest struct {
 		// be allowed for consistency
 		// The version may include prerelease information like `1.2.2-beta.0` or build
 		// related information `1.2.1+B7382-2018`.
-		Version  string   `toml:"version"`
+		// The version can be omited. In that case minepkg will try to use git tags
+		Version  string   `toml:"version,omitempty"`
+		Licence  string   `toml:"licence,omitempty"`
 		Provides []string `toml:"provides"`
 		Extends  []string `toml:"extends"`
 	} `toml:"package"`

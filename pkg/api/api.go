@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -53,7 +54,7 @@ func (m *MinepkgAPI) Login(username string, password string) (*AuthResponse, err
 		RequestUser: true,
 	}
 	//data, _ := json.Marshal(payload)
-	res, err := m.postJSON("https://authserver.mojang.com/authenticate", payload)
+	res, err := m.postJSON(context.TODO(), "https://authserver.mojang.com/authenticate", payload)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +85,7 @@ func (m *MinepkgAPI) MojangLogin(username string, password string) (*AuthRespons
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}{username, password}
-	res, err := m.postJSON(baseAPI+"/account/_mojangLogin", data)
+	res, err := m.postJSON(context.TODO(), baseAPI+"/account/_mojangLogin", data)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +113,7 @@ func (m *MinepkgAPI) MojangTokenLogin(accessToken string, clientToken string) (*
 		AccessToken string `json:"accessToken"`
 		ClientToken string `json:"clientToken"`
 	}{accessToken, clientToken}
-	res, err := m.postJSON(baseAPI+"/account/_mojangTokenLogin", loginData)
+	res, err := m.postJSON(context.TODO(), baseAPI+"/account/_mojangTokenLogin", loginData)
 	if err != nil {
 		return nil, err
 	}
@@ -136,9 +137,45 @@ func (m *MinepkgAPI) MojangTokenLogin(accessToken string, clientToken string) (*
 	return &auth, nil
 }
 
+// GetForgeVersions gets a single release from a project
+func (m *MinepkgAPI) GetForgeVersions(ctx context.Context) (*ForgeVersionResponse, error) {
+	res, err := m.get(ctx, baseAPI+"/meta/forge-versions")
+	if err != nil {
+		return nil, err
+	}
+	if err := checkResponse(res); err != nil {
+		return nil, err
+	}
+
+	fRes := ForgeVersionResponse{}
+	if err := parseJSON(res, &fRes); err != nil {
+		return nil, err
+	}
+
+	return &fRes, nil
+}
+
 // GetProject gets a single project
-func (m *MinepkgAPI) GetProject(name string) (*Project, error) {
-	res, err := m.get(baseAPI + "/projects/" + name)
+func (m *MinepkgAPI) GetProject(ctx context.Context, name string) (*Project, error) {
+	res, err := m.get(ctx, baseAPI+"/projects/"+name)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkResponse(res); err != nil {
+		return nil, err
+	}
+
+	project := Project{}
+	if err := parseJSON(res, &project); err != nil {
+		return nil, err
+	}
+
+	return &project, nil
+}
+
+// CreateProject creates a new project
+func (m *MinepkgAPI) CreateProject(p *Project) (*Project, error) {
+	res, err := m.postJSON(context.TODO(), baseAPI+"/projects", p)
 	if err != nil {
 		return nil, err
 	}
@@ -155,8 +192,8 @@ func (m *MinepkgAPI) GetProject(name string) (*Project, error) {
 }
 
 // GetRelease gets a single release from a project
-func (m *MinepkgAPI) GetRelease(project string, version string) (*Release, error) {
-	res, err := m.get(baseAPI + "/projects/" + project + "@" + version)
+func (m *MinepkgAPI) GetRelease(ctx context.Context, project string, version string) (*Release, error) {
+	res, err := m.get(ctx, baseAPI+"/projects/"+project+"@"+version)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +211,7 @@ func (m *MinepkgAPI) GetRelease(project string, version string) (*Release, error
 
 // GetReleaseList gets a all available releases for a project
 func (m *MinepkgAPI) GetReleaseList(project string) ([]*Release, error) {
-	res, err := m.get(baseAPI + "/projects/" + project + "/releases")
+	res, err := m.get(context.TODO(), baseAPI+"/projects/"+project+"/releases")
 	if err != nil {
 		return nil, err
 	}
@@ -219,8 +256,9 @@ func (m *MinepkgAPI) PutRelease(project string, version string, reader io.Reader
 }
 
 // get is a helper that does a get request and also sets various things
-func (m *MinepkgAPI) get(url string) (*http.Response, error) {
+func (m *MinepkgAPI) get(ctx context.Context, url string) (*http.Response, error) {
 	req, err := http.NewRequest("GET", url, nil)
+	req = req.WithContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -229,12 +267,13 @@ func (m *MinepkgAPI) get(url string) (*http.Response, error) {
 }
 
 // postJSON posts json
-func (m *MinepkgAPI) postJSON(url string, data interface{}) (*http.Response, error) {
+func (m *MinepkgAPI) postJSON(ctx context.Context, url string, data interface{}) (*http.Response, error) {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	req = req.WithContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -243,18 +282,9 @@ func (m *MinepkgAPI) postJSON(url string, data interface{}) (*http.Response, err
 	return m.http.Do(req)
 }
 
-func (m *MinepkgAPI) post(url string, body io.Reader) (*http.Response, error) {
+func (m *MinepkgAPI) post(ctx context.Context, url string, body io.Reader) (*http.Response, error) {
 	req, err := http.NewRequest("POST", url, body)
-	if err != nil {
-		return nil, err
-	}
-
-	m.decorate(req)
-	return m.http.Do(req)
-}
-
-func (m *MinepkgAPI) put(url string, body io.Reader) (*http.Response, error) {
-	req, err := http.NewRequest("PUT", url, body)
+	req = req.WithContext(ctx)
 	if err != nil {
 		return nil, err
 	}

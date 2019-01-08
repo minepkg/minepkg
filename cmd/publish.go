@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"context"
+	"github.com/manifoldco/promptui"
 	"golang.org/x/crypto/ssh/terminal"
 	"github.com/fiws/minepkg/pkg/api"
 	"github.com/briandowns/spinner"
@@ -31,11 +33,13 @@ var apiURL = "https://test-api.minepkg.io/v1"
 var (
 	dry bool
 	skipBuild bool
+	nonInteractive bool
 )
 
 func init() {
 	publishCmd.Flags().BoolVarP(&dry, "dry", "", false, "Dry run without publishing")
 	publishCmd.Flags().BoolVarP(&skipBuild, "skip-build", "", false, "Skips building the package")
+	publishCmd.Flags().BoolVarP(&nonInteractive, "non-interactive", "y", false, "Answers all interactive questions with the default")
 }
 
 var publishCmd = &cobra.Command{
@@ -85,13 +89,31 @@ var publishCmd = &cobra.Command{
 		}
 
 		logger.Log("Checking access rights")
-		_, err = apiClient.GetProject(m.Package.Name)
+		timeout, cancel := context.WithTimeout(context.Background(), time.Second * 5)
+		defer cancel()
+		_, err = apiClient.GetProject(timeout, m.Package.Name)
 
 		if err == api.ErrorNotFound {
-			logger.Fail("Project does not exists. Should ask you if you want to create it … but not yet.")
-		}
-
-		if err != nil {
+			if nonInteractive != true {
+				create := boolPrompt(&promptui.Prompt {
+					Label: "Project does not exists yet. Do you want to create it",
+					Default: "Y",
+					IsConfirm: true,
+				})
+				if create != true {
+					logger.Info("Aborting")
+					os.Exit(0)
+				}
+			}
+			project, err := apiClient.CreateProject(&api.Project{
+				Name: m.Package.Name,
+				Type: m.Package.Type,
+			})
+			if err != nil {
+				logger.Fail(err.Error())
+			}
+			logger.Info("Project "+project.Name+ " created")
+		} else if (err != nil) {
 			logger.Fail(err.Error())
 		}
 
@@ -132,7 +154,7 @@ var publishCmd = &cobra.Command{
 		// check if version exists
 		logger.Log("Checking if release exists")
 		{
-			_, err := apiClient.GetRelease(m.Package.Name, m.Package.Version)
+			_, err := apiClient.GetRelease(context.TODO(), m.Package.Name, m.Package.Version)
 
 			switch {
 			case err == nil:

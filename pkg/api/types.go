@@ -30,7 +30,7 @@ type AuthResponse struct {
 type Project struct {
 	Name        string `json:"name"`
 	Type        string `json:"type"`
-	Description string `json:"description"`
+	Description string `json:"description,omitempty"`
 }
 
 // Release is a released version of a project
@@ -56,7 +56,26 @@ type Dependency struct {
 	Name string `json:"name"`
 	// VersionRequirement is a semver version Constraint
 	// Example: `^2.9.22` or `5.x.x`
-	VersionRequirement *semver.Constraints `json:"versionRequirement"`
+	VersionRequirement string `json:"versionRequirement"`
+}
+
+// ForgeVersion is a release of forge
+type ForgeVersion struct {
+	Branch      string     `json:"branch"`
+	Build       int        `json:"build"`
+	Files       [][]string `json:"files"`
+	McVersion   string     `json:"mcversion"`
+	Modified    int        `json:"modified"`
+	Version     string     `json:"version"`
+	Recommended bool       `json:"recommended"`
+}
+
+// ForgeVersionResponse is the response from the /meta/forge-versions endpoint
+type ForgeVersionResponse struct {
+	Versions []ForgeVersion `json:"versions"`
+	Webpath  string         `json:"webpath"`
+	Homepage string         `json:"homepage"`
+	Adfocus  string         `json:"adfocus"`
 }
 
 // MinepkgError is the json response if the response
