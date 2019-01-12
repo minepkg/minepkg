@@ -51,14 +51,14 @@ type Manifest struct {
 	// This field is REQUIRED
 	ManifestVersion int `toml:"manifestVersion"`
 	Package         struct {
-		Description string `toml:"description"`
+		// Type should be one of `TypeMod` ("mod") or `TypeModpack` ("modpack")
+		Type string `toml:"type"`
 		// Name is the name of the package. It may NOT include spaces. It may ONLY consist of
 		// alphanumeric chars but can also include `-` and `_`
 		// Should be unique. (This will be enforced by the minepkg api)
 		// This field is REQUIRED
-		Name string `toml:"name"`
-		// Type should be one of `TypeMod` ("mod") or `TypeModpack` ("modpack")
-		Type string `toml:"type"`
+		Name        string `toml:"name"`
+		Description string `toml:"description"`
 		// Version is the version number of this package. A preceeding `v` (like `v2.1.1`) should NOT
 		// be allowed for consistency
 		// The version may include prerelease information like `1.2.2-beta.0` or build
