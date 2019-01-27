@@ -31,6 +31,11 @@ var installCmd = &cobra.Command{
 			panic(err)
 		}
 
+		// TEST STUFF
+		installFromMinepkg(args[0], instance)
+		fmt.Println("TODO: implement logic in install.go")
+		os.Exit(0)
+
 		// no args: installing minepkg.toml dependencies
 		if len(args) == 0 {
 			installManifest(instance)

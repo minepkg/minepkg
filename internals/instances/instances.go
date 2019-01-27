@@ -68,12 +68,12 @@ func (m *McInstance) Desc() string {
 }
 
 // Download downloads a mod into the mod directory
-func (m *McInstance) Download(mod *manifest.ResolvedMod) error {
-	res, err := http.Get(mod.DownloadURL)
+func (m *McInstance) Download(name string, url string) error {
+	res, err := http.Get(url)
 	if err != nil {
 		return err
 	}
-	dest, err := os.Create(path.Join(m.ModsDirectory, mod.LocalName()))
+	dest, err := os.Create(path.Join(m.ModsDirectory, name))
 	if err != nil {
 		return err
 	}

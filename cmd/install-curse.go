@@ -48,7 +48,7 @@ func installFromCurse(name string, instance *instances.McInstance) {
 	// download mod phase
 	task.Step("🚚", "Downloading Mods")
 	for _, mod := range resolved {
-		err := instance.Download(&mod)
+		err := instance.Download(mod.FileName, mod.DownloadURL)
 		if err != nil {
 			logger.Fail(fmt.Sprintf("Could not download %s (%s)"+mod.FileName, err))
 		}

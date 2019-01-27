@@ -17,8 +17,10 @@ require (
 	github.com/docker/go-units v0.3.3 // indirect
 	github.com/fatih/color v1.7.0
 	github.com/gogo/protobuf v1.1.1 // indirect
+	github.com/google/pprof v0.0.0-20190109223431-e84dfd68c163 // indirect
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/mux v1.6.2 // indirect
+	github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/logrusorgru/aurora v0.0.0-20181002194514-a7b3b318ed4e
 	github.com/manifoldco/promptui v0.3.1
@@ -31,6 +33,7 @@ require (
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/viper v1.2.1
 	github.com/stoewer/go-strcase v1.0.2
+	golang.org/x/arch v0.0.0-20181203225421-5a4828bb7045 // indirect
 	golang.org/x/crypto v0.0.0-20180904163835-0709b304e793
 	golang.org/x/net v0.0.0-20181201002055-351d144fa1fc // indirect
 	golang.org/x/sync v0.0.0-20181108010431-42b317875d0f // indirect

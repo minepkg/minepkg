@@ -84,6 +84,7 @@ func init() {
 	if rawCreds, err := ioutil.ReadFile(filepath.Join(globalDir, "credentials.json")); err == nil {
 		creds := api.AuthResponse{}
 		json.Unmarshal(rawCreds, &creds)
+
 		apiClient.JWT = creds.Token
 		apiClient.User = creds.User
 	}
