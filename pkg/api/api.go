@@ -8,16 +8,25 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 )
-
-const baseAPI = "https://test-api.minepkg.io/v1"
 
 var (
 	// ErrorNotFound gets returned when a 404 occured
 	ErrorNotFound = errors.New("Resource not found")
 	// ErrorBadRequest gets returned when a 400 occured
 	ErrorBadRequest = errors.New("Bad Request")
+	baseAPI         = getAPIUrl()
 )
+
+func getAPIUrl() string {
+	overwrite := os.Getenv("MINEPKG_API")
+	if overwrite != "" {
+		return overwrite
+	}
+
+	return "https://test-api.minepkg.io/v1"
+}
 
 // MinepkgAPI contains credentials and methods to talk
 // to the minepkg api
@@ -230,7 +239,7 @@ func checkResponse(res *http.Response) error {
 	case res.StatusCode >= 400:
 		minepkgErr := &MinepkgError{}
 		if err := parseJSON(res, minepkgErr); err != nil {
-			return errors.New("minepkg API did response with unexpected status " + res.Status)
+			return errors.New("minepkg API did respond with unexpected status " + res.Status)
 		}
 		return minepkgErr
 	}

@@ -24,7 +24,7 @@ var loginCmd = &cobra.Command{
 
 func login() {
 	fmt.Println("Please sign in with your Mojang (Minecraft) credentials")
-	fmt.Println("Your password is sent encrypted to Mojang directly and never saved locally.")
+	fmt.Println("Your password is sent encrypted to Mojang directly and NOT saved anywhere.")
 
 	uPrompt := promptui.Prompt{
 		Label:    "Please enter your Mojang username (email)",

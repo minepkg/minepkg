@@ -1,24 +1,27 @@
 package cmd
 
 import (
-	"context"
-	"github.com/manifoldco/promptui"
-	"golang.org/x/crypto/ssh/terminal"
-	"github.com/fiws/minepkg/pkg/api"
-	"github.com/briandowns/spinner"
-	"time"
-	"bufio"
-	"regexp"
-	"gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4"
 	"archive/zip"
+	"bufio"
 	"bytes"
+	"context"
+	"errors"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"strings"
+	"time"
+
+	"github.com/briandowns/spinner"
+	"github.com/fiws/minepkg/pkg/api"
+	"github.com/manifoldco/promptui"
+	"golang.org/x/crypto/ssh/terminal"
+	"gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/plumbing"
 
 	"github.com/BurntSushi/toml"
 	"github.com/fiws/minepkg/pkg/manifest"
@@ -31,8 +34,8 @@ var semverDoom = regexp.MustCompile(`(\d+\.\d+\.\d-)?(\d+\.\d+\.\d)(.+)?`)
 var apiURL = "https://test-api.minepkg.io/v1"
 
 var (
-	dry bool
-	skipBuild bool
+	dry            bool
+	skipBuild      bool
 	nonInteractive bool
 )
 
@@ -46,7 +49,7 @@ var publishCmd = &cobra.Command{
 	Use:   "publish",
 	Short: "Publishes a local mod in the current directory",
 	Run: func(cmd *cobra.Command, args []string) {
-		
+
 		// overwrite api
 		// TODO: don't do that here
 		if customAPI := os.Getenv("MINEPKG_API"); customAPI != "" {
@@ -89,15 +92,15 @@ var publishCmd = &cobra.Command{
 		}
 
 		logger.Log("Checking access rights")
-		timeout, cancel := context.WithTimeout(context.Background(), time.Second * 5)
+		timeout, cancel := context.WithTimeout(context.Background(), time.Second*5)
 		defer cancel()
 		_, err = apiClient.GetProject(timeout, m.Package.Name)
 
 		if err == api.ErrorNotFound {
 			if nonInteractive != true {
-				create := boolPrompt(&promptui.Prompt {
-					Label: "Project does not exists yet. Do you want to create it",
-					Default: "Y",
+				create := boolPrompt(&promptui.Prompt{
+					Label:     "Project does not exists yet. Do you want to create it",
+					Default:   "Y",
 					IsConfirm: true,
 				})
 				if create != true {
@@ -105,15 +108,17 @@ var publishCmd = &cobra.Command{
 					os.Exit(0)
 				}
 			}
+			readme, _ := getReadme()
 			project, err := apiClient.CreateProject(&api.Project{
-				Name: m.Package.Name,
-				Type: m.Package.Type,
+				Name:   m.Package.Name,
+				Type:   m.Package.Type,
+				Readme: readme,
 			})
 			if err != nil {
 				logger.Fail(err.Error())
 			}
-			logger.Info("Project "+project.Name+ " created")
-		} else if (err != nil) {
+			logger.Info("Project " + project.Name + " created")
+		} else if err != nil {
 			logger.Fail(err.Error())
 		}
 
@@ -135,12 +140,12 @@ var publishCmd = &cobra.Command{
 			iter, err := repo.Tags()
 
 			// TODO: warn user about quirks match
-			iter.ForEach(func (ref *plumbing.Reference) error {
+			iter.ForEach(func(ref *plumbing.Reference) error {
 				match := versionFromTag(ref)
 				if match != "" {
 					m.Package.Version = match
 				}
-				
+
 				return nil
 			})
 
@@ -176,21 +181,21 @@ var publishCmd = &cobra.Command{
 			} else {
 				tasks.Log("Using default build step (gradle --build-cache build)")
 			}
-	
+
 			// TODO: I don't think this i multi platform
 			build := exec.Command("sh", []string{"-c", buildScript}...)
 			// TODO: stderr !!!
 			bStdout, _ := build.StdoutPipe()
 			scanner := bufio.NewScanner(bStdout)
-	
+
 			s := spinner.New(spinner.CharSets[9], 100*time.Millisecond) // Build our new spinner
 			s.Prefix = " "
 			s.Start()
 			s.Suffix = " [no build output yet]"
-	
+
 			startTime := time.Now()
 			build.Start()
-	
+
 			maxTextWidth := terminalWidth() - 4 // spinner + spaces
 			for scanner.Scan() {
 				s.Suffix = " " + truncateString(scanner.Text(), maxTextWidth)
@@ -203,7 +208,7 @@ var publishCmd = &cobra.Command{
 			}
 			s.Suffix = ""
 			s.Stop()
-	
+
 			logger.Info(" ✓ Finished build in " + time.Now().Sub(startTime).String())
 		} else {
 			logger.Info("Skipped build")
@@ -246,7 +251,7 @@ var publishCmd = &cobra.Command{
 		}
 
 		// upload tha file
-		file, err := os.Open("tmp-minepkg-package.jar")	
+		file, err := os.Open("tmp-minepkg-package.jar")
 		if _, err = apiClient.PutRelease(m.Package.Name, m.Package.Version, file); err != nil {
 			logger.Fail(err.Error())
 		}
@@ -297,14 +302,14 @@ func versionFromTag(ref *plumbing.Reference) string {
 
 	var version string
 	matches := semverDoom.FindStringSubmatch(tagName)
-	switch len(matches){
+	switch len(matches) {
 	case 3:
 		version = matches[2]
 	case 4:
 		version = matches[2] + "+" + matches[3][1:]
 	}
 	return version
-} 
+}
 
 func terminalWidth() int {
 	fd := int(os.Stdout.Fd())
@@ -321,6 +326,32 @@ func truncateString(str string, num int) string {
 		bnoden = str[0:num] + "..."
 	}
 	return bnoden
+}
+
+func getReadme() (string, error) {
+	files, err := ioutil.ReadDir(".")
+	// something is wrong
+	if err != nil {
+		logger.Fail(err.Error())
+	}
+
+	readme := ""
+	for _, file := range files {
+		if strings.HasPrefix(strings.ToLower(file.Name()), "readme") {
+			readme = filepath.Join("./", file.Name())
+		}
+	}
+
+	if readme == "" {
+		return "", errors.New("Could not find any readme file")
+	}
+
+	file, err := ioutil.ReadFile(readme)
+	if err != nil {
+		logger.Fail(err.Error())
+	}
+	return string(file), nil
+
 }
 
 func findJar() string {
@@ -340,5 +371,4 @@ func findJar() string {
 	}
 
 	return filepath.Join("./build/libs", shortest.Name())
-
 }

@@ -1,6 +1,8 @@
 package api
 
-import "context"
+import (
+	"context"
+)
 
 // Project returns a Project object without fetching it from the API
 func (m *MinepkgAPI) Project(name string) *Project {

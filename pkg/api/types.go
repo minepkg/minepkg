@@ -32,6 +32,7 @@ type Project struct {
 	Name        string `json:"name"`
 	Type        string `json:"type"`
 	Description string `json:"description,omitempty"`
+	Readme      string `json:"readme,omitempty"`
 }
 
 // Release is a released version of a project
