@@ -85,10 +85,6 @@ var publishCmd = &cobra.Command{
 		// 	logger.Fail("Could not convert your minepkg.toml manifest to JSON")
 		// }
 
-		if m.Package.Type != manifest.TypeMod {
-			logger.Fail("Only mod can be published (for now)")
-		}
-
 		tasks.Log("Checking Authentication")
 		// token := os.Getenv("MINEPKG_API_TOKEN")
 		// if token == "" {
@@ -178,6 +174,17 @@ var publishCmd = &cobra.Command{
 		case err != nil && err != api.ErrorNotFound:
 			// unknown error
 			logger.Fail(err.Error())
+		}
+
+		// just publish the manifest for modpacks
+		if m.Package.Type == manifest.TypeModpack {
+			logger.Info("Creating release")
+			release, err = project.CreateRelease(context.TODO(), &m)
+			if err != nil {
+				logger.Fail(err.Error())
+			}
+			logger.Info(" ✓ Released " + release.Version)
+			return
 		}
 
 		tasks.Step("🏗", "Building")

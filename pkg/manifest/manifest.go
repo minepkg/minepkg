@@ -85,7 +85,7 @@ type Manifest struct {
 		Fabric string `toml:"fabric,omitempty" json:"fabric,omitempty"`
 	} `toml:"requirements" json:"requirements"`
 	// Dependencies lists runtime dependencies of this package
-	Dependencies `toml:"dependencies" json:"dependencies"`
+	Dependencies `toml:"dependencies" json:"dependencies,omitempty"`
 	// Hooks should help mod developers to ease publishing
 	Hooks struct {
 		Build string `toml:"build,omitempty" json:"build,omitempty"`
