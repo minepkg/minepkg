@@ -7,9 +7,9 @@ import (
 )
 
 func (r *Release) decorate(c *MinepkgAPI) {
-	r.c = c
+	r.client = c
 	for _, d := range r.Dependencies {
-		d.c = c
+		d.client = c
 	}
 }
 
@@ -21,17 +21,17 @@ func (r *Release) DownloadURL() string {
 // Upload uploads the jar or zipfile for a release
 func (r *Release) Upload(reader io.Reader) (*Release, error) {
 	// prepare request
-	m := r.c
+	client := r.client
 	req, err := http.NewRequest("POST", baseAPI+"/projects/"+r.Project+"@"+r.Version+"/upload", reader)
 	if err != nil {
 		return nil, err
 	}
 
-	m.decorate(req)
+	client.decorate(req)
 	req.Header.Set("Content-Type", "application/java-archive")
 
 	// execute request and handle response
-	res, err := m.http.Do(req)
+	res, err := client.http.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -69,6 +69,6 @@ func (m *MinepkgAPI) GetRelease(ctx context.Context, project string, version str
 
 // GetReleaseList gets a all available releases for a project
 func (m *MinepkgAPI) GetReleaseList(ctx context.Context, project string) ([]*Release, error) {
-	p := Project{c: m, Name: project}
+	p := Project{client: m, Name: project}
 	return p.GetReleases(ctx)
 }

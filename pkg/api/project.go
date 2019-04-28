@@ -8,8 +8,8 @@ import (
 // Project returns a Project object without fetching it from the API
 func (m *MinepkgAPI) Project(name string) *Project {
 	return &Project{
-		c:    m,
-		Name: name,
+		client: m,
+		Name:   name,
 	}
 }
 
@@ -23,7 +23,7 @@ func (m *MinepkgAPI) GetProject(ctx context.Context, name string) (*Project, err
 		return nil, err
 	}
 
-	project := Project{c: m}
+	project := Project{client: m}
 	if err := parseJSON(res, &project); err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func (m *MinepkgAPI) CreateProject(p *Project) (*Project, error) {
 		return nil, err
 	}
 
-	project := Project{c: m}
+	project := Project{client: m}
 	if err := parseJSON(res, &project); err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (p *Project) CreateRelease(ctx context.Context, m *manifest.Manifest) (*Rel
 		Manifest:  m,
 		Published: m.Package.Type == manifest.TypeModpack,
 	}
-	res, err := p.c.postJSON(ctx, baseAPI+"/projects/"+m.Package.Name+"/releases", wrap)
+	res, err := p.client.postJSON(ctx, baseAPI+"/projects/"+m.Package.Name+"/releases", wrap)
 	if err != nil {
 		return nil, err
 	}
@@ -66,17 +66,16 @@ func (p *Project) CreateRelease(ctx context.Context, m *manifest.Manifest) (*Rel
 		return nil, err
 	}
 
-	release := Release{}
+	release := Release{client: p.client}
 	if err := parseJSON(res, &release); err != nil {
 		return nil, err
 	}
-	release.decorate(p.c)
 	return &release, nil
 }
 
 // GetReleases gets a all available releases for this project
 func (p *Project) GetReleases(ctx context.Context) ([]*Release, error) {
-	res, err := p.c.get(ctx, baseAPI+"/projects/"+p.Name+"/releases")
+	res, err := p.client.get(ctx, baseAPI+"/projects/"+p.Name+"/releases")
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +88,7 @@ func (p *Project) GetReleases(ctx context.Context) ([]*Release, error) {
 		return nil, err
 	}
 	for _, r := range releases {
-		r.decorate(p.c) // sets the private client field
+		r.client = p.client // sets the private client field
 	}
 
 	return releases, nil

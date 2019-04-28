@@ -34,7 +34,7 @@ type LoginData struct {
 
 // Project is a project … realy
 type Project struct {
-	c           *MinepkgAPI
+	client      *MinepkgAPI
 	Name        string `json:"name"`
 	Type        string `json:"type"`
 	Description string `json:"description,omitempty"`
@@ -43,7 +43,7 @@ type Project struct {
 
 // Release is a released version of a project
 type Release struct {
-	c            *MinepkgAPI
+	client       *MinepkgAPI
 	Project      string        `json:"Project"`
 	Version      string        `json:"version"`
 	Published    bool          `json:"published"`
@@ -66,7 +66,7 @@ type Requirements struct {
 
 // Dependency in verbose form
 type Dependency struct {
-	c *MinepkgAPI
+	client *MinepkgAPI
 	// Provider is only minepkg for now. Kept for future extensions
 	Provider string `json:"provider"`
 	// Name is the name of the package (eg. storage-drawers)

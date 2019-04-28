@@ -23,7 +23,7 @@ var ErrNotMatchingRelease = errors.New("No matching release found for this depen
 
 // Resolve tries to fetch a matching release to this dependency requirement
 func (d *Dependency) Resolve(ctx context.Context) (*Release, error) {
-	releases, err := d.c.GetReleaseList(ctx, d.Name)
+	releases, err := d.client.GetReleaseList(ctx, d.Name)
 	if err != nil {
 		return nil, err
 	}
