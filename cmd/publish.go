@@ -241,8 +241,6 @@ var publishCmd = &cobra.Command{
 			}
 		}
 
-		fmt.Printf("%+v\n", release)
-
 		// upload tha file
 		file, err := os.Open(jar)
 		if release, err = release.Upload(file); err != nil {
