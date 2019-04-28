@@ -39,16 +39,6 @@ Examples:
 `,
 }
 
-var refreshCmd = &cobra.Command{
-	Use:   "refresh",
-	Short: "Fetches all mods that are available",
-	Long: `minepkg uses a local db to resolve all dependencies. 
-When these become out of date, you should run this.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		refreshDb()
-	},
-}
-
 var completionCmd = &cobra.Command{
 	Use:   "completion",
 	Args:  cobra.MaximumNArgs(1),
@@ -104,7 +94,6 @@ func init() {
 	rootCmd.AddCommand(publishCmd)
 	rootCmd.AddCommand(buildCmd)
 	rootCmd.AddCommand(launchCmd)
-	rootCmd.AddCommand(refreshCmd)
 	rootCmd.AddCommand(completionCmd)
 	cobra.OnInitialize(initConfig)
 
