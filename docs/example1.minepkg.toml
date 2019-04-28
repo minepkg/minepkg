@@ -1,7 +1,7 @@
 # Specifies the format version
 # This field is REQUIRED
 # Implementers should refuse to work if required values are missing or invalid.
-version = 1
+manifestVersion = 0
 
 # A generic "package" section (Table) describes the mod or modpack. It also inditifies it by a unique name.
 [package]

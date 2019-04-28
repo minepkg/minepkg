@@ -16,10 +16,10 @@ func installManifest(instance *instances.McInstance) {
 	task.Step("📚", "Searching local mod DB.")
 	db := readDbOrDownload()
 
-	deps, err := instance.Manifest.FullDependencies()
-	if err != nil {
-		task.Fail("Failed to extend " + err.Error())
-	}
+	deps := &instance.Manifest.Dependencies
+	// if err != nil {
+	// 	task.Fail("Failed to extend " + err.Error())
+	// }
 
 	mods := make([]*curse.Mod, len(*deps))
 

@@ -23,6 +23,7 @@ var cfgFile string
 var logger *cmdlog.Logger = cmdlog.New()
 var globalDir = "/tmp"
 var apiClient = api.New()
+var loginData = &api.LoginData{}
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -82,11 +83,16 @@ func init() {
 
 	// check if user is logged in
 	if rawCreds, err := ioutil.ReadFile(filepath.Join(globalDir, "credentials.json")); err == nil {
-		creds := api.AuthResponse{}
-		json.Unmarshal(rawCreds, &creds)
+		if err := json.Unmarshal(rawCreds, &loginData); err == nil && loginData.Minepkg != nil {
+			apiClient.JWT = loginData.Minepkg.Token
+			apiClient.User = loginData.Minepkg.User
+		}
+	}
 
-		apiClient.JWT = creds.Token
-		apiClient.User = creds.User
+	token := os.Getenv("MINEPKG_API_TOKEN")
+	if token != "" {
+		apiClient.JWT = token
+		fmt.Println("Using MINEPKG_API_TOKEN for authentication")
 	}
 
 	// TODO: remove this after a few releases (fixes #61)
@@ -97,7 +103,7 @@ func init() {
 	rootCmd.AddCommand(installCmd)
 	rootCmd.AddCommand(publishCmd)
 	rootCmd.AddCommand(buildCmd)
-	// rootCmd.AddCommand(launchCmd)
+	rootCmd.AddCommand(launchCmd)
 	rootCmd.AddCommand(refreshCmd)
 	rootCmd.AddCommand(completionCmd)
 	cobra.OnInitialize(initConfig)

@@ -18,7 +18,7 @@ const newPackageTemplate = `
 # WARNING: This package might not work with future versions
 #   of minepkg and might need to be updated then.
 # This is a preview version of the minepkg.toml format!
-version = 0
+manifestVersion = 0
 
 [package]
 type = "modpack"
@@ -49,26 +49,25 @@ const (
 type Manifest struct {
 	// ManifestVersion specifies the format version
 	// This field is REQUIRED
-	ManifestVersion int `toml:"manifestVersion"`
+	ManifestVersion int `toml:"manifestVersion" json:"manifestVersion"`
 	Package         struct {
 		// Type should be one of `TypeMod` ("mod") or `TypeModpack` ("modpack")
-		Type string `toml:"type"`
+		Type string `toml:"type" json:"type"`
 		// Name is the name of the package. It may NOT include spaces. It may ONLY consist of
 		// alphanumeric chars but can also include `-` and `_`
 		// Should be unique. (This will be enforced by the minepkg api)
 		// This field is REQUIRED
-		Name        string `toml:"name"`
-		Description string `toml:"description"`
+		Name        string `toml:"name" json:"name"`
+		Description string `toml:"description" json:"description"`
 		// Version is the version number of this package. A preceeding `v` (like `v2.1.1`) should NOT
 		// be allowed for consistency
 		// The version may include prerelease information like `1.2.2-beta.0` or build
 		// related information `1.2.1+B7382-2018`.
 		// The version can be omited. In that case minepkg will try to use git tags
-		Version  string   `toml:"version,omitempty"`
-		Licence  string   `toml:"licence,omitempty"`
-		Provides []string `toml:"provides"`
-		Extends  []string `toml:"extends"`
-	} `toml:"package"`
+		Version  string   `toml:"version,omitempty" json:"version,omitempty"`
+		Licence  string   `toml:"licence,omitempty" json:"licence,omitempty"`
+		Provides []string `toml:"provides,omitempty" json:"provides,omitempty"`
+	} `toml:"package" json:"package"`
 	Requirements struct {
 		// Minecraft is a semver version string describing the required Minecraft version
 		// The Minecraft version is binding and implementers should not install
@@ -77,20 +76,20 @@ type Manifest struct {
 		// Plain version numbers just default to the `~` semver operator here. Allowing patches but not minor or major versions.
 		// So `1.12.0` and `~1.12.0` are equal
 		// This field is REQUIRED
-		Minecraft string `toml:"minecraft"`
+		Minecraft string `toml:"minecraft" json:"minecraft"`
 		// Forge is the minimum forge version required
 		// no semver here, because forge does not follow semver
-		Forge string `toml:"forge,omitempty"`
+		Forge string `toml:"forge,omitempty" json:"forge,omitempty"`
 		// Fabric  is a semver version string describing the required Fabric version
 		// Only one of `Forge` or `Fabric` may be used
-		Fabric string `toml:"fabric,omitempty"`
-	} `toml:"requirements"`
+		Fabric string `toml:"fabric,omitempty" json:"fabric,omitempty"`
+	} `toml:"requirements" json:"requirements"`
 	// Dependencies lists runtime dependencies of this package
-	Dependencies `toml:"dependencies"`
+	Dependencies `toml:"dependencies" json:"dependencies"`
 	// Hooks should help mod developers to ease publishing
 	Hooks struct {
-		Build string `toml:"build,omitempty"`
-	} `toml:"hooks"`
+		Build string `toml:"build,omitempty" json:"build,omitempty"`
+	} `toml:"hooks" json:"hooks"`
 }
 
 // Dependency defines a dependency that can be saved and installed from
@@ -123,48 +122,6 @@ func (d *Dependencies) Parsed() []ParsedDependency {
 	}
 
 	return parsed
-}
-
-// FullDependencies returns all dependencies including dependencies
-// specified in external toml files (Package.Extends)
-func (m *Manifest) FullDependencies() (*Dependencies, error) {
-
-	deps := Dependencies{}
-	// merge with local deps
-	for k, v := range m.Dependencies {
-		deps[k] = v
-	}
-	fetched := make(map[string]bool)
-
-	var resolve func(urls []string) error
-	resolve = func(urls []string) error {
-		for _, url := range urls {
-			_, ok := fetched[url]
-			if ok == true {
-				break
-			}
-			fetched[url] = true
-			m, err := fetchExtends(url)
-			if err != nil {
-				return err
-			}
-			// merge with deps
-			for k, v := range m.Dependencies {
-				deps[k] = v
-			}
-
-			// recursion – resolve its extends
-			resolve(m.Package.Extends)
-		}
-		return nil
-	}
-
-	err := resolve(m.Package.Extends)
-	if err != nil {
-		return nil, err
-	}
-
-	return &deps, nil
 }
 
 // AddDependency adds a new dependency to the manifest

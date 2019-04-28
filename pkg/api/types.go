@@ -26,6 +26,12 @@ type AuthResponse struct {
 	Token string `json:"token"`
 }
 
+// LoginData combines the minepkg token + data with the mojang tokens
+type LoginData struct {
+	Minepkg *AuthResponse
+	Mojang  *mojangAuthResponse
+}
+
 // Project is a project … realy
 type Project struct {
 	c           *MinepkgAPI
@@ -38,10 +44,16 @@ type Project struct {
 // Release is a released version of a project
 type Release struct {
 	c            *MinepkgAPI
-	Project      string          `json:"Project"`
-	Version      *semver.Version `json:"version"`
-	Requirements Requirements    `json:"requirements"`
-	Dependencies []*Dependency   `json:"dependencies"`
+	Project      string        `json:"Project"`
+	Version      string        `json:"version"`
+	Published    bool          `json:"published"`
+	Requirements Requirements  `json:"requirements"`
+	Dependencies []*Dependency `json:"dependencies"`
+}
+
+// SemverVersion returns the Version as a `semver.Version` struct
+func (r *Release) SemverVersion() *semver.Version {
+	return semver.MustParse(r.Version)
 }
 
 // Requirements contains the wanted Minecraft version

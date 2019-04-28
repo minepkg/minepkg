@@ -14,6 +14,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/fiws/minepkg/pkg/manifest"
 	"github.com/logrusorgru/aurora"
+	homedir "github.com/mitchellh/go-homedir"
 	strcase "github.com/stoewer/go-strcase"
 )
 
@@ -26,7 +27,9 @@ var (
 	// FlavourMMC is a minecraft instance initiated with MultiMC
 	FlavourMMC uint8 = 2
 	// FlavourServer is a server side instance
-	FlavourServer uint8 = 1
+	FlavourServer uint8 = 3
+	// FlavourMinepkg is the native minepkg instance
+	FlavourMinepkg uint8 = 4
 
 	// ErrorNoInstance is returned if no mc instance was found
 	ErrorNoInstance = errors.New("Could not find minecraft instance in this directory")
@@ -96,7 +99,11 @@ func (m *McInstance) Add(name string, r io.Reader) error {
 func DetectInstance() (*McInstance, error) {
 	entries, _ := ioutil.ReadDir("./")
 
-	modsDir := "mods"
+	dir, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	modsDir := filepath.Join(dir, "mods")
 
 	var flavour uint8
 	for _, entry := range entries {
@@ -111,6 +118,11 @@ func DetectInstance() (*McInstance, error) {
 		case "server.properties":
 			flavour = FlavourServer
 			break
+		case "minepkg.toml":
+			flavour = FlavourServer
+			home, _ := homedir.Dir()
+			dir = filepath.Join(home, ".minepkg")
+			break
 		}
 	}
 
@@ -118,15 +130,10 @@ func DetectInstance() (*McInstance, error) {
 		return nil, ErrorNoInstance
 	}
 
-	wd, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-
 	instance := &McInstance{
 		Flavour:       flavour,
 		ModsDirectory: modsDir,
-		Directory:     wd,
+		Directory:     dir,
 	}
 
 	err = instance.initManifest()

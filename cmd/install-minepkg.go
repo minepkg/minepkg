@@ -63,7 +63,7 @@ func installFromMinepkg(name string, instance *instances.McInstance) {
 	}
 
 	prompt := promptui.Prompt{
-		Label:     "Install " + project.Name + "@" + releases[0].Version.String(),
+		Label:     "Install " + project.Name + "@" + releases[0].Version,
 		IsConfirm: true,
 		Default:   "Y",
 	}
@@ -83,7 +83,7 @@ func installFromMinepkg(name string, instance *instances.McInstance) {
 	task.Step("🚚", "Downloading Packages")
 
 	for _, p := range res.Resolved {
-		task.Log("Downloading " + p.Project + "@" + p.Version.String())
+		task.Log("Downloading " + p.Project + "@" + p.Version)
 		err = instance.Download(p.Project+".jar", p.DownloadURL())
 		if err != nil {
 			logger.Fail(fmt.Sprintf("Could not download %s (%s)"+p.Project, err))

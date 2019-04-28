@@ -55,7 +55,7 @@ func NewWithClient(client *http.Client) *MinepkgAPI {
 // Login is a convinient method that uses username/password credentials
 // to fetche a token from Mojangs Authentication Server. It then uses (only) that token
 // to login to minepkg
-func (m *MinepkgAPI) Login(username string, password string) (*AuthResponse, error) {
+func (m *MinepkgAPI) Login(username string, password string) (*LoginData, error) {
 	payload := mojangLogin{
 		Agent:       mojangAgent{Name: "Minecraft", Version: 1},
 		Username:    username,
@@ -81,8 +81,15 @@ func (m *MinepkgAPI) Login(username string, password string) (*AuthResponse, err
 		return nil, err
 	}
 	// TODO: check all the stuff
+	minepkgLogin, err := m.MojangTokenLogin(authRes.AccessToken, authRes.ClientToken)
+	if err != nil {
+		return nil, err
+	}
 
-	return m.MojangTokenLogin(authRes.AccessToken, authRes.ClientToken)
+	return &LoginData{
+		Minepkg: minepkgLogin,
+		Mojang:  &authRes,
+	}, nil
 }
 
 // MojangLogin signs in using Mojang credentials
@@ -144,6 +151,24 @@ func (m *MinepkgAPI) MojangTokenLogin(accessToken string, clientToken string) (*
 	m.User = auth.User
 
 	return &auth, nil
+}
+
+// GetAccount gets the account information
+func (m *MinepkgAPI) GetAccount(ctx context.Context) (*User, error) {
+	res, err := m.get(ctx, baseAPI+"/account")
+	if err != nil {
+		return nil, err
+	}
+	if err := checkResponse(res); err != nil {
+		return nil, err
+	}
+
+	user := User{}
+	if err := parseJSON(res, &user); err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }
 
 // GetForgeVersions gets a single release from a project
@@ -221,6 +246,17 @@ func (m *MinepkgAPI) postJSON(ctx context.Context, url string, data interface{})
 
 func (m *MinepkgAPI) post(ctx context.Context, url string, body io.Reader) (*http.Response, error) {
 	req, err := http.NewRequest("POST", url, body)
+	req = req.WithContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	m.decorate(req)
+	return m.http.Do(req)
+}
+
+func (m *MinepkgAPI) put(ctx context.Context, url string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequest("PUT", url, body)
 	req = req.WithContext(ctx)
 	if err != nil {
 		return nil, err

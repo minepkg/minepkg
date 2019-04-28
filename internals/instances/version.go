@@ -3,6 +3,7 @@ package instances
 import (
 	"encoding/json"
 	"io/ioutil"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -17,7 +18,9 @@ var (
 // AvailableVersions returns all available versions sorted highest first
 // TODO: return error
 func (m *McInstance) AvailableVersions() semver.Collection {
-	entries, _ := ioutil.ReadDir("./versions")
+	path := filepath.Join(m.Directory, "versions")
+	entries, _ := ioutil.ReadDir(path)
+
 	versions := make(semver.Collection, len(entries))
 	for i, entry := range entries {
 		cleanedUp := strings.Split(entry.Name(), "-forge")[0] // just cut away forge version for now

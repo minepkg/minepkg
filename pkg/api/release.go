@@ -2,6 +2,8 @@ package api
 
 import (
 	"context"
+	"io"
+	"net/http"
 )
 
 func (r *Release) decorate(c *MinepkgAPI) {
@@ -13,7 +15,37 @@ func (r *Release) decorate(c *MinepkgAPI) {
 
 // DownloadURL returns the download url for this release
 func (r *Release) DownloadURL() string {
-	return baseAPI + "/projects/" + r.Project + "@" + r.Version.String() + "/download"
+	return baseAPI + "/projects/" + r.Project + "@" + r.Version + "/download"
+}
+
+// Upload uploads the jar or zipfile for a release
+func (r *Release) Upload(reader io.Reader) (*Release, error) {
+	// prepare request
+	m := r.c
+	req, err := http.NewRequest("POST", baseAPI+"/projects/"+r.Project+"@"+r.Version+"/upload", reader)
+	if err != nil {
+		return nil, err
+	}
+
+	m.decorate(req)
+	req.Header.Set("Content-Type", "application/java-archive")
+
+	// execute request and handle response
+	res, err := m.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkResponse(res); err != nil {
+		return nil, err
+	}
+
+	// parse body
+	release := Release{}
+	if err := parseJSON(res, &release); err != nil {
+		return nil, err
+	}
+
+	return &release, nil
 }
 
 // GetRelease gets a single release from a project

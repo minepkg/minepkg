@@ -38,7 +38,7 @@ func (d *Dependency) Resolve(ctx context.Context) (*Release, error) {
 	}
 
 	for _, r := range releases {
-		if semverReq.Check(r.Version) == true {
+		if semverReq.Check(r.SemverVersion()) == true {
 			return r, nil
 		}
 	}

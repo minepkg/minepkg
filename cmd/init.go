@@ -1,23 +1,24 @@
 package cmd
 
 import (
-	"github.com/logrusorgru/aurora"
-	"github.com/fiws/minepkg/pkg/api"
-	"context"
-	"github.com/BurntSushi/toml"
 	"bytes"
-	"github.com/fiws/minepkg/pkg/manifest"
-	"gopkg.in/src-d/go-git.v4"
-	"github.com/Masterminds/semver"
-	"path/filepath"
-	"fmt"
-	"github.com/stoewer/go-strcase"
+	"context"
 	"errors"
-	"strings"
-	"github.com/manifoldco/promptui"
-	"regexp"
+	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+
+	"github.com/BurntSushi/toml"
+	"github.com/Masterminds/semver"
+	"github.com/fiws/minepkg/pkg/api"
+	"github.com/fiws/minepkg/pkg/manifest"
+	"github.com/logrusorgru/aurora"
+	"github.com/manifoldco/promptui"
+	"github.com/stoewer/go-strcase"
+	"gopkg.in/src-d/go-git.v4"
 
 	"github.com/spf13/cobra"
 )
@@ -25,7 +26,7 @@ import (
 var projectName = regexp.MustCompile(`^([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])$`)
 
 var (
-	force bool
+	force  bool
 	loader string
 )
 
@@ -37,16 +38,15 @@ func init() {
 var initCmd = &cobra.Command{
 	Use:   "init [modpack/mod]",
 	Short: "Creates a new mod or modpack in the current directory. Can also generate a minepkg.toml for existing directories.",
-	Args: cobra.MaximumNArgs(1),
+	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		if _, err := ioutil.ReadFile("./minepkg.toml"); err == nil && force != true {
 			logger.Fail("This directory already contains a minepkg.toml. Use --force to overwrite it")
 		}
 
+		manifestType := manifest.TypeMod
 		if len(args) == 0 || args[0] == "" || args[0] == "modpack" {
-			logger.Info("Generating new modpack")
-			logger.Log("Use \"mingpkg init mod\" to initialize a mod instead")
-			logger.Fail("Not implemented yet")
+			manifestType = manifest.TypeModpack
 		}
 
 		man := manifest.Manifest{}
@@ -65,7 +65,7 @@ var initCmd = &cobra.Command{
 		// 	logger.Fail(err.Error())
 		// }
 		// emptyDir = len(files) == 0
-	
+
 		chForgeVersions := make(chan *api.ForgeVersionResponse)
 		go func(ch chan *api.ForgeVersionResponse) {
 			res, err := apiClient.GetForgeVersions(context.TODO())
@@ -82,9 +82,9 @@ var initCmd = &cobra.Command{
 		wd, _ := os.Getwd()
 
 		logger.Info("[package]")
-		man.Package.Type = manifest.TypeMod
+		man.Package.Type = manifestType
 		man.Package.Name = stringPrompt(&promptui.Prompt{
-			Label: "Name",
+			Label:   "Name",
 			Default: strcase.KebabCase(filepath.Base(wd)),
 			Validate: func(s string) error {
 				switch {
@@ -102,13 +102,13 @@ var initCmd = &cobra.Command{
 		})
 
 		man.Package.Description = stringPrompt(&promptui.Prompt{
-			Label: "Description",
+			Label:   "Description",
 			Default: "",
 		})
-	
+
 		// TODO: maybe check local "LICENCE" file for popular licences
 		man.Package.Licence = stringPrompt(&promptui.Prompt{
-			Label: "Licence",
+			Label:   "Licence",
 			Default: "MIT",
 		})
 
@@ -116,7 +116,7 @@ var initCmd = &cobra.Command{
 		if gitRepo == false {
 			logger.Info("You can use git tags for versioning if you want: just submit an empty version")
 			man.Package.Version = stringPrompt(&promptui.Prompt{
-				Label: "Version",
+				Label:   "Version",
 				Default: "1.0.0",
 				Validate: func(s string) error {
 					switch {
@@ -135,24 +135,24 @@ var initCmd = &cobra.Command{
 			})
 		} else {
 			logger.Info(
-				aurora.Gray("Version:").String() + 
-				" [Using git tags]" +
-				aurora.Gray(" (see \"minepkg help manifest\")").String())
+				aurora.Gray("Version:").String() +
+					" [Using git tags]" +
+					aurora.Gray(" (see \"minepkg help manifest\")").String())
 		}
-		
+
 		fmt.Println("")
 		logger.Info("[requirements]")
 
 		if loader == "forge" {
-			forgeReleases := <- chForgeVersions
+			forgeReleases := <-chForgeVersions
 			man.Requirements.Forge = stringPrompt(&promptui.Prompt{
-				Label: "Minimum Forge version",
+				Label:   "Minimum Forge version",
 				Default: forgeReleases.Versions[0].Version,
 				// TODO: validation
 			})
 
 			man.Requirements.Minecraft = stringPrompt(&promptui.Prompt{
-				Label: "Supported Minecraft version",
+				Label:   "Supported Minecraft version",
 				Default: forgeReleases.Versions[0].McVersion,
 				// TODO: validation
 			})
@@ -162,28 +162,30 @@ var initCmd = &cobra.Command{
 				// TODO: validation
 			})
 			man.Requirements.Minecraft = stringPrompt(&promptui.Prompt{
-				Label: "Supported Minecraft version",
+				Label:   "Supported Minecraft version",
 				Default: "1.14.x",
 				// TODO: validation
 			})
 		}
 
-		
-		files, err := ioutil.ReadDir("./")
-		if err != nil {
-			logger.Fail(err.Error())
-		}
-		for _, f := range files {
-			if f.Name() == "gradlew" {
-				fmt.Println("")
-				logger.Info("[hooks]")
-				useHook := boolPrompt(&promptui.Prompt{
-					Label: "Do you want to use \"./gradlew build\" as you build hook",
-					Default: "Y",
-					IsConfirm: true,
-				})
-				if useHook == true {
-					man.Hooks.Build = "./gradlew build"
+		// generate hooks section for mods
+		if manifestType == manifest.TypeMod {
+			files, err := ioutil.ReadDir("./")
+			if err != nil {
+				logger.Fail(err.Error())
+			}
+			for _, f := range files {
+				if f.Name() == "gradlew" {
+					fmt.Println("")
+					logger.Info("[hooks]")
+					useHook := boolPrompt(&promptui.Prompt{
+						Label:     "Do you want to use \"./gradlew build\" as you build hook",
+						Default:   "Y",
+						IsConfirm: true,
+					})
+					if useHook == true {
+						man.Hooks.Build = "./gradlew build"
+					}
 				}
 			}
 		}

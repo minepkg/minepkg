@@ -3,6 +3,7 @@ package cmd
 import (
 	"bufio"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"runtime"
 	"time"
@@ -46,6 +47,7 @@ var buildCmd = &cobra.Command{
 		}
 
 		build := exec.Command("sh", []string{"-c", buildScript}...)
+		build.Env = os.Environ()
 		// TODO: test this … weird thing
 		if runtime.GOOS == "windows" {
 			build = exec.Command("cmd", []string{"/C", buildScript}...)

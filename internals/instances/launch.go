@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
+	homedir "github.com/mitchellh/go-homedir"
 )
 
 var (
@@ -24,8 +25,14 @@ var (
 
 // Launch starts the minecraft instance
 func (m *McInstance) Launch() error {
-	if m.Flavour != FlavourVanilla {
-		return ErrorLaunchNotImplemented
+	// if m.Flavour != FlavourVanilla {
+	// 	return ErrorLaunchNotImplemented
+	// }
+	home, _ := homedir.Dir()
+	globalDir := filepath.Join(home, ".minepkg")
+	cwd, err := os.Getwd()
+	if err != nil {
+		panic(err)
 	}
 
 	// get the latest compatible version to our minepkg requirement
@@ -54,7 +61,7 @@ func (m *McInstance) Launch() error {
 		return err
 	}
 	defer os.RemoveAll(tmpDir) // cleanup dir
-	libDir := filepath.Join(m.Directory, "libraries")
+	libDir := filepath.Join(globalDir, "libraries")
 
 	// build that spooky -cp arg
 	// TODO: use rules! some libs have to be excluded on osx
@@ -90,16 +97,26 @@ func (m *McInstance) Launch() error {
 			}
 		}
 		// not skipped. append this library to our doom -cp arg
-		cpArgs = append(cpArgs, filepath.Join(libDir, lib.Downloads.Artifact.Path))
+		libPath := lib.Downloads.Artifact.Path
+		if libPath == "" {
+			grouped := strings.Split(lib.Name, ":")
+			basePath := filepath.Join(strings.Split(grouped[0], ".")...)
+			name := grouped[1]
+			version := grouped[2]
+
+			libPath = filepath.Join(basePath, name, version, name+"-"+version+".jar")
+			fmt.Println(libPath)
+		}
+		cpArgs = append(cpArgs, filepath.Join(libDir, libPath))
 	}
 	// finally append the minecraft.jar
-	mcJar := filepath.Join(m.Directory, "versions", version, version+".jar")
+	mcJar := filepath.Join(globalDir, "versions", version, version+".jar")
 	cpArgs = append(cpArgs, mcJar)
 
 	replacer := strings.NewReplacer(
 		v("auth_player_name"), profile.Profiles[profileID].DisplayName,
 		v("version_name"), version,
-		v("game_directory"), m.Directory,
+		v("game_directory"), cwd,
 		v("assets_root"), filepath.Join(m.Directory, "assets"),
 		v("assets_index_name"), instr.Assets, // asset index version
 		v("auth_uuid"), profiles.SelectedUser.Profile, // profile id

@@ -50,11 +50,6 @@ var installCmd = &cobra.Command{
 				projectname := firstArg[42:] // url minus first bits (just the name)
 				installFromCurse(projectname, instance)
 				return
-
-			// looks like a source zip file. install from source
-			case strings.HasSuffix(firstArg, ".zip"):
-				installFromSource(args[0], instance)
-				return
 			}
 			logger.Fail("Sorry. Don't know what to do with that url")
 		}

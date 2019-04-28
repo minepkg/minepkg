@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -30,19 +31,21 @@ import (
 )
 
 // doomRegex: (\d+\.\d+\.\d-)?(\d+\.\d+\.\d)(.+)?
-var semverDoom = regexp.MustCompile(`(\d+\.\d+\.\d-)?(\d+\.\d+\.\d)(.+)?`)
+var semverDoom = regexp.MustCompile(`(\d+\.\d+\.\d+-)?(\d+\.\d+\.\d+)(.+)?`)
 var apiURL = "https://test-api.minepkg.io/v1"
 
 var (
 	dry            bool
 	skipBuild      bool
 	nonInteractive bool
+	release        string
 )
 
 func init() {
 	publishCmd.Flags().BoolVarP(&dry, "dry", "", false, "Dry run without publishing")
 	publishCmd.Flags().BoolVarP(&skipBuild, "skip-build", "", false, "Skips building the package")
 	publishCmd.Flags().BoolVarP(&nonInteractive, "non-interactive", "y", false, "Answers all interactive questions with the default")
+	publishCmd.Flags().StringVarP(&release, "release", "r", "", "The release version number to publish")
 }
 
 var publishCmd = &cobra.Command{
@@ -77,6 +80,11 @@ var publishCmd = &cobra.Command{
 			logger.Fail("Your minepkg.toml is missing either forge or fabric in [requirements]")
 		}
 
+		// buf, err := json.Marshal(m)
+		// if err != nil {
+		// 	logger.Fail("Could not convert your minepkg.toml manifest to JSON")
+		// }
+
 		if m.Package.Type != manifest.TypeMod {
 			logger.Fail("Only mod can be published (for now)")
 		}
@@ -94,7 +102,7 @@ var publishCmd = &cobra.Command{
 		logger.Log("Checking access rights")
 		timeout, cancel := context.WithTimeout(context.Background(), time.Second*5)
 		defer cancel()
-		_, err = apiClient.GetProject(timeout, m.Package.Name)
+		project, err := apiClient.GetProject(timeout, m.Package.Name)
 
 		if err == api.ErrorNotFound {
 			if nonInteractive != true {
@@ -109,7 +117,7 @@ var publishCmd = &cobra.Command{
 				}
 			}
 			readme, _ := getReadme()
-			project, err := apiClient.CreateProject(&api.Project{
+			project, err = apiClient.CreateProject(&api.Project{
 				Name:   m.Package.Name,
 				Type:   m.Package.Type,
 				Readme: readme,
@@ -130,6 +138,9 @@ var publishCmd = &cobra.Command{
 
 		tasks.Log("Determening version to publish")
 		switch {
+		case release != "":
+			tasks.Log("Using supplied release version number")
+			m.Package.Version = release
 		case m.Package.Version != "":
 			tasks.Log("Using version number in minepkg.toml")
 		default:
@@ -158,16 +169,15 @@ var publishCmd = &cobra.Command{
 
 		// check if version exists
 		logger.Log("Checking if release exists")
-		{
-			_, err := apiClient.GetRelease(context.TODO(), m.Package.Name, m.Package.Version)
 
-			switch {
-			case err == nil:
-				logger.Fail("Release already exists!")
-			case err != nil && err != api.ErrorNotFound:
-				// unknown error
-				logger.Fail(err.Error())
-			}
+		release, err := apiClient.GetRelease(context.TODO(), m.Package.Name, m.Package.Version)
+
+		switch {
+		case err == nil && release.Published != false:
+			logger.Fail("Release already published!")
+		case err != nil && err != api.ErrorNotFound:
+			// unknown error
+			logger.Fail(err.Error())
 		}
 
 		tasks.Step("🏗", "Building")
@@ -182,32 +192,29 @@ var publishCmd = &cobra.Command{
 				tasks.Log("Using default build step (gradle --build-cache build)")
 			}
 
-			// TODO: I don't think this i multi platform
+			// TODO: I don't think this is multi platform
 			build := exec.Command("sh", []string{"-c", buildScript}...)
-			// TODO: stderr !!!
-			bStdout, _ := build.StdoutPipe()
-			scanner := bufio.NewScanner(bStdout)
+			build.Env = os.Environ()
 
-			s := spinner.New(spinner.CharSets[9], 100*time.Millisecond) // Build our new spinner
-			s.Prefix = " "
-			s.Start()
-			s.Suffix = " [no build output yet]"
+			if nonInteractive == true {
+				terminalOutput(build)
+			}
+
+			var spinner func()
+			if nonInteractive != true {
+				spinner = spinnerOutput(build)
+			}
 
 			startTime := time.Now()
 			build.Start()
+			spinner()
 
-			maxTextWidth := terminalWidth() - 4 // spinner + spaces
-			for scanner.Scan() {
-				s.Suffix = " " + truncateString(scanner.Text(), maxTextWidth)
-			}
-			bStdout.Close()
 			err = build.Wait()
 			if err != nil {
 				// TODO: output logs or something
+				fmt.Println(err)
 				logger.Fail("Build step failed. Aborting")
 			}
-			s.Suffix = ""
-			s.Stop()
 
 			logger.Info(" ✓ Finished build in " + time.Now().Sub(startTime).String())
 		} else {
@@ -219,30 +226,6 @@ var publishCmd = &cobra.Command{
 		jar := findJar()
 
 		logger.Info("Using " + jar)
-		logger.Log("Checking for embedded minepkg.toml")
-		r, err := zip.OpenReader(jar)
-		if err != nil {
-			logger.Fail("Broken jar file: " + err.Error())
-		}
-		defer r.Close()
-
-		// Iterate through the files in the archive,
-		hasManifest := false
-		for _, f := range r.File {
-			if f.Name == "minepkg.toml" {
-				hasManifest = true
-				break
-			}
-		}
-
-		if hasManifest != true {
-			logger.Info("package is missing minepkg.toml. Injecting it")
-			err := injectManifest(r, &m)
-			if err != nil {
-				logger.Fail("Inject failed: " + err.Error())
-			}
-		}
-
 		tasks.Step("☁", "Uploading package")
 
 		if dry == true {
@@ -250,14 +233,50 @@ var publishCmd = &cobra.Command{
 			os.Exit(0)
 		}
 
+		if release == nil {
+			logger.Info("Creating release")
+			release, err = project.CreateRelease(context.TODO(), &m)
+			if err != nil {
+				logger.Fail(err.Error())
+			}
+		}
+
+		fmt.Printf("%+v\n", release)
+
 		// upload tha file
-		file, err := os.Open("tmp-minepkg-package.jar")
-		if _, err = apiClient.PutRelease(m.Package.Name, m.Package.Version, file); err != nil {
+		file, err := os.Open(jar)
+		if release, err = release.Upload(file); err != nil {
 			logger.Fail(err.Error())
 		}
 
-		logger.Info(" ✓ Released " + m.Package.Version)
+		logger.Info(" ✓ Released " + release.Version)
 	},
+}
+
+func spinnerOutput(build *exec.Cmd) func() {
+	stdout, _ := build.StdoutPipe()
+	scanner := bufio.NewScanner(stdout)
+	// TODO: stderr!!
+
+	return func() {
+		s := spinner.New(spinner.CharSets[9], 100*time.Millisecond) // Build our new spinner
+		s.Prefix = " "
+		s.Start()
+		s.Suffix = " [no build output yet]"
+
+		maxTextWidth := terminalWidth() - 4 // spinner + spaces
+		for scanner.Scan() {
+			s.Suffix = " " + truncateString(scanner.Text(), maxTextWidth)
+		}
+		stdout.Close()
+		s.Suffix = ""
+		s.Stop()
+	}
+}
+
+func terminalOutput(b *exec.Cmd) {
+	b.Stderr = os.Stderr
+	b.Stdout = os.Stdout
 }
 
 func injectManifest(r *zip.ReadCloser, m *manifest.Manifest) error {
@@ -302,10 +321,13 @@ func versionFromTag(ref *plumbing.Reference) string {
 
 	var version string
 	matches := semverDoom.FindStringSubmatch(tagName)
-	switch len(matches) {
-	case 3:
+
+	switch {
+	case len(matches) == 0:
+		return version
+	case matches[2] != "" && matches[3] == "":
 		version = matches[2]
-	case 4:
+	case matches[2] != "" && matches[3] != "":
 		version = matches[2] + "+" + matches[3][1:]
 	}
 	return version
