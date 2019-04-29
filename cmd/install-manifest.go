@@ -3,60 +3,28 @@ package cmd
 import (
 	"fmt"
 	"github.com/fiws/minepkg/internals/instances"
-	"os"
 )
 
 // installManifest installs dependencies from the minepkg.toml
 func installManifest(instance *instances.McInstance) {
-	// task := logger.NewTask(3)
 
-	fmt.Println("installing manifest is broken right now :(")
-	os.Exit(1)
+	task := logger.NewTask(2)
 
-	// task.Step("📚", "Searching local mod DB.")
-	// db := readDbOrDownload()
+	task.Info("Installing minepkg.toml dependencies")
 
-	// deps := &instance.Manifest.Dependencies
-	// // if err != nil {
-	// // 	task.Fail("Failed to extend " + err.Error())
-	// // }
+	task.Step("🔎", "Resolving Dependencies")
+	res := NewResolver()
+	res.ResolveManifest(instance.Manifest)
 
-	// mods := make([]*curse.Mod, len(*deps))
+	// logger.Info("The following Dependencies will be downloaded:")
+	// logger.Info(strings.Join())
+	task.Step("🚚", "Downloading Packages")
 
-	// i := 0
-	// for name := range *deps {
-	// 	resolved := db.modBySlug(name)
-	// 	if resolved == nil {
-	// 		task.Fail("Could not resolve " + name)
-	// 	}
-	// 	mods[i] = resolved
-	// 	i++
-	// }
-
-	// task.Step("🔎", "Resolving Dependencies")
-	// resolver := curse.NewResolver()
-
-	// s := spinner.New(spinner.CharSets[9], 100*time.Millisecond) // Build our new spinner
-	// s.Prefix = "  "
-	// s.Start()
-	// for _, mod := range mods {
-	// 	s.Suffix = "  Resolving " + mod.Slug
-	// 	resolver.Resolve(mod.ID, instance.Manifest.Requirements.Minecraft)
-	// }
-	// s.Stop()
-	// resolved := resolver.Resolved
-
-	// for _, mod := range resolved {
-	// 	task.Log(fmt.Sprintf("requires %s", mod.FileName))
-	// }
-
-	// task.Step("🚚", "Downloading Mods")
-
-	// for _, mod := range resolved {
-	// 	err := instance.Download(mod.FileName, mod.DownloadURL)
-	// 	if err != nil {
-	// 		logger.Fail(fmt.Sprintf("Could not download %s (%s)"+mod.FileName, err))
-	// 	}
-	// 	task.Log(fmt.Sprintf("downloaded %s", mod.FileName))
-	// }
+	for _, p := range res.Resolved {
+		task.Log("Downloading " + p.Project + "@" + p.Version)
+		err := instance.Download(p.Project+".jar", p.DownloadURL())
+		if err != nil {
+			logger.Fail(fmt.Sprintf("Could not download %s (%s)"+p.Project, err))
+		}
+	}
 }

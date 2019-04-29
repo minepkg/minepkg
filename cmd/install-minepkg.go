@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/fiws/minepkg/pkg/manifest"
 	"os"
 
 	"github.com/fiws/minepkg/pkg/api"
@@ -21,9 +22,31 @@ func NewResolver() *Resolver {
 	return &Resolver{Resolved: make(map[string]*api.Release)}
 }
 
+// ResolveManifest resolves a manifest
+func (r *Resolver) ResolveManifest(man *manifest.Manifest) error {
+
+	// TODO: USE VERSION!
+	for name := range man.Dependencies {
+		releases, _ := apiClient.GetReleaseList(context.TODO(), name)
+		r.ResolveSingle(releases[0])
+	}
+
+	return nil
+}
+
 // Resolve find all dependencies from the given `id`
 // and adds it to the `resolved` map. Nothing is returned
-func (r *Resolver) Resolve(release *api.Release) error {
+func (r *Resolver) Resolve(releases []*api.Release) error {
+	for _, release := range releases {
+		r.ResolveSingle(release)
+	}
+
+	return nil
+}
+
+// ResolveSingle resolves all dependencies of a single release
+func (r *Resolver) ResolveSingle(release *api.Release) error {
+
 	r.Resolved[release.Project] = release
 	// TODO: parallelize
 	for _, d := range release.Dependencies {
@@ -32,11 +55,11 @@ func (r *Resolver) Resolve(release *api.Release) error {
 			return nil
 		}
 		r.Resolved[d.Name] = nil
-		res, err := d.Resolve(context.TODO())
+		release, err := d.Resolve(context.TODO())
 		if err != nil {
 			return err
 		}
-		r.Resolve(res)
+		r.ResolveSingle(release)
 	}
 
 	return nil
@@ -55,7 +78,6 @@ func installFromMinepkg(name string, instance *instances.McInstance) {
 
 	// choosenMod := chooseMod(mods, task)
 	project := apiClient.Project(name)
-
 	releases, _ := project.GetReleases(context.TODO())
 
 	if len(releases) == 0 {
@@ -74,9 +96,13 @@ func installFromMinepkg(name string, instance *instances.McInstance) {
 		os.Exit(0)
 	}
 
+	// TODO: real resolve logic!
+	release := releases[0]
+
 	task.Step("🔎", "Resolving Dependencies")
 	res := NewResolver()
-	res.Resolve(releases[0])
+	res.ResolveSingle(release)
+	instance.Manifest.AddDependency(release.Project, release.Version)
 
 	// logger.Info("The following Dependencies will be downloaded:")
 	// logger.Info(strings.Join())
@@ -89,7 +115,8 @@ func installFromMinepkg(name string, instance *instances.McInstance) {
 			logger.Fail(fmt.Sprintf("Could not download %s (%s)"+p.Project, err))
 		}
 	}
-	fmt.Println("done! :)")
+	instance.Manifest.Save()
+	fmt.Println("updated minepkg.toml")
 
 }
 

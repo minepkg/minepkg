@@ -4,11 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
-	"strings"
 
 	"github.com/BurntSushi/toml"
 )
@@ -102,35 +99,12 @@ type Dependency interface {
 // Dependencies are the dependencies of a mod or modpack
 type Dependencies map[string]string
 
-// ParsedDependency is returned by `Parsed` to make installing
-// Dependencies easier
-type ParsedDependency struct {
-	Provider string
-	Target   string
-	Meta     string
-}
-
-// Parsed returns a `ParsedDependency` slice including all dependencies
-func (d *Dependencies) Parsed() []ParsedDependency {
-	parsed := make([]ParsedDependency, len(*d))
-
-	i := 0
-	for _, dep := range *d {
-		splited := strings.SplitN(dep, ":", 1)
-		parsed[i] = ParsedDependency{Provider: splited[0], Target: splited[1]}
-		i++
-	}
-
-	return parsed
-}
-
 // AddDependency adds a new dependency to the manifest
-func (m *Manifest) AddDependency(d Dependency) {
+func (m *Manifest) AddDependency(name string, version string) {
 	if m.Dependencies == nil {
-		fmt.Println("[dependencies] was not initialized. This should not happen. Please report this")
 		m.Dependencies = make(map[string]string)
 	}
-	m.Dependencies[d.Identifier()] = d.String()
+	m.Dependencies[name] = version
 }
 
 // Save saves the manifest to disk
@@ -164,32 +138,4 @@ func New() *Manifest {
 	manifest := Manifest{}
 	toml.Decode(newPackageTemplate, &manifest)
 	return &manifest
-}
-
-// ResolvedMod is a mod that can be downloaded
-type ResolvedMod struct {
-	Slug        string
-	DownloadURL string
-	FileName    string
-}
-
-// LocalName returns the name that should be used on disk
-func (r *ResolvedMod) LocalName() string {
-	if strings.HasSuffix(r.FileName, ".jar") {
-		return r.FileName
-	}
-
-	return r.FileName + ".jar"
-}
-
-func fetchExtends(url string) (*Manifest, error) {
-	res, err := http.Get(url)
-	b, err := ioutil.ReadAll(res.Body)
-
-	m := Manifest{}
-	err = toml.Unmarshal(b, &m)
-	if err != nil {
-		return nil, err
-	}
-	return &m, nil
 }
