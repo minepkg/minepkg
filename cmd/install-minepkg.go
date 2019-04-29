@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/fiws/minepkg/pkg/manifest"
 	"os"
+	"strings"
 
 	"github.com/fiws/minepkg/pkg/api"
 
@@ -25,10 +26,12 @@ func NewResolver() *Resolver {
 // ResolveManifest resolves a manifest
 func (r *Resolver) ResolveManifest(man *manifest.Manifest) error {
 
-	// TODO: USE VERSION!
-	for name := range man.Dependencies {
-		releases, _ := apiClient.GetReleaseList(context.TODO(), name)
-		r.ResolveSingle(releases[0])
+	for name, version := range man.Dependencies {
+		release, err := apiClient.FindRelease(context.TODO(), name, version)
+		if err != nil {
+			return err
+		}
+		r.ResolveSingle(release)
 	}
 
 	return nil
@@ -77,15 +80,22 @@ func installFromMinepkg(name string, instance *instances.McInstance) {
 	// })
 
 	// choosenMod := chooseMod(mods, task)
-	project := apiClient.Project(name)
-	releases, _ := project.GetReleases(context.TODO())
 
-	if len(releases) == 0 {
-		panic("This project has no releases.")
+	comp := strings.Split(name, "@")
+	name = comp[0]
+	version := "latest"
+	if len(comp) == 2 {
+		version = comp[1]
+	}
+	release, _ := apiClient.FindRelease(context.TODO(), name, version)
+
+	if release == nil {
+		logger.Info("Could not find package " + name + "@" + version)
+		os.Exit(1)
 	}
 
 	prompt := promptui.Prompt{
-		Label:     "Install " + project.Name + "@" + releases[0].Version,
+		Label:     "Install " + name + "@" + release.Version,
 		IsConfirm: true,
 		Default:   "Y",
 	}
@@ -95,9 +105,6 @@ func installFromMinepkg(name string, instance *instances.McInstance) {
 		logger.Info("Aborting installation")
 		os.Exit(0)
 	}
-
-	// TODO: real resolve logic!
-	release := releases[0]
 
 	task.Step("🔎", "Resolving Dependencies")
 	res := NewResolver()

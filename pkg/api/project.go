@@ -88,7 +88,7 @@ func (p *Project) GetReleases(ctx context.Context) ([]*Release, error) {
 		return nil, err
 	}
 	for _, r := range releases {
-		r.client = p.client // sets the private client field
+		r.decorate(p.client) // sets the private client field
 	}
 
 	return releases, nil

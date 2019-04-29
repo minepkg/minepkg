@@ -2,9 +2,14 @@ package api
 
 import (
 	"context"
+	"errors"
+	"github.com/Masterminds/semver"
 	"io"
 	"net/http"
 )
+
+// ErrNotMatchingRelease gets returned if no matching release was found
+var ErrNotMatchingRelease = errors.New("No matching release found for this dependency")
 
 func (r *Release) decorate(c *MinepkgAPI) {
 	r.client = c
@@ -71,4 +76,31 @@ func (m *MinepkgAPI) GetRelease(ctx context.Context, project string, version str
 func (m *MinepkgAPI) GetReleaseList(ctx context.Context, project string) ([]*Release, error) {
 	p := Project{client: m, Name: project}
 	return p.GetReleases(ctx)
+}
+
+// FindRelease gets the latest release matching the versionRequirement (can be "latest" or a semver requirement)
+func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, versionRequirement string) (*Release, error) {
+	p := Project{client: m, Name: project}
+	releases, err := p.GetReleases(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if versionRequirement == "latest" || versionRequirement == "*" {
+		return releases[0], nil
+	}
+
+	semverReq, err := semver.NewConstraint(versionRequirement)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, r := range releases {
+		if semverReq.Check(r.SemverVersion()) == true {
+			return r, nil
+		}
+	}
+
+	// found nothing
+	return nil, ErrNotMatchingRelease
 }
