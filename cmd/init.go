@@ -107,8 +107,8 @@ var initCmd = &cobra.Command{
 		})
 
 		// TODO: maybe check local "LICENCE" file for popular licences
-		man.Package.Licence = stringPrompt(&promptui.Prompt{
-			Label:   "Licence",
+		man.Package.License = stringPrompt(&promptui.Prompt{
+			Label:   "License",
 			Default: "MIT",
 		})
 
