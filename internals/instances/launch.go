@@ -22,6 +22,8 @@ import (
 var (
 	// ErrorLaunchNotImplemented is returned if attemting to start a non vanilla instance
 	ErrorLaunchNotImplemented = errors.New("Can only launch vanilla instances (for now)")
+	// ErrorNoCredentials is returned when an instance is launched without `MojangProfile` beeing set
+	ErrorNoCredentials = errors.New("Can not launch without mojang credentials")
 )
 
 // Launch starts the minecraft instance
@@ -53,14 +55,12 @@ func (m *McInstance) Launch() error {
 		instr.MergeWith(parent)
 	}
 
-	// here we snack the login info from .minecraft
-	profiles, err := m.getProfiles()
-	if err != nil {
-		return err
+	creds := m.MojangCredentials
+	profile := creds.SelectedProfile
+	if profile == nil {
+		return ErrorNoCredentials
 	}
 
-	profile := profiles.lastDbEntry()
-	profileID := profiles.SelectedUser.Profile
 	tmpName := m.Manifest.Package.Name + fmt.Sprintf("%d", time.Now().Unix())
 	tmpDir, err := ioutil.TempDir("", tmpName)
 	if err != nil {
@@ -137,13 +137,13 @@ func (m *McInstance) Launch() error {
 	cpArgs = append(cpArgs, mcJar)
 
 	replacer := strings.NewReplacer(
-		v("auth_player_name"), profile.Profiles[profileID].DisplayName,
+		v("auth_player_name"), profile.Name,
 		v("version_name"), version,
 		v("game_directory"), cwd,
 		v("assets_root"), filepath.Join(m.Directory, "assets"),
 		v("assets_index_name"), instr.Assets, // asset index version
-		v("auth_uuid"), profiles.SelectedUser.Profile, // profile id
-		v("auth_access_token"), profile.AccessToken,
+		v("auth_uuid"), profile.ID, // profile id
+		v("auth_access_token"), creds.AccessToken,
 		v("user_type"), "mojang", // unsure about this one (legacy mc login flag?)
 		v("version_type"), instr.Type, // release / snapshot … etc
 	)

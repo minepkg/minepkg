@@ -23,13 +23,14 @@ type AuthResponse struct {
 	// User contains the account data like name or email
 	User *User `json:"user"`
 	// Token is a jwt token
-	Token string `json:"token"`
+	Token  string `json:"token"`
+	Mojang *MojangAuthResponse
 }
 
 // LoginData combines the minepkg token + data with the mojang tokens
 type LoginData struct {
 	Minepkg *AuthResponse
-	Mojang  *mojangAuthResponse
+	Mojang  *MojangAuthResponse
 }
 
 // Project is a project … realy
@@ -119,9 +120,25 @@ type mojangLogin struct {
 	RequestUser bool        `json:"requestUser"`
 }
 
-type mojangAuthResponse struct {
-	ClientToken string `json:"clientToken"`
-	AccessToken string `json:"accessToken"`
+// MojangAuthResponse is the response returned by a succefully mojang login
+type MojangAuthResponse struct {
+	AccessToken     string         `json:"accessToken"`
+	ClientToken     string         `json:"clientToken"`
+	SelectedProfile *MojangProfile `json:"selectedProfile"`
+}
+
+// MojangProfile is a profile that potentially can be used to launch minecraft
+type MojangProfile struct {
+	Agent         string `json:"agent"`
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	UserID        string `json:"userId"`
+	TokenID       string `json:"tokenId"`
+	CreatedAt     int    `json:"createdAt"`
+	LegacyProfile bool   `json:"legacyProfile"`
+	Suspended     bool   `json:"suspended"`
+	Paid          bool   `json:"paid"`
+	Migrated      bool   `json:"migrated"`
 }
 
 type mojangError struct {

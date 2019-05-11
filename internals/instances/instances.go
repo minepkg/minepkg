@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/fiws/minepkg/pkg/api"
 	"github.com/fiws/minepkg/pkg/manifest"
 	"github.com/logrusorgru/aurora"
 	homedir "github.com/mitchellh/go-homedir"
@@ -39,10 +40,11 @@ var (
 
 // McInstance describes a locally installed minecraft instance
 type McInstance struct {
-	Flavour       uint8
-	Directory     string
-	ModsDirectory string
-	Manifest      *manifest.Manifest
+	Flavour           uint8
+	Directory         string
+	ModsDirectory     string
+	Manifest          *manifest.Manifest
+	MojangCredentials *api.MojangAuthResponse
 }
 
 // Desc returns a one-liner summary of this instance

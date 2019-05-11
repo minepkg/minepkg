@@ -23,7 +23,7 @@ var cfgFile string
 var logger *cmdlog.Logger = cmdlog.New()
 var globalDir = "/tmp"
 var apiClient = api.New()
-var loginData = &api.LoginData{}
+var loginData = &api.AuthResponse{}
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -73,9 +73,9 @@ func init() {
 
 	// check if user is logged in
 	if rawCreds, err := ioutil.ReadFile(filepath.Join(globalDir, "credentials.json")); err == nil {
-		if err := json.Unmarshal(rawCreds, &loginData); err == nil && loginData.Minepkg != nil {
-			apiClient.JWT = loginData.Minepkg.Token
-			apiClient.User = loginData.Minepkg.User
+		if err := json.Unmarshal(rawCreds, &loginData); err == nil && loginData.Token != "" {
+			apiClient.JWT = loginData.Token
+			apiClient.User = loginData.User
 		}
 	}
 

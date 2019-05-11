@@ -53,9 +53,9 @@ func NewWithClient(client *http.Client) *MinepkgAPI {
 }
 
 // Login is a convinient method that uses username/password credentials
-// to fetche a token from Mojangs Authentication Server. It then uses (only) that token
+// to fetch a token from Mojangs Authentication Server. It then uses (only) that token
 // to login to minepkg
-func (m *MinepkgAPI) Login(username string, password string) (*LoginData, error) {
+func (m *MinepkgAPI) Login(username string, password string) (*AuthResponse, error) {
 	payload := mojangLogin{
 		Agent:       mojangAgent{Name: "Minecraft", Version: 1},
 		Username:    username,
@@ -76,20 +76,18 @@ func (m *MinepkgAPI) Login(username string, password string) (*LoginData, error)
 		return nil, mojangErr
 	}
 
-	authRes := mojangAuthResponse{}
+	authRes := MojangAuthResponse{}
 	if err := parseJSON(res, &authRes); err != nil {
 		return nil, err
 	}
+
 	// TODO: check all the stuff
 	minepkgLogin, err := m.MojangTokenLogin(authRes.AccessToken, authRes.ClientToken)
 	if err != nil {
 		return nil, err
 	}
 
-	return &LoginData{
-		Minepkg: minepkgLogin,
-		Mojang:  &authRes,
-	}, nil
+	return minepkgLogin, nil
 }
 
 // MojangLogin signs in using Mojang credentials
