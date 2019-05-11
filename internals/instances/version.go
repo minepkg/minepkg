@@ -1,7 +1,6 @@
 package instances
 
 import (
-	"encoding/json"
 	"io/ioutil"
 	"path/filepath"
 	"sort"
@@ -41,19 +40,6 @@ func (m *McInstance) Version() *semver.Version {
 		versions := m.AvailableVersions()
 
 		return versions[0] // assume this is the version wanted
-	case FlavourMMC:
-		pack := mmcPack{}
-		raw, _ := ioutil.ReadFile("./mmc-pack.json")
-		json.Unmarshal(raw, &pack)
-		if pack.FormatVersion != compatMMCFormat {
-			panic("incompatible MMC version. Open a bug for minepkg")
-		}
-		for _, comp := range pack.Components {
-			if comp.UID == "net.minecraft" {
-				return semver.MustParse(comp.Version)
-			}
-		}
-		fallthrough
 	default:
 		// fallback to 1.12.2 (?!)
 		return semver.MustParse("1.12.2")

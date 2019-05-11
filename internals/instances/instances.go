@@ -108,10 +108,6 @@ func DetectInstance() (*McInstance, error) {
 	var flavour uint8
 	for _, entry := range entries {
 		switch entry.Name() {
-		case "mmc-pack.json":
-			flavour = FlavourMMC
-			modsDir = detectMmcModsDir(entries)
-			break
 		case "versions":
 			flavour = FlavourVanilla
 			break
@@ -175,25 +171,4 @@ func (m *McInstance) initManifest() error {
 
 	m.Manifest = &manifest
 	return nil
-}
-
-func detectMmcModsDir(e []os.FileInfo) string {
-	for _, entry := range e {
-		name := entry.Name()
-		if name == "minecraft" || name == ".minecraft" {
-			return name + "/mods"
-		}
-	}
-
-	return ""
-}
-
-type mmcPack struct {
-	FormatVersion uint32         `json:"formatVersion"`
-	Components    []mmcComponent `json:"components"`
-}
-
-type mmcComponent struct {
-	UID     string `json:"uid"`
-	Version string `json:"version"`
 }

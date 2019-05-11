@@ -214,7 +214,9 @@ var publishCmd = &cobra.Command{
 
 			startTime := time.Now()
 			build.Start()
-			spinner()
+			if nonInteractive != true {
+				spinner()
+			}
 
 			err = build.Wait()
 			if err != nil {

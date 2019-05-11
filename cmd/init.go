@@ -157,7 +157,7 @@ var initCmd = &cobra.Command{
 				// TODO: validation
 			})
 		} else {
-			man.Requirements.Forge = stringPrompt(&promptui.Prompt{
+			man.Requirements.Fabric = stringPrompt(&promptui.Prompt{
 				Label: "Minimum Fabric version",
 				// TODO: validation
 			})
