@@ -169,10 +169,10 @@ func (m *McInstance) Launch() error {
 	}
 	cmdArgs = append(cmdArgs, strings.Split(args, " ")...)
 
-	fmt.Println("cmd: ")
-	fmt.Println(cmdArgs)
-	fmt.Println("tmpdir: + " + tmpDir)
-	os.Exit(0)
+	// fmt.Println("cmd: ")
+	// fmt.Println(cmdArgs)
+	// fmt.Println("tmpdir: + " + tmpDir)
+	// os.Exit(0)
 
 	cmd := exec.Command("java", cmdArgs...)
 
@@ -257,8 +257,16 @@ func v(s string) string {
 }
 
 func (m *McInstance) launchManifest() (*mcLaunchManifest, error) {
+	manifest := m.Manifest
 	// TODO: this is just for demo. make it work with anything else than fabric
-	return m.resolveFabricManifest()
+	switch {
+	case manifest.Requirements.Fabric != "":
+		return m.resolveFabricManifest()
+	case manifest.Requirements.Forge != "":
+		panic("Forge is not supported")
+	default:
+		return m.getLaunchManifest(manifest.Requirements.Minecraft)
+	}
 }
 
 func (m *McInstance) getLaunchManifest(v string) (*mcLaunchManifest, error) {

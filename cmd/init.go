@@ -32,7 +32,7 @@ var (
 
 func init() {
 	initCmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite all the things")
-	initCmd.Flags().StringVarP(&loader, "loader", "l", "forge", "Set the required loader to forge or fabric.")
+	initCmd.Flags().StringVarP(&loader, "loader", "l", "forge", "Set the required loader to forge, fabric or none.")
 }
 
 var initCmd = &cobra.Command{
@@ -52,8 +52,8 @@ var initCmd = &cobra.Command{
 		man := manifest.Manifest{}
 
 		loader = strings.ToLower(loader)
-		if loader != "forge" && loader != "fabric" {
-			logger.Fail("Allowed values for loader option: forge or fabric")
+		if loader != "forge" && loader != "fabric" && loader != "none" {
+			logger.Fail("Allowed values for loader option: forge, fabric or none")
 		}
 		var (
 			// emptyDir bool
@@ -143,7 +143,8 @@ var initCmd = &cobra.Command{
 		fmt.Println("")
 		logger.Info("[requirements]")
 
-		if loader == "forge" {
+		switch loader {
+		case "forge":
 			forgeReleases := <-chForgeVersions
 			man.Requirements.Forge = stringPrompt(&promptui.Prompt{
 				Label:   "Minimum Forge version",
@@ -156,14 +157,20 @@ var initCmd = &cobra.Command{
 				Default: forgeReleases.Versions[0].McVersion,
 				// TODO: validation
 			})
-		} else {
+		case "fabric":
 			man.Requirements.Fabric = stringPrompt(&promptui.Prompt{
 				Label: "Minimum Fabric version",
 				// TODO: validation
 			})
 			man.Requirements.Minecraft = stringPrompt(&promptui.Prompt{
 				Label:   "Supported Minecraft version",
-				Default: "1.14.x",
+				Default: "1.14",
+				// TODO: validation
+			})
+		case "none":
+			man.Requirements.Minecraft = stringPrompt(&promptui.Prompt{
+				Label:   "Supported Minecraft version",
+				Default: "1.14",
 				// TODO: validation
 			})
 		}
