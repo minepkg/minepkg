@@ -159,12 +159,12 @@ func (m *McInstance) Launch() error {
 		"-cp",
 		strings.Join(cpArgs, ":"),
 		// "-Xmx2G", // TODO: option!
-		"-XX:+UnlockExperimentalVMOptions",
-		"-XX:+UseG1GC",
-		"-XX:G1NewSizePercent=20",
-		"-XX:G1ReservePercent=20",
-		"-XX:MaxGCPauseMillis=50",
-		"-XX:G1HeapRegionSize=32M",
+		// "-XX:+UnlockExperimentalVMOptions",
+		// "-XX:+UseG1GC",
+		// "-XX:G1NewSizePercent=20",
+		// "-XX:G1ReservePercent=20",
+		// "-XX:MaxGCPauseMillis=50",
+		// "-XX:G1HeapRegionSize=32M",
 		instr.MainClass,
 	}
 	cmdArgs = append(cmdArgs, strings.Split(args, " ")...)
