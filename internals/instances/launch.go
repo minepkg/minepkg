@@ -150,6 +150,12 @@ func (m *McInstance) Launch() error {
 
 	args := replacer.Replace(instr.LaunchArgs())
 
+	javaCpSeperator := ":"
+	// of course
+	if runtime.GOOS == "windows" {
+		javaCpSeperator = ";"
+	}
+
 	cmdArgs := []string{
 		"-Xss1M",
 		"-Djava.library.path=" + tmpDir,
@@ -157,14 +163,14 @@ func (m *McInstance) Launch() error {
 		// "-Dminecraft.launcher.version=" + "0.0.2", // TODO: implement!
 		"-Dminecraft.client.jar=" + mcJar,
 		"-cp",
-		strings.Join(cpArgs, ":"),
+		strings.Join(cpArgs, javaCpSeperator),
 		// "-Xmx2G", // TODO: option!
-		// "-XX:+UnlockExperimentalVMOptions",
-		// "-XX:+UseG1GC",
-		// "-XX:G1NewSizePercent=20",
-		// "-XX:G1ReservePercent=20",
-		// "-XX:MaxGCPauseMillis=50",
-		// "-XX:G1HeapRegionSize=32M",
+		"-XX:+UnlockExperimentalVMOptions",
+		"-XX:+UseG1GC",
+		"-XX:G1NewSizePercent=20",
+		"-XX:G1ReservePercent=20",
+		"-XX:MaxGCPauseMillis=50",
+		"-XX:G1HeapRegionSize=32M",
 		instr.MainClass,
 	}
 	cmdArgs = append(cmdArgs, strings.Split(args, " ")...)
@@ -174,18 +180,7 @@ func (m *McInstance) Launch() error {
 	// fmt.Println("tmpdir: + " + tmpDir)
 	// os.Exit(0)
 
-	java := "java"
-	if runtime.GOOS == "windows" {
-		where := exec.Command("where.exe", "java")
-		err := where.Run()
-		if err != nil {
-			return err
-		}
-		out, _ := where.Output()
-		java = string(out)
-	}
-
-	cmd := exec.Command(java, cmdArgs...)
+	cmd := exec.Command("java", cmdArgs...)
 
 	// TODO: detatch from process
 	cmd.Stdout = os.Stdout
