@@ -174,7 +174,7 @@ func (l *lib) DownloadURL() string {
 	case l.Downloads.Artifact.URL != "":
 		return l.Downloads.Artifact.URL
 	case l.URL != "":
-		return l.URL + l.Filepath()
+		return l.URL + filepath.ToSlash(l.Filepath())
 	default:
 		return "https://libraries.minecraft.net/" + filepath.ToSlash(l.Filepath())
 	}
