@@ -174,7 +174,18 @@ func (m *McInstance) Launch() error {
 	// fmt.Println("tmpdir: + " + tmpDir)
 	// os.Exit(0)
 
-	cmd := exec.Command("java", cmdArgs...)
+	java := "java"
+	if runtime.GOOS == "windows" {
+		where := exec.Command("where.exe", "java")
+		err := where.Run()
+		if err != nil {
+			return err
+		}
+		out, _ := where.Output()
+		java = string(out)
+	}
+
+	cmd := exec.Command(java, cmdArgs...)
 
 	// TODO: detatch from process
 	cmd.Stdout = os.Stdout
