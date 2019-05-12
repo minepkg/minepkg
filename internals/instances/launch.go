@@ -158,7 +158,7 @@ func (m *McInstance) Launch() error {
 		"-Dminecraft.client.jar=" + mcJar,
 		"-cp",
 		strings.Join(cpArgs, ":"),
-		"-Xmx2G", // TODO: option!
+		// "-Xmx2G", // TODO: option!
 		"-XX:+UnlockExperimentalVMOptions",
 		"-XX:+UseG1GC",
 		"-XX:G1NewSizePercent=20",
