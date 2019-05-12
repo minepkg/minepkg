@@ -169,6 +169,11 @@ func (m *McInstance) Launch() error {
 	}
 	cmdArgs = append(cmdArgs, strings.Split(args, " ")...)
 
+	fmt.Println("cmd: ")
+	fmt.Println(cmdArgs)
+	fmt.Println("tmpdir: + " + tmpDir)
+	os.Exit(0)
+
 	cmd := exec.Command("java", cmdArgs...)
 
 	// TODO: detatch from process
