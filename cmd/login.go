@@ -45,6 +45,7 @@ func login() {
 	if err != nil {
 		logger.Fail("Probably invalid credentials. not sure: " + err.Error())
 	}
+	loginData = auth
 	creds, err := json.Marshal(auth)
 
 	credFile := filepath.Join(globalDir, "credentials.json")

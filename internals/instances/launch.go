@@ -2,12 +2,14 @@ package instances
 
 import (
 	"archive/zip"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -24,6 +26,8 @@ var (
 	ErrorLaunchNotImplemented = errors.New("Can only launch vanilla instances (for now)")
 	// ErrorNoCredentials is returned when an instance is launched without `MojangProfile` beeing set
 	ErrorNoCredentials = errors.New("Can not launch without mojang credentials")
+	// ErrorNoFabricLoader is returned if the wanted fabric version was not found
+	ErrorNoFabricLoader = errors.New("Could not find wanted fabric version")
 )
 
 // Launch starts the minecraft instance
@@ -35,31 +39,27 @@ func (m *McInstance) Launch() error {
 		panic(err)
 	}
 
-	// get the latest compatible version to our minepkg requirement
-	version, err := m.verstionToLaunch()
-	if err != nil {
-		return err
+	creds := m.MojangCredentials
+	profile := creds.SelectedProfile
+	if profile == nil {
+		return ErrorNoCredentials
 	}
 
 	// instructions might be a bad name. this file tells us howto construct the start command
-	instr, err := m.getLaunchInstructions(version)
+	instr, err := m.launchManifest()
 	if err != nil {
 		return err
 	}
 
 	if instr.InheritsFrom != "" {
-		parent, err := m.getLaunchInstructions(instr.InheritsFrom)
+		parent, err := m.getLaunchManifest(instr.InheritsFrom)
 		if err != nil {
 			return err
 		}
 		instr.MergeWith(parent)
 	}
 
-	creds := m.MojangCredentials
-	profile := creds.SelectedProfile
-	if profile == nil {
-		return ErrorNoCredentials
-	}
+	m.ensureAssets(instr)
 
 	tmpName := m.Manifest.Package.Name + fmt.Sprintf("%d", time.Now().Unix())
 	tmpDir, err := ioutil.TempDir("", tmpName)
@@ -131,14 +131,14 @@ func (m *McInstance) Launch() error {
 	// finally append the minecraft.jar
 	jarTarget := instr.Jar
 	if jarTarget == "" {
-		jarTarget = version
+		jarTarget = instr.Assets
 	}
 	mcJar := filepath.Join(globalDir, "versions", jarTarget, jarTarget+".jar")
 	cpArgs = append(cpArgs, mcJar)
 
 	replacer := strings.NewReplacer(
 		v("auth_player_name"), profile.Name,
-		v("version_name"), version,
+		v("version_name"), jarTarget,
 		v("game_directory"), cwd,
 		v("assets_root"), filepath.Join(m.Directory, "assets"),
 		v("assets_index_name"), instr.Assets, // asset index version
@@ -168,10 +168,6 @@ func (m *McInstance) Launch() error {
 		instr.MainClass,
 	}
 	cmdArgs = append(cmdArgs, strings.Split(args, " ")...)
-
-	// fmt.Println("final cmd: ")
-	// fmt.Println(cmdArgs)
-	// os.Exit(0)
 
 	cmd := exec.Command("java", cmdArgs...)
 
@@ -209,8 +205,7 @@ func existOrDownload(lib lib) {
 	if res.StatusCode != http.StatusOK {
 		panic(url + " did not return status code 200")
 	}
-	fmt.Println("Downloading to: " + path)
-	fmt.Println("from: " + url)
+	fmt.Println("downloading: " + path)
 	// create directory first
 	os.MkdirAll(filepath.Dir(path), 0755)
 	// file next
@@ -256,29 +251,169 @@ func v(s string) string {
 	return "${" + s + "}"
 }
 
-func (m *McInstance) getProfiles() (*vanillaProfiles, error) {
-	buf, err := ioutil.ReadFile(filepath.Join(m.Directory, "launcher_profiles.json"))
-	if err != nil {
-		return nil, err
-	}
-	profiles := vanillaProfiles{}
-	json.Unmarshal(buf, &profiles)
-	return &profiles, nil
+func (m *McInstance) launchManifest() (*mcLaunchManifest, error) {
+	// TODO: this is just for demo. make it work with anything else than fabric
+	return m.resolveFabricManifest()
 }
 
-func (m *McInstance) getLaunchInstructions(v string) (*launchInstructions, error) {
+func (m *McInstance) getLaunchManifest(v string) (*mcLaunchManifest, error) {
 	buf, err := ioutil.ReadFile(filepath.Join(m.Directory, "versions", v, v+".json"))
 	if err != nil {
-		return nil, err
+		return m.fetchVanillaManifest(v)
+		// return nil, err
 	}
-	instructions := launchInstructions{}
+	instructions := mcLaunchManifest{}
 	json.Unmarshal(buf, &instructions)
 	return &instructions, nil
 }
 
+func (m *McInstance) resolveFabricManifest() (*mcLaunchManifest, error) {
+	// TODO: Minecraft is a range, not a version number
+	matched, err := getFabricLoaderForGameVersion(m.Manifest.Requirements.Minecraft)
+	if err != nil {
+		return nil, err
+	}
+
+	loader := matched.Loader.Version
+	mappings := matched.Mappings.Version
+	man, err := m.fetchFabricManifest(loader, mappings)
+	if err != nil {
+		return nil, err
+	}
+
+	return man, nil
+}
+
+func (m *McInstance) fetchFabricManifest(loader string, mappings string) (*mcLaunchManifest, error) {
+	manifest := mcLaunchManifest{}
+	res, err := http.Get("https://fabricmc.net/download/vanilla?format=profileJson&loader=" + url.QueryEscape(loader) + "&yarn=" + url.QueryEscape(mappings))
+	if err != nil {
+		return nil, err
+	}
+
+	buf, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	version := m.Manifest.Requirements.Minecraft + "-fabric-" + loader
+	dir := filepath.Join(m.Directory, "versions", m.Manifest.Requirements.Minecraft+"-fabric-"+loader)
+	os.MkdirAll(dir, os.ModePerm)
+	if err != nil {
+		return nil, err
+	}
+	ioutil.WriteFile(filepath.Join(dir, version+".json"), buf, 0666)
+
+	if err = json.Unmarshal(buf, &manifest); err != nil {
+		return nil, err
+	}
+	return &manifest, nil
+}
+
+func (m *McInstance) fetchVanillaManifest(version string) (*mcLaunchManifest, error) {
+	mcVersions, err := GetMinecraftReleases(context.TODO())
+	if err != nil {
+		return nil, err
+	}
+
+	manifestURL := ""
+	for _, mc := range mcVersions.Versions {
+		if mc.ID == version {
+			manifestURL = mc.URL
+		}
+	}
+	if manifestURL == "" {
+		return nil, ErrorNoVersion
+	}
+
+	manifest := mcLaunchManifest{}
+	res, err := http.Get(manifestURL)
+	if err != nil {
+		return nil, err
+	}
+
+	buf, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	dir := filepath.Join(m.Directory, "versions", version)
+	os.MkdirAll(dir, os.ModePerm)
+	if err != nil {
+		return nil, err
+	}
+	ioutil.WriteFile(filepath.Join(dir, version+".json"), buf, 0666)
+
+	if err = json.Unmarshal(buf, &manifest); err != nil {
+		return nil, err
+	}
+
+	// TODO: this is a side effect. it should not be here
+	jarRes, err := http.Get(manifest.Downloads.Client.URL)
+	if err != nil {
+		return nil, err
+	}
+	jarDest, err := os.Create(filepath.Join(dir, version+".jar"))
+	if err != nil {
+		return nil, err
+	}
+
+	// copy the jar
+	if _, err = io.Copy(jarDest, jarRes.Body); err != nil {
+		return nil, err
+	}
+
+	return &manifest, nil
+}
+
+func (m *McInstance) ensureAssets(man *mcLaunchManifest) error {
+	assets := mcAssetsIndex{}
+
+	assetJSONPath := filepath.Join(m.Directory, "assets/indexes", man.Assets+".json")
+	buf, err := ioutil.ReadFile(assetJSONPath)
+	if err != nil {
+		res, err := http.Get(man.AssetIndex.URL)
+		if err != nil {
+			return err
+		}
+
+		buf, err = ioutil.ReadAll(res.Body)
+		if err != nil {
+			return err
+		}
+
+		os.MkdirAll(filepath.Join(m.Directory, "assets/indexes"), os.ModePerm)
+		err = ioutil.WriteFile(assetJSONPath, buf, 0666)
+		if err != nil {
+			return err
+		}
+	}
+	json.Unmarshal(buf, &assets)
+
+	for _, asset := range assets.Objects {
+		file := filepath.Join(m.Directory, "assets/objects", asset.UnixPath())
+		if _, err := os.Stat(file); os.IsNotExist(err) {
+			fmt.Println("downloading: " + asset.DownloadURL())
+			fileRes, err := http.Get(asset.DownloadURL())
+			// TODO: check status code and all the things!
+			os.MkdirAll(filepath.Join(m.Directory, "assets/objects", asset.Hash[:2]), os.ModePerm)
+			dest, err := os.Create(file)
+			if err != nil {
+				return err
+			}
+			_, err = io.Copy(dest, fileRes.Body)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	fmt.Println("ensuring assets are there …")
+	fmt.Println("for: " + man.Assets)
+	return nil
+}
+
 func (m *McInstance) verstionToLaunch() (string, error) {
 
-	fmt.Println(m.Manifest)
 	if m.Manifest.Requirements.Fabric != "" {
 		fmt.Println("YAY FABRIC")
 		return "fabric-loader-0.4.6+build.141-1.14+build.6", nil
@@ -300,185 +435,4 @@ func (m *McInstance) verstionToLaunch() (string, error) {
 	}
 
 	return "", ErrorNoVersion
-}
-
-type launchInstructions struct {
-	// MinecraftArguments are used before 1.13 (?)
-	MinecraftArguments string `json:"minecraftArguments"`
-	// Arguments is the new (complicated) system
-	Arguments struct {
-		Game []stringArgument `json:"game"`
-		JVM  []stringArgument `json:"jvm"`
-	} `json:"arguments"`
-	Libraries    []lib  `json:"libraries"`
-	Type         string `json:"type"`
-	MainClass    string `json:"mainClass"`
-	Jar          string `json:"jar"`
-	Assets       string `json:"assets"`
-	InheritsFrom string `json:"inheritsFrom"`
-}
-
-func (l *launchInstructions) MergeWith(merge *launchInstructions) {
-	l.Libraries = append(l.Libraries, merge.Libraries...)
-
-	if l.MainClass == "" {
-		l.MainClass = merge.MainClass
-	}
-	if l.Assets == "" {
-		l.Assets = merge.Assets
-	}
-
-	if len(l.Arguments.Game) == 0 {
-		l.Arguments = merge.Arguments
-	}
-}
-
-func (l *launchInstructions) LaunchArgs() string {
-	// easy minecraft versions before 1.13
-	if l.MinecraftArguments != "" {
-		return l.MinecraftArguments
-	}
-
-	// TODO: this is not a full implementation
-	args := make([]string, 0)
-	for _, arg := range l.Arguments.Game {
-		// pretty bad, we just skip all rules here
-		if len(arg.Rules) != 0 {
-			continue
-		}
-		args = append(args, strings.Join(arg.Value, ""))
-	}
-
-	return strings.Join(args, " ")
-}
-
-type argument struct {
-	// Value is the actual argument
-	Value stringSlice `json:"value"`
-	Rules []libRule   `json:"rules"`
-}
-
-type stringSlice []string
-
-func (w *stringSlice) String() string {
-	return strings.Join(*w, " ")
-}
-
-// UnmarshalJSON is needed because argument sometimes is a string
-func (w *stringSlice) UnmarshalJSON(data []byte) (err error) {
-	var arg []string
-
-	if string(data[0]) == "[" {
-		err := json.Unmarshal(data, &arg)
-		if err != nil {
-			return err
-		}
-		*w = arg
-	}
-
-	*w = []string{string(data)}
-	return nil
-}
-
-type stringArgument struct{ argument }
-
-// UnmarshalJSON is needed because argument sometimes is a string
-func (w *stringArgument) UnmarshalJSON(data []byte) (err error) {
-	var arg argument
-	if string(data[0]) == "{" {
-		err := json.Unmarshal(data, &arg)
-		if err != nil {
-			return err
-		}
-		w.argument = arg
-		return nil
-	}
-
-	var str string
-	err = json.Unmarshal(data, &str)
-	if err != nil {
-		return err
-	}
-	w.Value = []string{str}
-	return nil
-}
-
-type lib struct {
-	Name      string `json:"name"`
-	Downloads struct {
-		Artifact    artifact            `json:"artifact"`
-		Classifiers map[string]artifact `json:"classifiers"`
-	} `json:"downloads,omitempty"`
-	URL     string            `json:"url"`
-	Rules   []libRule         `json:"rules"`
-	Natives map[string]string `json:"natives"`
-}
-
-func (l *lib) Filepath() string {
-	libPath := l.Downloads.Artifact.Path
-	if libPath == "" {
-		grouped := strings.Split(l.Name, ":")
-		basePath := filepath.Join(strings.Split(grouped[0], ".")...)
-		name := grouped[1]
-		version := grouped[2]
-
-		libPath = filepath.Join(basePath, name, version, name+"-"+version+".jar")
-	}
-	return libPath
-}
-
-func (l *lib) DownloadURL() string {
-	switch {
-	case l.Downloads.Artifact.URL != "":
-		return l.Downloads.Artifact.URL
-	case l.URL != "":
-		return l.URL + l.Filepath()
-	default:
-		return "https://libraries.minecraft.net/" + l.Filepath()
-	}
-}
-
-type artifact struct {
-	Path string      `json:"path"`
-	Sha1 string      `json:"sha1"`
-	Size json.Number `json:"size"`
-	URL  string      `json:"url"`
-}
-
-type libRule struct {
-	Action string `json:"action"`
-	OS     struct {
-		Name string `json:"name"`
-	} `json:"os"`
-}
-
-type profile struct {
-	Type     string `json:"type"`
-	LastUsed string `json:"lastUsed"`
-}
-
-// lastDbEntry should be used as parameters
-func (p *vanillaProfiles) lastDbEntry() dbEntry {
-	last := p.SelectedUser.Account
-	return p.AuthenticationDatabase[last]
-}
-
-type dbEntry struct {
-	AccessToken string               `json:"accessToken"`
-	Username    string               `json:"username"`
-	Profiles    map[string]dbProfile `json:"profiles"`
-}
-
-type dbProfile struct {
-	DisplayName string `json:"displayName"`
-}
-
-type vanillaProfiles struct {
-	Profiles               map[string]profile `json:"profiles"`
-	ClientToken            string             `json:"clientToken"`
-	AuthenticationDatabase map[string]dbEntry `json:"authenticationDatabase"`
-	SelectedUser           struct {
-		Account string `json:"account"`
-		Profile string `json:"profile"`
-	} `json:"selectedUser"`
 }

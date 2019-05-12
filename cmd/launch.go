@@ -31,6 +31,10 @@ var launchCmd = &cobra.Command{
 
 		// launch instance
 		fmt.Printf("Launching %s\n", instance.Desc())
+		if loginData.Mojang == nil {
+			logger.Info("You need to sign in with your mojang account to launch minecraft")
+			login()
+		}
 		instance.MojangCredentials = loginData.Mojang
 		err = instance.Launch()
 		if err != nil {
