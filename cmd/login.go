@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/fiws/minepkg/pkg/api"
@@ -48,6 +49,7 @@ func login() {
 	loginData = auth
 	creds, err := json.Marshal(auth)
 
+	os.MkdirAll(globalDir, os.ModePerm)
 	credFile := filepath.Join(globalDir, "credentials.json")
 	if err := ioutil.WriteFile(credFile, creds, 0700); err != nil {
 		logger.Fail("Count not write credentials file: " + err.Error())

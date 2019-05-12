@@ -176,7 +176,7 @@ func (l *lib) DownloadURL() string {
 	case l.URL != "":
 		return l.URL + l.Filepath()
 	default:
-		return "https://libraries.minecraft.net/" + l.Filepath()
+		return "https://libraries.minecraft.net/" + filepath.ToSlash(l.Filepath())
 	}
 }
 
