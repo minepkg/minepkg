@@ -33,9 +33,9 @@ var rootCmd = &cobra.Command{
 	Long: `Manage Minecraft mods with ease.
 
 Examples:
-  minepkg install rftools
-  minepkg install https://minecraft.curseforge.com/projects/storage-drawers
-  minepkg install https://github.com/McJtyMods/XNet/archive/1.12.zip
+	minepkg init -l fabric
+	minepkg install modmenu@latest
+  minepkg install https://minepkg.io/projects/desire-paths
 `,
 }
 
@@ -88,6 +88,7 @@ func init() {
 	// TODO: remove this after a few releases (fixes #61)
 	os.Chmod(globalDir, 0755)
 
+	rootCmd.AddCommand(testCmd)
 	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(installCmd)
