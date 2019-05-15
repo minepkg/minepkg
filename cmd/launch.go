@@ -36,7 +36,7 @@ var launchCmd = &cobra.Command{
 			login()
 		}
 		instance.MojangCredentials = loginData.Mojang
-		err = instance.Launch()
+		err = instance.Launch(&instances.LaunchOptions{})
 		if err != nil {
 			logger.Fail(err.Error())
 		}

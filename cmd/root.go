@@ -88,7 +88,6 @@ func init() {
 	// TODO: remove this after a few releases (fixes #61)
 	os.Chmod(globalDir, 0755)
 
-	rootCmd.AddCommand(testCmd)
 	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(installCmd)
