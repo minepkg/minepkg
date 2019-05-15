@@ -80,6 +80,13 @@ type lib struct {
 }
 
 func (l *lib) Filepath() string {
+
+	if l.Natives[runtime.GOOS] != "" {
+		nativeID, _ := l.Natives[runtime.GOOS]
+		native := l.Downloads.Classifiers[nativeID]
+		return native.Path
+	}
+
 	libPath := l.Downloads.Artifact.Path
 	if libPath == "" {
 		grouped := strings.Split(l.Name, ":")
@@ -94,6 +101,9 @@ func (l *lib) Filepath() string {
 
 func (l *lib) DownloadURL() string {
 	switch {
+	case l.Natives[runtime.GOOS] != "":
+		nativeID, _ := l.Natives[runtime.GOOS]
+		return l.Downloads.Classifiers[nativeID].URL
 	case l.Downloads.Artifact.URL != "":
 		return l.Downloads.Artifact.URL
 	case l.URL != "":

@@ -190,134 +190,6 @@ func (m *McInstance) Launch(opts *LaunchOptions) error {
 	return err
 }
 
-// LaunchWithDefaults starts the minecraft instance without any options
-func (m *McInstance) LaunchWithDefaults() error {
-	home, _ := homedir.Dir()
-	globalDir := filepath.Join(home, ".minepkg")
-	cwd, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-
-	creds := m.MojangCredentials
-	profile := creds.SelectedProfile
-	if profile == nil {
-		return ErrorNoCredentials
-	}
-
-	// this file tells us howto construct the start command
-	instr, err := m.GetLaunchManifest()
-	if err != nil {
-		return err
-	}
-
-	m.ensureAssets(instr)
-
-	tmpName := m.Manifest.Package.Name + fmt.Sprintf("%d", time.Now().Unix())
-	tmpDir, err := ioutil.TempDir("", tmpName)
-	if err != nil {
-		return err
-	}
-	defer os.RemoveAll(tmpDir) // cleanup dir
-	libDir := filepath.Join(globalDir, "libraries")
-
-	// build that spooky -cp arg
-	var cpArgs []string
-
-	libs := instr.Libraries.Required()
-
-	for _, lib := range libs {
-		// copy natives. not sure if this implementation is complete
-		if len(lib.Natives) != 0 {
-			nativeID, ok := lib.Natives[runtime.GOOS]
-			// skip native not available for this platform
-			if ok != true {
-				continue
-			}
-			// extract native to temp dir
-			native := lib.Downloads.Classifiers[nativeID]
-
-			p := filepath.Join(libDir, native.Path)
-			existOrDownload(lib)
-			err := extractNative(p, tmpDir)
-			if err != nil {
-				return err
-			}
-			cpArgs = append(cpArgs, filepath.Join(libDir, native.Path))
-		} else {
-			// append this library to our doom -cp arg
-			libPath := lib.Filepath()
-			existOrDownload(lib)
-			cpArgs = append(cpArgs, filepath.Join(libDir, libPath))
-		}
-	}
-	// os.Exit(0)
-	// finally append the minecraft.jar
-	jarTarget := instr.Jar
-	if jarTarget == "" {
-		jarTarget = instr.Assets
-	}
-	mcJar := filepath.Join(globalDir, "versions", jarTarget, jarTarget+".jar")
-	cpArgs = append(cpArgs, mcJar)
-
-	replacer := strings.NewReplacer(
-		v("auth_player_name"), profile.Name,
-		v("version_name"), jarTarget,
-		v("game_directory"), cwd,
-		v("assets_root"), filepath.Join(m.Directory, "assets"),
-		v("assets_index_name"), instr.Assets, // asset index version
-		v("auth_uuid"), profile.ID, // profile id
-		v("auth_access_token"), creds.AccessToken,
-		v("user_type"), "mojang", // unsure about this one (legacy mc login flag?)
-		v("version_type"), instr.Type, // release / snapshot … etc
-	)
-
-	args := replacer.Replace(instr.LaunchArgs())
-
-	javaCpSeperator := ":"
-	// of course
-	if runtime.GOOS == "windows" {
-		javaCpSeperator = ";"
-	}
-
-	cmdArgs := []string{
-		"-Xss1M",
-		"-Djava.library.path=" + tmpDir,
-		"-Dminecraft.launcher.brand=minepkg",
-		// "-Dminecraft.launcher.version=" + "0.0.2", // TODO: implement!
-		"-Dminecraft.client.jar=" + mcJar,
-		"-cp",
-		strings.Join(cpArgs, javaCpSeperator),
-		// "-Xmx2G", // TODO: option!
-		"-XX:+UnlockExperimentalVMOptions",
-		"-XX:+UseG1GC",
-		"-XX:G1NewSizePercent=20",
-		"-XX:G1ReservePercent=20",
-		"-XX:MaxGCPauseMillis=50",
-		"-XX:G1HeapRegionSize=32M",
-		instr.MainClass,
-	}
-	cmdArgs = append(cmdArgs, strings.Split(args, " ")...)
-
-	// fmt.Println("cmd: ")
-	// fmt.Println(cmdArgs)
-	// fmt.Println("tmpdir: + " + tmpDir)
-	// os.Exit(0)
-
-	cmd := exec.Command("java", cmdArgs...)
-
-	// TODO: detatch from process
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	err = cmd.Run()
-
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func existOrDownload(lib lib) {
 	home, _ := homedir.Dir()
 	globalDir := filepath.Join(home, ".minepkg/libraries")
@@ -506,6 +378,25 @@ func (m *McInstance) fetchVanillaManifest(version string) (*LaunchManifest, erro
 	}
 
 	return &manifest, nil
+}
+
+// FindMissingLibraries returns all missing assets
+func (m *McInstance) FindMissingLibraries(man *LaunchManifest) (Libraries, error) {
+	missing := Libraries{}
+
+	libs := man.Libraries.Required()
+	globalDir := filepath.Join(m.Directory, "libraries")
+
+	for _, lib := range libs {
+		path := filepath.Join(globalDir, lib.Filepath())
+		if _, err := os.Stat(path); err == nil {
+			continue
+		}
+
+		missing = append(missing, lib)
+	}
+
+	return missing, nil
 }
 
 // FindMissingAssets returns all missing assets
