@@ -3,9 +3,10 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/fiws/minepkg/pkg/manifest"
 	"os"
 	"strings"
+
+	"github.com/fiws/minepkg/pkg/manifest"
 
 	"github.com/fiws/minepkg/pkg/api"
 
@@ -68,7 +69,7 @@ func (r *Resolver) ResolveSingle(release *api.Release) error {
 	return nil
 }
 
-func installFromMinepkg(name string, instance *instances.McInstance) {
+func installFromMinepkg(mods []string, instance *instances.McInstance) error {
 
 	task := logger.NewTask(3)
 	task.Step("📚", "Searching requested package")
@@ -81,35 +82,49 @@ func installFromMinepkg(name string, instance *instances.McInstance) {
 
 	// choosenMod := chooseMod(mods, task)
 
-	comp := strings.Split(name, "@")
-	name = comp[0]
-	version := "latest"
-	if len(comp) == 2 {
-		version = comp[1]
-	}
-	release, _ := apiClient.FindRelease(context.TODO(), name, version)
+	releases := make([]*api.Release, len(mods))
 
-	if release == nil {
-		logger.Info("Could not find package " + name + "@" + version)
-		os.Exit(1)
+	for i, name := range mods {
+		comp := strings.Split(name, "@")
+		name = comp[0]
+		version := "latest"
+		if len(comp) == 2 {
+			version = comp[1]
+		}
+		release, err := apiClient.FindRelease(context.TODO(), name, version)
+		if err != nil {
+			return err
+		}
+		if release == nil {
+			logger.Info("Could not find package " + name + "@" + version)
+			os.Exit(1)
+		}
+		releases[i] = release
 	}
 
-	prompt := promptui.Prompt{
-		Label:     "Install " + name + "@" + release.Version,
-		IsConfirm: true,
-		Default:   "Y",
-	}
+	if len(releases) == 1 {
+		logger.Info("Installing " + releases[0].Project + "@" + releases[0].Version)
+	} else {
+		// TODO: list mods
+		prompt := promptui.Prompt{
+			Label:     fmt.Sprintf("Install %d mods", len(releases)),
+			IsConfirm: true,
+			Default:   "Y",
+		}
 
-	_, err := prompt.Run()
-	if err != nil {
-		logger.Info("Aborting installation")
-		os.Exit(0)
+		_, err := prompt.Run()
+		if err != nil {
+			logger.Info("Aborting installation")
+			os.Exit(0)
+		}
 	}
 
 	task.Step("🔎", "Resolving Dependencies")
 	res := NewResolver()
-	res.ResolveSingle(release)
-	instance.Manifest.AddDependency(release.Project, release.Version)
+	res.Resolve(releases)
+	for _, release := range releases {
+		instance.Manifest.AddDependency(release.Project, release.Version)
+	}
 
 	// logger.Info("The following Dependencies will be downloaded:")
 	// logger.Info(strings.Join())
@@ -117,7 +132,7 @@ func installFromMinepkg(name string, instance *instances.McInstance) {
 
 	for _, p := range res.Resolved {
 		task.Log("Downloading " + p.Project + "@" + p.Version)
-		err = instance.Download(p.Project+".jar", p.DownloadURL())
+		err := instance.Download(p.Project+".jar", p.DownloadURL())
 		if err != nil {
 			logger.Fail(fmt.Sprintf("Could not download %s (%s)"+p.Project, err))
 		}
@@ -125,6 +140,7 @@ func installFromMinepkg(name string, instance *instances.McInstance) {
 	instance.Manifest.Save()
 	fmt.Println("updated minepkg.toml")
 
+	return nil
 }
 
 // func chooseMod(mods []curse.Mod, task *cmdlog.Task) *curse.Mod {

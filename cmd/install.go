@@ -43,13 +43,19 @@ var installCmd = &cobra.Command{
 			// got a curseforge url
 			case strings.HasPrefix(firstArg, "https://minepkg.io/projects/"):
 				projectname := firstArg[28:] // url minus first bits (just the name)
-				installFromMinepkg(projectname, instance)
+				err = installFromMinepkg([]string{projectname}, instance)
+				if err != nil {
+					logger.Fail(err.Error())
+				}
 				return
 			}
 			logger.Fail("Sorry. Don't know what to do with that url")
 		}
 
 		// fallback to minepkg
-		installFromMinepkg(strings.Join(args, " "), instance)
+		err = installFromMinepkg(args, instance)
+		if err != nil {
+			logger.Fail(err.Error())
+		}
 	},
 }
