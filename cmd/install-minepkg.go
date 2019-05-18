@@ -6,68 +6,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fiws/minepkg/pkg/manifest"
-
 	"github.com/fiws/minepkg/pkg/api"
 
 	"github.com/fiws/minepkg/internals/instances"
 	"github.com/manifoldco/promptui"
 )
-
-// Resolver resolves given the mods of given dependencies
-type Resolver struct {
-	Resolved map[string]*api.Release
-}
-
-// NewResolver returns a new resolver
-func NewResolver() *Resolver {
-	return &Resolver{Resolved: make(map[string]*api.Release)}
-}
-
-// ResolveManifest resolves a manifest
-func (r *Resolver) ResolveManifest(man *manifest.Manifest) error {
-
-	for name, version := range man.Dependencies {
-		release, err := apiClient.FindRelease(context.TODO(), name, version)
-		if err != nil {
-			return err
-		}
-		r.ResolveSingle(release)
-	}
-
-	return nil
-}
-
-// Resolve find all dependencies from the given `id`
-// and adds it to the `resolved` map. Nothing is returned
-func (r *Resolver) Resolve(releases []*api.Release) error {
-	for _, release := range releases {
-		r.ResolveSingle(release)
-	}
-
-	return nil
-}
-
-// ResolveSingle resolves all dependencies of a single release
-func (r *Resolver) ResolveSingle(release *api.Release) error {
-
-	r.Resolved[release.Project] = release
-	// TODO: parallelize
-	for _, d := range release.Dependencies {
-		_, ok := r.Resolved[d.Name]
-		if ok == true {
-			return nil
-		}
-		r.Resolved[d.Name] = nil
-		release, err := d.Resolve(context.TODO())
-		if err != nil {
-			return err
-		}
-		r.ResolveSingle(release)
-	}
-
-	return nil
-}
 
 func installFromMinepkg(mods []string, instance *instances.McInstance) error {
 
@@ -120,7 +63,7 @@ func installFromMinepkg(mods []string, instance *instances.McInstance) error {
 	}
 
 	task.Step("🔎", "Resolving Dependencies")
-	res := NewResolver()
+	res := api.NewResolver(apiClient)
 	res.Resolve(releases)
 	for _, release := range releases {
 		instance.Manifest.AddDependency(release.Project, release.Version)

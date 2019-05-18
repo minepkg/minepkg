@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/fiws/minepkg/internals/instances"
+	"github.com/fiws/minepkg/pkg/api"
 )
 
 // installManifest installs dependencies from the minepkg.toml
@@ -13,7 +15,7 @@ func installManifest(instance *instances.McInstance) {
 	task.Info("Installing minepkg.toml dependencies")
 
 	task.Step("🔎", "Resolving Dependencies")
-	res := NewResolver()
+	res := api.NewResolver(apiClient)
 	res.ResolveManifest(instance.Manifest)
 
 	// logger.Info("The following Dependencies will be downloaded:")

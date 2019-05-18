@@ -78,6 +78,9 @@ func (m *McInstance) Download(name string, url string) error {
 	if err != nil {
 		return err
 	}
+	if res.StatusCode != 200 {
+		return fmt.Errorf("Unexpected status code %d for %s", res.StatusCode, url)
+	}
 	dest, err := os.Create(path.Join(m.ModsDirectory, name))
 	if err != nil {
 		return err
