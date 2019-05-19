@@ -65,7 +65,12 @@ func (l *Lockfile) Buffer() *bytes.Buffer {
 	if err := toml.NewEncoder(buf).Encode(l); err != nil {
 		log.Fatal(err)
 	}
-	return buf
+
+	bbuf := new(bytes.Buffer)
+	bbuf.Write([]byte("# You usually do not need to edit this file.\n# It was genereted by minepkg.\n\n"))
+	bbuf.Write(buf.Bytes())
+
+	return bbuf
 }
 
 func (l *Lockfile) String() string {
