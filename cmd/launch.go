@@ -98,6 +98,7 @@ var launchCmd = &cobra.Command{
 		opts := &instances.LaunchOptions{
 			LaunchManifest: launchManifest,
 			SkipDownload:   true,
+			Java:           java,
 		}
 		err = instance.Launch(opts)
 		if err != nil {
