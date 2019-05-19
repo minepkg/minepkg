@@ -17,6 +17,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fiws/minepkg/pkg/manifest"
+
 	"github.com/Masterminds/semver"
 	homedir "github.com/mitchellh/go-homedir"
 )
@@ -259,16 +261,39 @@ func v(s string) string {
 }
 
 func (m *McInstance) launchManifest() (*LaunchManifest, error) {
-	manifest := m.Manifest
-	// TODO: this is just for demo. make it work with anything else than fabric
-	switch {
-	case manifest.Requirements.Fabric != "":
-		return m.resolveFabricManifest()
-	case manifest.Requirements.Forge != "":
+	lockfile := m.Lockfile
+	if lockfile == nil {
+		m.initLockfile()
+	}
+	buf, err := ioutil.ReadFile(filepath.Join(m.Directory, "versions", lockfile.McManifestName()))
+	if err == nil {
+		man := LaunchManifest{}
+		json.Unmarshal(buf, &man)
+		return &man, nil
+	}
+
+	switch m.Platform() {
+	case PlatformFabric:
+		return m.fetchFabricManifest(lockfile.Fabric.FabricLoader, lockfile.Fabric.Mapping)
+	case PlatformForge:
+		// TODO: forge
 		panic("Forge is not supported")
 	default:
-		return m.getLaunchManifest(manifest.Requirements.Minecraft)
+		return m.getLaunchManifest(m.Manifest.Requirements.Minecraft)
 	}
+}
+
+// SaveLockfile saves the lockfile to disk
+func (m *McInstance) SaveLockfile() error {
+	file, err := os.Create("minepkg-lock.toml")
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(file, m.Lockfile.Buffer())
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (m *McInstance) getLaunchManifest(v string) (*LaunchManifest, error) {
@@ -282,21 +307,119 @@ func (m *McInstance) getLaunchManifest(v string) (*LaunchManifest, error) {
 	return &instructions, nil
 }
 
-func (m *McInstance) resolveFabricManifest() (*LaunchManifest, error) {
-	// TODO: Minecraft is a range, not a version number
-	matched, err := getFabricLoaderForGameVersion(m.Manifest.Requirements.Minecraft)
+func (m *McInstance) ResolveVanilaVersion(ctx context.Context) (*MinecraftRelease, error) {
+	constraint, _ := semver.NewConstraint(m.Manifest.Requirements.Minecraft)
+	res, err := GetMinecraftReleases(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	loader := matched.Loader.Version
-	mappings := matched.Mappings.Version
-	man, err := m.fetchFabricManifest(loader, mappings)
+	// find newest compatible version
+	for _, v := range res.Versions {
+		// TODO: some versions contain spaces
+		semverVersion, err := semver.NewVersion(v.ID)
+
+		// skip unparsable minecraft versions
+		if err != nil {
+			continue
+		}
+
+		if constraint.Check(semverVersion) {
+			return &v, nil
+		}
+	}
+
+	return nil, nil
+}
+
+func (m *McInstance) ResolveRequirements(ctx context.Context) error {
+	m.Lockfile = manifest.NewLockfile()
+	switch m.Platform() {
+	case PlatformFabric:
+		lock, err := m.ResolveFabricRequirement(ctx)
+		if err != nil {
+			return err
+		}
+		m.Lockfile.Fabric = lock
+	case PlatformForge:
+		fmt.Println("forge is not supported for now")
+	case PlatformVanilla:
+		version, err := m.ResolveVanilaVersion(ctx)
+		if err != nil {
+			return err
+		}
+		m.Lockfile.Vanilla = &manifest.VanillaLock{Minecraft: version.ID}
+	}
+	return nil
+}
+
+func (m *McInstance) ResolveFabricRequirement(ctx context.Context) (*manifest.FabricLock, error) {
+	// TODO: check for invalid semver
+	MCconstraint, _ := semver.NewConstraint(m.Manifest.Requirements.Minecraft)
+	FabricLoaderConstraint, _ := semver.NewConstraint(m.Manifest.Requirements.Fabric)
+	// mcVersions, err := GetMinecraftReleases(ctx)
+
+	fabricMappings, err := getFabricMappingVersions(ctx)
+	if err != nil {
+		return nil, err
+	}
+	fabricLoaders, err := getFabricLoaderVersions(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return man, nil
+	var foundMapping *fabricMappingVersion
+	// find newest compatible version
+	for _, v := range fabricMappings {
+		// TODO: some versions contain spaces
+		semverVersion, err := semver.NewVersion(v.GameVersion)
+
+		// skip unparsable minecraft versions
+		if err != nil {
+			continue
+		}
+
+		if MCconstraint.Check(semverVersion) {
+			foundMapping = &v
+			break
+		}
+	}
+
+	var foundLoader *fabricLoaderVersion
+	// find newest compatible version
+	for _, v := range fabricLoaders {
+		// TODO: some versions contain spaces
+		semverVersion, err := semver.NewVersion(v.Version)
+
+		// skip unparsable minecraft versions
+		if err != nil {
+			continue
+		}
+
+		if FabricLoaderConstraint.Check(semverVersion) {
+			foundLoader = &v
+			break
+		}
+	}
+
+	if foundLoader == nil {
+		return nil, ErrorNoFabricLoader
+	}
+
+	return &manifest.FabricLock{
+		Minecraft:    foundMapping.GameVersion,
+		Mapping:      foundMapping.Version,
+		FabricLoader: foundLoader.Version,
+	}, nil
+
+	// loader := matched.Loader.Version
+	// mappings := matched.Mappings.Version
+	// man, err := m.fetchFabricManifest(loader, mappings)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// return man, nil
 }
 
 func (m *McInstance) fetchFabricManifest(loader string, mappings string) (*LaunchManifest, error) {
@@ -458,29 +581,4 @@ func (m *McInstance) ensureAssets(man *LaunchManifest) error {
 	}
 
 	return nil
-}
-
-func (m *McInstance) verstionToLaunch() (string, error) {
-
-	if m.Manifest.Requirements.Fabric != "" {
-		fmt.Println("YAY FABRIC")
-		return "fabric-loader-0.4.6+build.141-1.14+build.6", nil
-	}
-
-	if m.Manifest.Requirements.Forge != "" {
-		fmt.Println("forge.. nice")
-		return "1.12.2-forge", nil
-	}
-
-	constraint, _ := semver.NewConstraint(m.Manifest.Requirements.Minecraft)
-	versions := m.AvailableVersions()
-
-	// find newest compatible version
-	for _, v := range versions {
-		if constraint.Check(v) {
-			return v.String(), nil
-		}
-	}
-
-	return "", ErrorNoVersion
 }

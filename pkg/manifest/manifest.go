@@ -2,7 +2,6 @@ package manifest
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -74,26 +73,20 @@ type Manifest struct {
 		// So `1.12.0` and `~1.12.0` are equal
 		// This field is REQUIRED
 		Minecraft string `toml:"minecraft" json:"minecraft"`
+		// Fabric is a semver version string describing the required Fabric version
+		// Only one of `Forge` or `Fabric` may be used
+		Fabric string `toml:"fabric,omitempty" json:"fabric,omitempty"`
 		// Forge is the minimum forge version required
 		// no semver here, because forge does not follow semver
 		Forge string `toml:"forge,omitempty" json:"forge,omitempty"`
-		// Fabric  is a semver version string describing the required Fabric version
-		// Only one of `Forge` or `Fabric` may be used
-		Fabric string `toml:"fabric,omitempty" json:"fabric,omitempty"`
 	} `toml:"requirements" json:"requirements"`
 	// Dependencies lists runtime dependencies of this package
+	// this list can contain mods and modpacks
 	Dependencies `toml:"dependencies" json:"dependencies,omitempty"`
 	// Hooks should help mod developers to ease publishing
 	Hooks struct {
 		Build string `toml:"build,omitempty" json:"build,omitempty"`
 	} `toml:"hooks" json:"hooks"`
-}
-
-// Dependency defines a dependency that can be saved and installed from
-// the minepkg.toml
-type Dependency interface {
-	Identifier() string // Identifier is the (unique) name of the dependency
-	fmt.Stringer        // used as `data` in `name = "[data]"` inside the minepkg.toml
 }
 
 // Dependencies are the dependencies of a mod or modpack

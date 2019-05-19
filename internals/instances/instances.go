@@ -32,6 +32,13 @@ var (
 	// FlavourMinepkg is the native minepkg instance
 	FlavourMinepkg uint8 = 4
 
+	// PlatformVanilla is a vanilla minecraft instance
+	PlatformVanilla uint8 = 1
+	// PlatformFabric is a fabric minecraft instance
+	PlatformFabric uint8 = 2
+	// PlatformForge is forge minecraft instance
+	PlatformForge uint8 = 3
+
 	// ErrorNoInstance is returned if no mc instance was found
 	ErrorNoInstance = errors.New("Could not find minecraft instance in this directory")
 	// ErrorNoVersion is returned if no mc version was detected
@@ -44,7 +51,20 @@ type McInstance struct {
 	Directory         string
 	ModsDirectory     string
 	Manifest          *manifest.Manifest
+	Lockfile          *manifest.Lockfile
 	MojangCredentials *api.MojangAuthResponse
+}
+
+// Platform returns the type of loader required to start this instance
+func (m *McInstance) Platform() uint8 {
+	switch {
+	case m.Manifest.Requirements.Fabric != "":
+		return PlatformFabric
+	case m.Manifest.Requirements.Forge != "":
+		return PlatformForge
+	default:
+		return PlatformVanilla
+	}
 }
 
 // Desc returns a one-liner summary of this instance
@@ -142,6 +162,11 @@ func DetectInstance() (*McInstance, error) {
 		return nil, err
 	}
 
+	err = instance.initLockfile()
+	if err != nil {
+		return nil, err
+	}
+
 	return instance, nil
 }
 
@@ -149,6 +174,9 @@ func DetectInstance() (*McInstance, error) {
 func (m *McInstance) initManifest() error {
 	minepkg, err := ioutil.ReadFile("./minepkg.toml")
 	if err != nil {
+		if os.IsNotExist(err) != true {
+			return err
+		}
 		manifest := manifest.New()
 		wd, err := os.Getwd()
 		if err != nil {
@@ -175,5 +203,27 @@ func (m *McInstance) initManifest() error {
 	}
 
 	m.Manifest = &manifest
+	return nil
+}
+
+// initLockfile sets the lockfile or creates one
+func (m *McInstance) initLockfile() error {
+	rawLockfile, err := ioutil.ReadFile("./minepkg-lock.toml")
+	if err != nil {
+		// non existing lockfile is not bad
+		if os.IsNotExist(err) {
+			return nil
+		}
+		// this is bad
+		return err
+	}
+
+	lockfile := manifest.Lockfile{}
+	_, err = toml.Decode(string(rawLockfile), &lockfile)
+	if err != nil {
+		return err
+	}
+
+	m.Lockfile = &lockfile
 	return nil
 }

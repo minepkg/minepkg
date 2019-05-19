@@ -13,7 +13,6 @@ import (
 )
 
 var version string
-var listVersions bool
 
 var launchCmd = &cobra.Command{
 	Use:     "launch",
@@ -24,14 +23,6 @@ var launchCmd = &cobra.Command{
 		instance, err := instances.DetectInstance()
 		if err != nil {
 			logger.Fail("Instance problem: " + err.Error())
-		}
-		// list versions instead of launching
-		if listVersions == true {
-			logger.Headline("Available Versions:")
-			for _, version := range instance.AvailableVersions() {
-				logger.Log(" - " + version.String())
-			}
-			return
 		}
 
 		// launch instance
@@ -48,9 +39,16 @@ var launchCmd = &cobra.Command{
 		s.Start()
 		s.Suffix = " Preparing launch"
 
+		// resolve requirements
+		if instance.Lockfile == nil {
+			s.Suffix = " Preparing launch – Resolving Requirements"
+			instance.ResolveRequirements(context.TODO())
+			instance.SaveLockfile()
+		}
+
 		mgr := downloadmgr.New()
 		mgr.OnProgress = func(p int) {
-			s.Suffix = fmt.Sprintf(" Preparing launch %v", p) + "%"
+			s.Suffix = fmt.Sprintf(" Preparing launch – Downloading %v", p) + "%"
 		}
 
 		launchManifest, err := instance.GetLaunchManifest()
@@ -94,5 +92,4 @@ var launchCmd = &cobra.Command{
 
 func init() {
 	// launchCmd.Flags().StringVarP(&version, "run-version", "r", "", "Version to start. Uses the latest compatible if not present")
-	launchCmd.Flags().BoolVarP(&listVersions, "list-versions", "", false, "List available versions instead of starting minecraft")
 }
