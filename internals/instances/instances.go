@@ -69,23 +69,11 @@ func (m *McInstance) Platform() uint8 {
 
 // Desc returns a one-liner summary of this instance
 func (m *McInstance) Desc() string {
-	var flavourText string
-	switch m.Flavour {
-	case FlavourMMC:
-		flavourText = "MMC"
-	default:
-		flavourText = "Vanilla"
-	}
 	manifest := m.Manifest
 
-	flavourText = fmt.Sprintf(" ⌂ %s ", flavourText)
-	version := fmt.Sprintf(" MC %s ", manifest.Requirements.Minecraft)
 	depCount := fmt.Sprintf(" %d deps ", len(manifest.Dependencies))
 	name := fmt.Sprintf(" 📦 %s ", manifest.Package.Name)
 	build := []string{
-		aurora.BgBrown(flavourText).String(),
-		aurora.BgGray(version).Black().String(),
-		" ",
 		aurora.BgBlue(name).String(),
 		aurora.BgGray(depCount).Black().String(),
 	}

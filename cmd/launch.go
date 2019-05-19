@@ -95,6 +95,7 @@ var launchCmd = &cobra.Command{
 		mgr.Start(context.TODO())
 		s.Stop()
 
+		fmt.Println("\nLaunching Minecraft …")
 		opts := &instances.LaunchOptions{
 			LaunchManifest: launchManifest,
 			SkipDownload:   true,
