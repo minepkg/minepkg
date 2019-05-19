@@ -56,6 +56,7 @@ type LaunchOptions struct {
 	SkipDownload bool
 	// Offline is not implemented
 	Offline bool
+	Java    string
 }
 
 // Launch starts the minecraft instance
@@ -182,7 +183,10 @@ func (m *McInstance) Launch(opts *LaunchOptions) error {
 	// fmt.Println("tmpdir: + " + tmpDir)
 	// os.Exit(0)
 
-	cmd := exec.Command("java", cmdArgs...)
+	if opts.Java == "" {
+		opts.Java = "java"
+	}
+	cmd := exec.Command(opts.Java, cmdArgs...)
 
 	// TODO: detatch from process
 	cmd.Stdout = os.Stdout

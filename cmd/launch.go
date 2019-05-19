@@ -3,8 +3,15 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"os"
 	"path/filepath"
+	"runtime"
 	"time"
+
+	"github.com/mholt/archiver"
 
 	"github.com/briandowns/spinner"
 	"github.com/fiws/minepkg/internals/downloadmgr"
@@ -38,6 +45,15 @@ var launchCmd = &cobra.Command{
 		s.Prefix = " "
 		s.Start()
 		s.Suffix = " Preparing launch"
+
+		java := javaBin(instance.Directory)
+		if java == "" {
+			s.Suffix = " Preparing launch – Downloading java"
+			java, err = downloadJava(instance.Directory)
+			if err != nil {
+				logger.Fail(err.Error())
+			}
+		}
 
 		// resolve requirements
 		if instance.Lockfile == nil {
@@ -88,6 +104,58 @@ var launchCmd = &cobra.Command{
 			logger.Fail(err.Error())
 		}
 	},
+}
+
+func javaBin(dir string) string {
+	localJava, err := ioutil.ReadDir(filepath.Join(dir, "java"))
+
+	if err == nil && len(localJava) != 0 {
+		return filepath.Join(dir, "java", localJava[0].Name(), "bin/java")
+	}
+
+	return ""
+	// TODO: check if local java is installed
+	// cmd := exec.Command("java", cmdArgs...)
+
+	// // TODO: detatch from process
+	// cmd.Stdout = os.Stdout
+	// cmd.Stderr = os.Stderr
+
+	// err = cmd.Run()
+}
+
+func downloadJava(dir string) (string, error) {
+	url := ""
+	ext := ".tar.gz"
+
+	localJava := filepath.Join(dir, "java")
+	os.MkdirAll(localJava, os.ModePerm)
+	switch runtime.GOOS {
+	case "linux":
+		url = "https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u212-b03/OpenJDK8U-jre_x64_linux_hotspot_8u212b03.tar.gz"
+	case "windows":
+		ext = ".zip"
+		url = "https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u212-b03/OpenJDK8U-jre_x64_windows_hotspot_8u212b03.zip"
+	case "osx":
+		url = "https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u212-b03/OpenJDK8U-jre_x64_mac_hotspot_8u212b03.tar.gz"
+	}
+	res, err := http.Get(url)
+	target, err := ioutil.TempFile("", "minepkg-java.*"+ext)
+
+	if err != nil {
+		return "", err
+	}
+	_, err = io.Copy(target, res.Body)
+	if err != nil {
+		return "", err
+	}
+
+	err = archiver.Unarchive(target.Name(), localJava)
+	if err != nil {
+		return "", err
+	}
+
+	return javaBin(dir), nil
 }
 
 func init() {
