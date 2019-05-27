@@ -3,9 +3,10 @@ package api
 import (
 	"context"
 	"errors"
-	"github.com/Masterminds/semver"
 	"io"
 	"net/http"
+
+	"github.com/Masterminds/semver"
 )
 
 // ErrNotMatchingRelease gets returned if no matching release was found
@@ -18,9 +19,19 @@ func (r *Release) decorate(c *MinepkgAPI) {
 	}
 }
 
+// Identifier returns this release in a "project@version" format. eg: `fabric@0.2.0`
+func (r *Release) Identifier() string {
+	return r.Project + "@" + r.Version
+}
+
+// Filename returns this release in a "project@version.jar" format. eg: `fabric@0.2.0.jar`
+func (r *Release) Filename() string {
+	return r.Identifier() + ".jar"
+}
+
 // DownloadURL returns the download url for this release
 func (r *Release) DownloadURL() string {
-	return baseAPI + "/projects/" + r.Project + "@" + r.Version + "/download"
+	return baseAPI + "/projects/" + r.Identifier() + "/download"
 }
 
 // Upload uploads the jar or zipfile for a release

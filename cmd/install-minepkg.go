@@ -3,29 +3,46 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
+	"github.com/briandowns/spinner"
 	"github.com/fiws/minepkg/pkg/api"
 
+	"github.com/fiws/minepkg/internals/downloadmgr"
 	"github.com/fiws/minepkg/internals/instances"
 	"github.com/manifoldco/promptui"
 )
 
+type cache struct {
+	baseDir string
+}
+
+func (c *cache) store() {
+
+}
+
 func installFromMinepkg(mods []string, instance *instances.McInstance) error {
+
+	cacheDir := filepath.Join(globalDir, "cache")
+	os.MkdirAll(cacheDir, os.ModePerm)
 
 	task := logger.NewTask(3)
 	task.Step("📚", "Searching requested package")
-	// db := readDbOrDownload()
-
-	// // TODO: better search!
-	// mods := curse.Filter(db.Mods, func(m curse.Mod) bool {
-	// 	return strings.HasPrefix(strings.ToLower(m.Slug), name)
-	// })
-
-	// choosenMod := chooseMod(mods, task)
 
 	releases := make([]*api.Release, len(mods))
+
+	s := spinner.New(spinner.CharSets[9], 300*time.Millisecond) // Build our new spinner
+	s.Prefix = " "
+
+	mgr := downloadmgr.New()
+	mgr.OnProgress = func(p int) {
+		s.Suffix = fmt.Sprintf(" Downloading %v", p) + "%"
+	}
 
 	for i, name := range mods {
 		comp := strings.Split(name, "@")
@@ -67,19 +84,44 @@ func installFromMinepkg(mods []string, instance *instances.McInstance) error {
 	res.Resolve(releases)
 	for _, release := range releases {
 		instance.Manifest.AddDependency(release.Project, release.Version)
+		target := filepath.Join(cacheDir, release.Filename())
+		mgr.Add(downloadmgr.NewHTTPItem(release.DownloadURL(), target))
 	}
 
 	// logger.Info("The following Dependencies will be downloaded:")
 	// logger.Info(strings.Join())
 	task.Step("🚚", "Downloading Packages")
 
-	for _, p := range res.Resolved {
-		task.Log("Downloading " + p.Project + "@" + p.Version)
-		err := instance.Download(p.Project+".jar", p.DownloadURL())
-		if err != nil {
-			logger.Fail(fmt.Sprintf("Could not download %s (%s)"+p.Project, err))
+	files, err := ioutil.ReadDir(instance.ModsDirectory)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, f := range files {
+		switch mode := f.Mode(); {
+		case mode.IsRegular():
+			logger.Warn("ignoring file in mods not placed by minepkg: " + f.Name())
+		case mode&os.ModeSymlink != 0:
+			os.Remove(filepath.Join(instance.ModsDirectory, f.Name()))
+		case mode&os.ModeNamedPipe != 0:
+			fmt.Println("named pipe?! what is this")
 		}
 	}
+
+	s.Start()
+	if err := mgr.Start(context.TODO()); err != nil {
+		logger.Fail(err.Error())
+	}
+
+	for _, release := range res.Resolved {
+		from := filepath.Join(cacheDir, release.Filename())
+		to := filepath.Join(instance.ModsDirectory, release.Filename())
+		err := os.Symlink(from, to)
+		if err != nil {
+			panic(err)
+		}
+	}
+	s.Stop()
 	instance.Manifest.Save()
 	fmt.Println("updated minepkg.toml")
 

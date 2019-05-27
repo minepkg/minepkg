@@ -415,15 +415,6 @@ func (m *McInstance) ResolveFabricRequirement(ctx context.Context) (*manifest.Fa
 		Mapping:      foundMapping.Version,
 		FabricLoader: foundLoader.Version,
 	}, nil
-
-	// loader := matched.Loader.Version
-	// mappings := matched.Mappings.Version
-	// man, err := m.fetchFabricManifest(loader, mappings)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// return man, nil
 }
 
 func (m *McInstance) fetchFabricManifest(loader string, mappings string) (*LaunchManifest, error) {

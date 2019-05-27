@@ -92,7 +92,9 @@ var launchCmd = &cobra.Command{
 			mgr.Add(downloadmgr.NewHTTPItem(lib.DownloadURL(), target))
 		}
 
-		mgr.Start(context.TODO())
+		if err = mgr.Start(context.TODO()); err != nil {
+			logger.Fail(err.Error())
+		}
 		s.Stop()
 
 		fmt.Println("\nLaunching Minecraft …")
