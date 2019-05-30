@@ -2,6 +2,7 @@ package manifest
 
 import (
 	"bytes"
+	"errors"
 	"log"
 
 	"github.com/BurntSushi/toml"
@@ -10,13 +11,18 @@ import (
 // LockfileVersion is the current version of the lockfile template
 const LockfileVersion = 1
 
+var (
+	// ErrDependencyConflicts is returned when trying to add a dependency that is already present
+	ErrDependencyConflicts = errors.New("A dependency with that name is already present")
+)
+
 // Lockfile includes resolved dependencies and requirements
 type Lockfile struct {
-	LockfileVersion int          `toml:"lockfileVersion" json:"lockfileVersion"`
-	Fabric          *FabricLock  `toml:"fabric,omitempty" json:"fabric,omitempty"`
-	Forge           *ForgeLock   `toml:"forge,omitempty" json:"forge,omitempty"`
-	Vanilla         *VanillaLock `toml:"vanilla,omitempty" json:"vanilla,omitempty"`
-	Dependencies    `toml:"dependencies,omitempty" json:"dependencies,omitempty"`
+	LockfileVersion int                        `toml:"lockfileVersion" json:"lockfileVersion"`
+	Fabric          *FabricLock                `toml:"fabric,omitempty" json:"fabric,omitempty"`
+	Forge           *ForgeLock                 `toml:"forge,omitempty" json:"forge,omitempty"`
+	Vanilla         *VanillaLock               `toml:"vanilla,omitempty" json:"vanilla,omitempty"`
+	Dependencies    map[string]*DependencyLock `toml:"dependencies,omitempty" json:"dependencies,omitempty"`
 }
 
 // FabricLock describes resolved fabric requirements
@@ -45,6 +51,7 @@ type DependencyLock struct {
 	Version  string `toml:"version" json:"version"`
 	IPFSHash string `toml:"ipfsHash" json:"ipfsHash"`
 	Sha1     string `toml:"sha1" json:"sha1"`
+	URL      string `toml:"url" json:"url"`
 }
 
 // McManifestName returns the Minecraft Launcher Manifest name
@@ -77,8 +84,13 @@ func (l *Lockfile) String() string {
 	return l.Buffer().String()
 }
 
+// AddDependency adds a new dependency to the lockfile
+func (l *Lockfile) AddDependency(dep *DependencyLock) {
+	l.Dependencies[dep.Project] = dep
+}
+
 // NewLockfile returns a new lockfile
 func NewLockfile() *Lockfile {
-	manifest := Lockfile{LockfileVersion: LockfileVersion}
+	manifest := Lockfile{LockfileVersion: LockfileVersion, Dependencies: make(map[string]*DependencyLock)}
 	return &manifest
 }

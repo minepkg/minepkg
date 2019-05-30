@@ -287,19 +287,6 @@ func (m *McInstance) launchManifest() (*LaunchManifest, error) {
 	}
 }
 
-// SaveLockfile saves the lockfile to disk
-func (m *McInstance) SaveLockfile() error {
-	file, err := os.Create("minepkg-lock.toml")
-	if err != nil {
-		return err
-	}
-	_, err = io.Copy(file, m.Lockfile.Buffer())
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (m *McInstance) getLaunchManifest(v string) (*LaunchManifest, error) {
 	buf, err := ioutil.ReadFile(filepath.Join(m.Directory, "versions", v, v+".json"))
 	if err != nil {

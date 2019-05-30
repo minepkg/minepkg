@@ -211,7 +211,16 @@ func (m *McInstance) initLockfile() error {
 	if err != nil {
 		return err
 	}
+	if lockfile.Dependencies == nil {
+		lockfile.Dependencies = make(map[string]*manifest.DependencyLock)
+	}
 
 	m.Lockfile = &lockfile
 	return nil
+}
+
+// SaveLockfile saves the lockfile to the current directory
+func (m *McInstance) SaveLockfile() error {
+	lockfile := m.Lockfile.Buffer()
+	return ioutil.WriteFile("minepkg-lock.toml", lockfile.Bytes(), os.ModePerm)
 }
