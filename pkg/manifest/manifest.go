@@ -2,9 +2,7 @@ package manifest
 
 import (
 	"bytes"
-	"io"
 	"log"
-	"os"
 
 	"github.com/BurntSushi/toml"
 )
@@ -98,19 +96,6 @@ func (m *Manifest) AddDependency(name string, version string) {
 		m.Dependencies = make(map[string]string)
 	}
 	m.Dependencies[name] = version
-}
-
-// Save saves the manifest to disk
-func (m *Manifest) Save() error {
-	file, err := os.Create("minepkg.toml")
-	if err != nil {
-		return err
-	}
-	_, err = io.Copy(file, m.Buffer())
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // Buffer returns the manifest as toml in Buffer form

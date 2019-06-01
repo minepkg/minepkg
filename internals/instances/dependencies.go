@@ -17,7 +17,7 @@ import (
 )
 
 // UpdateLockfileDependencies resolves all dependencies
-func (i *McInstance) UpdateLockfileDependencies() {
+func (i *Instance) UpdateLockfileDependencies() {
 	if i.Lockfile == nil {
 		i.Lockfile = manifest.NewLockfile()
 	} else {
@@ -37,7 +37,7 @@ func (i *McInstance) UpdateLockfileDependencies() {
 }
 
 // FindMissingDependencies returns all dependencies that are not present
-func (i *McInstance) FindMissingDependencies() ([]*manifest.DependencyLock, error) {
+func (i *Instance) FindMissingDependencies() ([]*manifest.DependencyLock, error) {
 	missing := make([]*manifest.DependencyLock, 0)
 
 	deps := i.Lockfile.Dependencies
@@ -54,7 +54,7 @@ func (i *McInstance) FindMissingDependencies() ([]*manifest.DependencyLock, erro
 }
 
 // LinkDependencies links or copies all missing dependencies into the mods folder
-func (i *McInstance) LinkDependencies() error {
+func (i *Instance) LinkDependencies() error {
 	cacheDir := filepath.Join(i.Directory, "cache")
 
 	files, err := ioutil.ReadDir(i.ModsDirectory)
@@ -93,7 +93,7 @@ func (i *McInstance) LinkDependencies() error {
 }
 
 // EnsureDependencies downloads missing dependencies
-func (i *McInstance) EnsureDependencies(ctx context.Context) error {
+func (i *Instance) EnsureDependencies(ctx context.Context) error {
 	cacheDir := filepath.Join(i.Directory, "cache")
 
 	missingFiles, err := i.FindMissingDependencies()

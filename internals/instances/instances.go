@@ -40,8 +40,8 @@ var (
 	ErrorNoVersion = errors.New("Could not detect minecraft version")
 )
 
-// McInstance describes a locally installed minecraft instance
-type McInstance struct {
+// Instance describes a locally installed minecraft instance
+type Instance struct {
 	Flavour           uint8
 	Directory         string
 	ModsDirectory     string
@@ -52,11 +52,11 @@ type McInstance struct {
 }
 
 // Platform returns the type of loader required to start this instance
-func (m *McInstance) Platform() uint8 {
+func (i *Instance) Platform() uint8 {
 	switch {
-	case m.Manifest.Requirements.Fabric != "":
+	case i.Manifest.Requirements.Fabric != "":
 		return PlatformFabric
-	case m.Manifest.Requirements.Forge != "":
+	case i.Manifest.Requirements.Forge != "":
 		return PlatformForge
 	default:
 		return PlatformVanilla
@@ -64,8 +64,8 @@ func (m *McInstance) Platform() uint8 {
 }
 
 // Desc returns a one-liner summary of this instance
-func (m *McInstance) Desc() string {
-	manifest := m.Manifest
+func (i *Instance) Desc() string {
+	manifest := i.Manifest
 
 	depCount := fmt.Sprintf(" %d deps ", len(manifest.Dependencies))
 	name := fmt.Sprintf(" 📦 %s ", manifest.Package.Name)
@@ -77,7 +77,7 @@ func (m *McInstance) Desc() string {
 }
 
 // Download downloads a mod into the mod directory
-func (m *McInstance) Download(name string, url string) error {
+func (i *Instance) Download(name string, url string) error {
 	res, err := http.Get(url)
 	if err != nil {
 		return err
@@ -85,7 +85,7 @@ func (m *McInstance) Download(name string, url string) error {
 	if res.StatusCode != 200 {
 		return fmt.Errorf("Unexpected status code %d for %s", res.StatusCode, url)
 	}
-	dest, err := os.Create(path.Join(m.ModsDirectory, name))
+	dest, err := os.Create(path.Join(i.ModsDirectory, name))
 	if err != nil {
 		return err
 	}
@@ -94,8 +94,8 @@ func (m *McInstance) Download(name string, url string) error {
 }
 
 // Add a new mod using a reader
-func (m *McInstance) Add(name string, r io.Reader) error {
-	dest, err := os.Create(path.Join(m.ModsDirectory, name))
+func (i *Instance) Add(name string, r io.Reader) error {
+	dest, err := os.Create(path.Join(i.ModsDirectory, name))
 	if err != nil {
 		return err
 	}
@@ -105,7 +105,7 @@ func (m *McInstance) Add(name string, r io.Reader) error {
 
 // DetectInstance tries to detect a minecraft instance
 // returning it, if succesfull
-func DetectInstance() (*McInstance, error) {
+func DetectInstance() (*Instance, error) {
 	entries, _ := ioutil.ReadDir("./")
 
 	dir, err := os.Getwd()
@@ -135,7 +135,7 @@ func DetectInstance() (*McInstance, error) {
 		return nil, ErrorNoInstance
 	}
 
-	instance := &McInstance{
+	instance := &Instance{
 		Flavour:       flavour,
 		ModsDirectory: modsDir,
 		Directory:     dir,
@@ -155,7 +155,7 @@ func DetectInstance() (*McInstance, error) {
 }
 
 // initManifest sets the manifest file or creates one
-func (m *McInstance) initManifest() error {
+func (i *Instance) initManifest() error {
 	minepkg, err := ioutil.ReadFile("./minepkg.toml")
 	if err != nil {
 		if os.IsNotExist(err) != true {
@@ -167,7 +167,7 @@ func (m *McInstance) initManifest() error {
 			return err
 		}
 		name := filepath.Base(wd)
-		version := m.Version().String()
+		version := "1.14.2" // TODO: not static
 		if version == "" {
 			return ErrorNoVersion
 		}
@@ -176,7 +176,7 @@ func (m *McInstance) initManifest() error {
 
 		manifest.Package.Name = strcase.KebabCase(name)
 		manifest.Requirements.Minecraft = version
-		m.Manifest = manifest
+		i.Manifest = manifest
 		return nil
 	}
 
@@ -186,12 +186,12 @@ func (m *McInstance) initManifest() error {
 		return err
 	}
 
-	m.Manifest = &manifest
+	i.Manifest = &manifest
 	return nil
 }
 
 // initLockfile sets the lockfile or creates one
-func (m *McInstance) initLockfile() error {
+func (i *Instance) initLockfile() error {
 	rawLockfile, err := ioutil.ReadFile("./minepkg-lock.toml")
 	if err != nil {
 		// non existing lockfile is not bad
@@ -211,12 +211,18 @@ func (m *McInstance) initLockfile() error {
 		lockfile.Dependencies = make(map[string]*manifest.DependencyLock)
 	}
 
-	m.Lockfile = &lockfile
+	i.Lockfile = &lockfile
 	return nil
 }
 
+// SaveManifest saves the manifest to the current directory
+func (i *Instance) SaveManifest() error {
+	manifest := i.Manifest.Buffer()
+	return ioutil.WriteFile("minepkg.toml", manifest.Bytes(), os.ModePerm)
+}
+
 // SaveLockfile saves the lockfile to the current directory
-func (m *McInstance) SaveLockfile() error {
-	lockfile := m.Lockfile.Buffer()
+func (i *Instance) SaveLockfile() error {
+	lockfile := i.Lockfile.Buffer()
 	return ioutil.WriteFile("minepkg-lock.toml", lockfile.Bytes(), os.ModePerm)
 }

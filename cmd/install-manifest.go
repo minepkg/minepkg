@@ -13,7 +13,7 @@ import (
 )
 
 // installManifest installs dependencies from the minepkg.toml
-func installManifest(instance *instances.McInstance) {
+func installManifest(instance *instances.Instance) {
 	cacheDir := filepath.Join(globalDir, "cache")
 
 	task := logger.NewTask(2)

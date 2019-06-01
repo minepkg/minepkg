@@ -1,7 +1,6 @@
 package instances
 
 import (
-	"archive/zip"
 	"context"
 	"encoding/json"
 	"errors"
@@ -19,7 +18,6 @@ import (
 
 	"github.com/fiws/minepkg/pkg/manifest"
 
-	"github.com/Masterminds/semver"
 	homedir "github.com/mitchellh/go-homedir"
 )
 
@@ -33,14 +31,14 @@ var (
 )
 
 // GetLaunchManifest returns the merged manifest for the instance
-func (m *McInstance) GetLaunchManifest() (*LaunchManifest, error) {
+func (m *Instance) GetLaunchManifest() (*LaunchManifest, error) {
 	man, err := m.launchManifest()
 	if err != nil {
 		return nil, err
 	}
 
 	if man.InheritsFrom != "" {
-		parent, err := m.getLaunchManifest(man.InheritsFrom)
+		parent, err := m.getVanillaManifest(man.InheritsFrom)
 		if err != nil {
 			return nil, err
 		}
@@ -60,7 +58,7 @@ type LaunchOptions struct {
 }
 
 // Launch starts the minecraft instance
-func (m *McInstance) Launch(opts *LaunchOptions) error {
+func (i *Instance) Launch(opts *LaunchOptions) error {
 	home, _ := homedir.Dir()
 	globalDir := filepath.Join(home, ".minepkg")
 	cwd, err := os.Getwd()
@@ -68,7 +66,7 @@ func (m *McInstance) Launch(opts *LaunchOptions) error {
 		panic(err)
 	}
 
-	creds := m.MojangCredentials
+	creds := i.MojangCredentials
 	profile := creds.SelectedProfile
 	if profile == nil {
 		return ErrorNoCredentials
@@ -79,7 +77,7 @@ func (m *McInstance) Launch(opts *LaunchOptions) error {
 
 	// get manifest if not passed as option
 	if launchManifest == nil {
-		launchManifest, err = m.GetLaunchManifest()
+		launchManifest, err = i.GetLaunchManifest()
 		if err != nil {
 			return err
 		}
@@ -87,11 +85,11 @@ func (m *McInstance) Launch(opts *LaunchOptions) error {
 
 	// Download assets if not skipped
 	if opts.SkipDownload != true {
-		m.ensureAssets(launchManifest)
+		i.ensureAssets(launchManifest)
 	}
 
 	// create tmp dir for instance
-	tmpName := m.Manifest.Package.Name + fmt.Sprintf("%d", time.Now().Unix())
+	tmpName := i.Manifest.Package.Name + fmt.Sprintf("%d", time.Now().Unix())
 	tmpDir, err := ioutil.TempDir("", tmpName)
 	if err != nil {
 		return err
@@ -143,7 +141,7 @@ func (m *McInstance) Launch(opts *LaunchOptions) error {
 		v("auth_player_name"), profile.Name,
 		v("version_name"), jarTarget,
 		v("game_directory"), cwd,
-		v("assets_root"), filepath.Join(m.Directory, "assets"),
+		v("assets_root"), filepath.Join(i.Directory, "assets"),
 		v("assets_index_name"), launchManifest.Assets, // asset index version
 		v("auth_uuid"), profile.ID, // profile id
 		v("auth_access_token"), creds.AccessToken,
@@ -196,101 +194,33 @@ func (m *McInstance) Launch(opts *LaunchOptions) error {
 	return err
 }
 
-func existOrDownload(lib lib) {
-	home, _ := homedir.Dir()
-	globalDir := filepath.Join(home, ".minepkg/libraries")
-	path := filepath.Join(globalDir, lib.Filepath())
-	url := lib.DownloadURL()
-	if lib.Natives[runtime.GOOS] != "" {
-		nativeID, _ := lib.Natives[runtime.GOOS]
-		native := lib.Downloads.Classifiers[nativeID]
-		url = native.URL
-		path = filepath.Join(globalDir, native.Path)
-	}
-	if _, err := os.Stat(path); err == nil {
-		return
-	}
-
-	res, err := http.Get(url)
-	if err != nil {
-		panic(err)
-	}
-	if res.StatusCode != http.StatusOK {
-		panic(url + " did not return status code 200")
-	}
-	fmt.Println("downloading: " + path)
-	// create directory first
-	os.MkdirAll(filepath.Dir(path), 0755)
-	// file next
-	target, err := os.Create(path)
-	if err != nil {
-		panic(err)
-	}
-	_, err = io.Copy(target, res.Body)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func extractNative(jar string, target string) error {
-	r, err := zip.OpenReader(jar)
-	if err != nil {
-		return err
-	}
-	defer r.Close()
-	for _, f := range r.File {
-		// skip META-INF dir
-		if strings.HasPrefix(f.Name, "META-INF") {
-			continue
-		}
-
-		rc, err := f.Open()
-		if err != nil {
-			return err
-		}
-		f, err := os.Create(filepath.Join(target, f.Name))
-		if err != nil {
-			return err
-		}
-
-		io.Copy(f, rc)
-		rc.Close()
-	}
-	return nil
-}
-
-// v for variable
-func v(s string) string {
-	return "${" + s + "}"
-}
-
-func (m *McInstance) launchManifest() (*LaunchManifest, error) {
-	lockfile := m.Lockfile
+func (i *Instance) launchManifest() (*LaunchManifest, error) {
+	lockfile := i.Lockfile
 	if lockfile == nil {
-		m.initLockfile()
+		i.initLockfile()
 	}
-	buf, err := ioutil.ReadFile(filepath.Join(m.Directory, "versions", lockfile.McManifestName()))
+	buf, err := ioutil.ReadFile(filepath.Join(i.Directory, "versions", lockfile.McManifestName()))
 	if err == nil {
 		man := LaunchManifest{}
 		json.Unmarshal(buf, &man)
 		return &man, nil
 	}
 
-	switch m.Platform() {
+	switch i.Platform() {
 	case PlatformFabric:
-		return m.fetchFabricManifest(lockfile.Fabric)
+		return i.fetchFabricManifest(lockfile.Fabric)
 	case PlatformForge:
 		// TODO: forge
 		panic("Forge is not supported")
 	default:
-		return m.getLaunchManifest(m.Manifest.Requirements.Minecraft)
+		return i.getVanillaManifest(i.Manifest.Requirements.Minecraft)
 	}
 }
 
-func (m *McInstance) getLaunchManifest(v string) (*LaunchManifest, error) {
-	buf, err := ioutil.ReadFile(filepath.Join(m.Directory, "versions", v, v+".json"))
+func (i *Instance) getVanillaManifest(v string) (*LaunchManifest, error) {
+	buf, err := ioutil.ReadFile(filepath.Join(i.Directory, "versions", v, v+".json"))
 	if err != nil {
-		return m.fetchVanillaManifest(v)
+		return i.fetchVanillaManifest(v)
 		// return nil, err
 	}
 	instructions := LaunchManifest{}
@@ -298,115 +228,7 @@ func (m *McInstance) getLaunchManifest(v string) (*LaunchManifest, error) {
 	return &instructions, nil
 }
 
-func (m *McInstance) ResolveVanilaVersion(ctx context.Context) (*MinecraftRelease, error) {
-	constraint, _ := semver.NewConstraint(m.Manifest.Requirements.Minecraft)
-	res, err := GetMinecraftReleases(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// find newest compatible version
-	for _, v := range res.Versions {
-		// TODO: some versions contain spaces
-		semverVersion, err := semver.NewVersion(v.ID)
-
-		// skip unparsable minecraft versions
-		if err != nil {
-			continue
-		}
-
-		if constraint.Check(semverVersion) {
-			return &v, nil
-		}
-	}
-
-	return nil, nil
-}
-
-func (m *McInstance) ResolveRequirements(ctx context.Context) error {
-	if m.Lockfile == nil {
-		m.Lockfile = manifest.NewLockfile()
-	}
-	switch m.Platform() {
-	case PlatformFabric:
-		lock, err := m.ResolveFabricRequirement(ctx)
-		if err != nil {
-			return err
-		}
-		m.Lockfile.Fabric = lock
-	case PlatformForge:
-		fmt.Println("forge is not supported for now")
-	case PlatformVanilla:
-		version, err := m.ResolveVanilaVersion(ctx)
-		if err != nil {
-			return err
-		}
-		m.Lockfile.Vanilla = &manifest.VanillaLock{Minecraft: version.ID}
-	}
-	return nil
-}
-
-func (m *McInstance) ResolveFabricRequirement(ctx context.Context) (*manifest.FabricLock, error) {
-	// TODO: check for invalid semver
-	MCconstraint, _ := semver.NewConstraint(m.Manifest.Requirements.Minecraft)
-	FabricLoaderConstraint, _ := semver.NewConstraint(m.Manifest.Requirements.Fabric)
-	// mcVersions, err := GetMinecraftReleases(ctx)
-
-	fabricMappings, err := getFabricMappingVersions(ctx)
-	if err != nil {
-		return nil, err
-	}
-	fabricLoaders, err := getFabricLoaderVersions(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	var foundMapping *fabricMappingVersion
-	// find newest compatible version
-	for _, v := range fabricMappings {
-		// TODO: some versions contain spaces
-		semverVersion, err := semver.NewVersion(v.GameVersion)
-
-		// skip unparsable minecraft versions
-		if err != nil {
-			continue
-		}
-
-		if MCconstraint.Check(semverVersion) {
-			foundMapping = &v
-			break
-		}
-	}
-
-	var foundLoader *fabricLoaderVersion
-	// find newest compatible version
-	for _, v := range fabricLoaders {
-		// TODO: some versions contain spaces
-		semverVersion, err := semver.NewVersion(v.Version)
-
-		// skip unparsable minecraft versions
-		if err != nil {
-			continue
-		}
-
-		if FabricLoaderConstraint.Check(semverVersion) {
-			foundLoader = &v
-			break
-		}
-	}
-
-	if foundLoader == nil {
-		return nil, ErrorNoFabricLoader
-	}
-
-	return &manifest.FabricLock{
-		Minecraft:    foundMapping.GameVersion,
-		Mapping:      foundMapping.Version,
-		FabricLoader: foundLoader.Version,
-	}, nil
-}
-
-func (m *McInstance) fetchFabricManifest(lock *manifest.FabricLock) (*LaunchManifest, error) {
+func (i *Instance) fetchFabricManifest(lock *manifest.FabricLock) (*LaunchManifest, error) {
 	manifest := LaunchManifest{}
 	loader := lock.FabricLoader
 	mappings := lock.Mapping
@@ -421,7 +243,7 @@ func (m *McInstance) fetchFabricManifest(lock *manifest.FabricLock) (*LaunchMani
 		return nil, err
 	}
 	version := minecraft + "-fabric-" + loader
-	dir := filepath.Join(m.Directory, "versions", m.Manifest.Requirements.Minecraft+"-fabric-"+loader)
+	dir := filepath.Join(i.Directory, "versions", i.Manifest.Requirements.Minecraft+"-fabric-"+loader)
 	os.MkdirAll(dir, os.ModePerm)
 	if err != nil {
 		return nil, err
@@ -434,7 +256,7 @@ func (m *McInstance) fetchFabricManifest(lock *manifest.FabricLock) (*LaunchMani
 	return &manifest, nil
 }
 
-func (m *McInstance) fetchVanillaManifest(version string) (*LaunchManifest, error) {
+func (i *Instance) fetchVanillaManifest(version string) (*LaunchManifest, error) {
 	mcVersions, err := GetMinecraftReleases(context.TODO())
 	if err != nil {
 		return nil, err
@@ -461,7 +283,7 @@ func (m *McInstance) fetchVanillaManifest(version string) (*LaunchManifest, erro
 		return nil, err
 	}
 
-	dir := filepath.Join(m.Directory, "versions", version)
+	dir := filepath.Join(i.Directory, "versions", version)
 	os.MkdirAll(dir, os.ModePerm)
 	if err != nil {
 		return nil, err
@@ -491,11 +313,11 @@ func (m *McInstance) fetchVanillaManifest(version string) (*LaunchManifest, erro
 }
 
 // FindMissingLibraries returns all missing assets
-func (m *McInstance) FindMissingLibraries(man *LaunchManifest) (Libraries, error) {
+func (i *Instance) FindMissingLibraries(man *LaunchManifest) (Libraries, error) {
 	missing := Libraries{}
 
 	libs := man.Libraries.Required()
-	globalDir := filepath.Join(m.Directory, "libraries")
+	globalDir := filepath.Join(i.Directory, "libraries")
 
 	for _, lib := range libs {
 		path := filepath.Join(globalDir, lib.Filepath())
@@ -510,10 +332,10 @@ func (m *McInstance) FindMissingLibraries(man *LaunchManifest) (Libraries, error
 }
 
 // FindMissingAssets returns all missing assets
-func (m *McInstance) FindMissingAssets(man *LaunchManifest) ([]McAssetObject, error) {
+func (i *Instance) FindMissingAssets(man *LaunchManifest) ([]McAssetObject, error) {
 	assets := mcAssetsIndex{}
 
-	assetJSONPath := filepath.Join(m.Directory, "assets/indexes", man.Assets+".json")
+	assetJSONPath := filepath.Join(i.Directory, "assets/indexes", man.Assets+".json")
 	buf, err := ioutil.ReadFile(assetJSONPath)
 	if err != nil {
 		res, err := http.Get(man.AssetIndex.URL)
@@ -526,7 +348,7 @@ func (m *McInstance) FindMissingAssets(man *LaunchManifest) ([]McAssetObject, er
 			return nil, err
 		}
 
-		os.MkdirAll(filepath.Join(m.Directory, "assets/indexes"), os.ModePerm)
+		os.MkdirAll(filepath.Join(i.Directory, "assets/indexes"), os.ModePerm)
 		err = ioutil.WriteFile(assetJSONPath, buf, 0666)
 		if err != nil {
 			return nil, err
@@ -537,35 +359,11 @@ func (m *McInstance) FindMissingAssets(man *LaunchManifest) ([]McAssetObject, er
 	missing := make([]McAssetObject, 0)
 
 	for _, asset := range assets.Objects {
-		file := filepath.Join(m.Directory, "assets/objects", asset.UnixPath())
+		file := filepath.Join(i.Directory, "assets/objects", asset.UnixPath())
 		if _, err := os.Stat(file); os.IsNotExist(err) {
 			missing = append(missing, asset)
 		}
 	}
 
 	return missing, nil
-}
-
-func (m *McInstance) ensureAssets(man *LaunchManifest) error {
-
-	missing, err := m.FindMissingAssets(man)
-	if err != nil {
-		return err
-	}
-
-	for _, asset := range missing {
-		fileRes, err := http.Get(asset.DownloadURL())
-		// TODO: check status code and all the things!
-		os.MkdirAll(filepath.Join(m.Directory, "assets/objects", asset.Hash[:2]), os.ModePerm)
-		dest, err := os.Create(filepath.Join(m.Directory, "assets/objects", asset.UnixPath()))
-		if err != nil {
-			return err
-		}
-		_, err = io.Copy(dest, fileRes.Body)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }

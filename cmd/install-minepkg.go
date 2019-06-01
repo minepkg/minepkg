@@ -16,7 +16,7 @@ import (
 	"github.com/manifoldco/promptui"
 )
 
-func installFromMinepkg(mods []string, instance *instances.McInstance) error {
+func installFromMinepkg(mods []string, instance *instances.Instance) error {
 
 	cacheDir := filepath.Join(globalDir, "cache")
 	os.MkdirAll(cacheDir, os.ModePerm)
@@ -94,7 +94,7 @@ func installFromMinepkg(mods []string, instance *instances.McInstance) error {
 	instance.LinkDependencies()
 
 	s.Stop()
-	instance.Manifest.Save()
+	instance.SaveManifest()
 	instance.SaveLockfile()
 	fmt.Println("updated minepkg.toml")
 
