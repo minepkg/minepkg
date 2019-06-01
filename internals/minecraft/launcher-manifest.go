@@ -1,8 +1,6 @@
 package minecraft
 
 import (
-	"encoding/json"
-	"path/filepath"
 	"runtime"
 	"strings"
 )
@@ -33,94 +31,6 @@ type LaunchManifest struct {
 		URL       string `json:"url"`
 	} `json:"assetIndex"`
 	InheritsFrom string `json:"inheritsFrom"`
-}
-
-// Libraries as a collection of minecraft libs
-type Libraries []Lib
-
-// Required returns only the required library file (matching rules)
-func (l Libraries) Required() Libraries {
-	required := make(Libraries, 0)
-
-OUTER:
-	for _, lib := range l {
-
-		for _, rule := range lib.Rules {
-			// skip here rules do not apply
-			if rule.Applies() != true {
-				continue OUTER
-			}
-		}
-
-		// copy natives. not sure if this implementation is complete
-		if len(lib.Natives) != 0 {
-			_, ok := lib.Natives[runtime.GOOS]
-			// skip native not available for this platform
-			if ok != true {
-				continue
-			}
-		}
-
-		// not skipped. append this
-		required = append(required, lib)
-	}
-
-	return required
-}
-
-// Lib is one minecraft library
-type Lib struct {
-	Name      string `json:"name"`
-	Downloads struct {
-		Artifact    artifact            `json:"artifact"`
-		Classifiers map[string]artifact `json:"classifiers"`
-	} `json:"downloads,omitempty"`
-	URL     string            `json:"url"`
-	Rules   []libRule         `json:"rules"`
-	Natives map[string]string `json:"natives"`
-}
-
-// Filepath returns the target filepath for this library
-func (l *Lib) Filepath() string {
-
-	if l.Natives[runtime.GOOS] != "" {
-		nativeID, _ := l.Natives[runtime.GOOS]
-		native := l.Downloads.Classifiers[nativeID]
-		return native.Path
-	}
-
-	libPath := l.Downloads.Artifact.Path
-	if libPath == "" {
-		grouped := strings.Split(l.Name, ":")
-		basePath := filepath.Join(strings.Split(grouped[0], ".")...)
-		name := grouped[1]
-		version := grouped[2]
-
-		libPath = filepath.Join(basePath, name, version, name+"-"+version+".jar")
-	}
-	return libPath
-}
-
-// DownloadURL returns the Download URL this library
-func (l *Lib) DownloadURL() string {
-	switch {
-	case l.Natives[runtime.GOOS] != "":
-		nativeID, _ := l.Natives[runtime.GOOS]
-		return l.Downloads.Classifiers[nativeID].URL
-	case l.Downloads.Artifact.URL != "":
-		return l.Downloads.Artifact.URL
-	case l.URL != "":
-		return l.URL + filepath.ToSlash(l.Filepath())
-	default:
-		return "https://libraries.minecraft.net/" + filepath.ToSlash(l.Filepath())
-	}
-}
-
-type artifact struct {
-	Path string      `json:"path"`
-	Sha1 string      `json:"sha1"`
-	Size json.Number `json:"size"`
-	URL  string      `json:"url"`
 }
 
 type libRule struct {
@@ -154,28 +64,6 @@ type mcJarDownload struct {
 	Sha1 string `json:"sha1"`
 	Size int    `json:"size"`
 	URL  string `json:"url"`
-}
-
-// AssetIndex is just a map containing AssetObjects
-type AssetIndex struct {
-	Objects map[string]AssetObject
-}
-
-// AssetObject is one minecraft asset
-type AssetObject struct {
-	Hash string
-	Size int
-}
-
-// UnixPath returns the path including the folder
-// example: /fe/fe32f3b8…
-func (a *AssetObject) UnixPath() string {
-	return a.Hash[:2] + "/" + a.Hash
-}
-
-// DownloadURL returns the download url for this asset
-func (a *AssetObject) DownloadURL() string {
-	return "https://resources.download.minecraft.net/" + a.UnixPath()
 }
 
 // MergeWith merges important properties with another manifest
@@ -228,49 +116,4 @@ type argument struct {
 	// Value is the actual argument
 	Value stringSlice `json:"value"`
 	Rules []libRule   `json:"rules"`
-}
-
-type stringSlice []string
-
-func (w *stringSlice) String() string {
-	return strings.Join(*w, " ")
-}
-
-// UnmarshalJSON is needed because argument sometimes is a string
-func (w *stringSlice) UnmarshalJSON(data []byte) (err error) {
-	var arg []string
-
-	if string(data[0]) == "[" {
-		err := json.Unmarshal(data, &arg)
-		if err != nil {
-			return err
-		}
-		*w = arg
-	}
-
-	*w = []string{string(data)}
-	return nil
-}
-
-type stringArgument struct{ argument }
-
-// UnmarshalJSON is needed because argument sometimes is a string
-func (w *stringArgument) UnmarshalJSON(data []byte) (err error) {
-	var arg argument
-	if string(data[0]) == "{" {
-		err := json.Unmarshal(data, &arg)
-		if err != nil {
-			return err
-		}
-		w.argument = arg
-		return nil
-	}
-
-	var str string
-	err = json.Unmarshal(data, &str)
-	if err != nil {
-		return err
-	}
-	w.Value = []string{str}
-	return nil
 }
