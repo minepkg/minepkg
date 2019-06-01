@@ -121,7 +121,7 @@ func fabricGet(ctx context.Context, url string) (*http.Response, error) {
 	req.Header.Set("Content-Type", "application/json")
 	res, err := http.DefaultClient.Do(req.WithContext(ctx))
 	if err == nil && res.StatusCode != 200 {
-		return res, fmt.Errorf("fabric meta API did respond with unexpected status %d", res.Status)
+		return res, fmt.Errorf("fabric meta API did respond with unexpected status %s", res.Status)
 	}
 	return res, err
 }

@@ -31,14 +31,14 @@ var (
 )
 
 // GetLaunchManifest returns the merged manifest for the instance
-func (m *Instance) GetLaunchManifest() (*LaunchManifest, error) {
-	man, err := m.launchManifest()
+func (i *Instance) GetLaunchManifest() (*LaunchManifest, error) {
+	man, err := i.launchManifest()
 	if err != nil {
 		return nil, err
 	}
 
 	if man.InheritsFrom != "" {
-		parent, err := m.getVanillaManifest(man.InheritsFrom)
+		parent, err := i.getVanillaManifest(man.InheritsFrom)
 		if err != nil {
 			return nil, err
 		}
