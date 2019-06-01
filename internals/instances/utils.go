@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/fiws/minepkg/internals/minecraft"
 	homedir "github.com/mitchellh/go-homedir"
 )
 
@@ -45,7 +46,7 @@ func v(s string) string {
 	return "${" + s + "}"
 }
 
-func existOrDownload(lib lib) {
+func existOrDownload(lib minecraft.Lib) {
 	home, _ := homedir.Dir()
 	globalDir := filepath.Join(home, ".minepkg/libraries")
 	path := filepath.Join(globalDir, lib.Filepath())
@@ -81,7 +82,7 @@ func existOrDownload(lib lib) {
 	}
 }
 
-func (i *Instance) ensureAssets(man *LaunchManifest) error {
+func (i *Instance) ensureAssets(man *minecraft.LaunchManifest) error {
 
 	missing, err := i.FindMissingAssets(man)
 	if err != nil {

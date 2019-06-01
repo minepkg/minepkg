@@ -16,6 +16,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fiws/minepkg/internals/minecraft"
+
 	"github.com/fiws/minepkg/pkg/manifest"
 
 	homedir "github.com/mitchellh/go-homedir"
@@ -31,7 +33,7 @@ var (
 )
 
 // GetLaunchManifest returns the merged manifest for the instance
-func (i *Instance) GetLaunchManifest() (*LaunchManifest, error) {
+func (i *Instance) GetLaunchManifest() (*minecraft.LaunchManifest, error) {
 	man, err := i.launchManifest()
 	if err != nil {
 		return nil, err
@@ -49,7 +51,7 @@ func (i *Instance) GetLaunchManifest() (*LaunchManifest, error) {
 
 // LaunchOptions are options for launching
 type LaunchOptions struct {
-	LaunchManifest *LaunchManifest
+	LaunchManifest *minecraft.LaunchManifest
 	// SkipDownload will NOT download missing assets & libraries
 	SkipDownload bool
 	// Offline is not implemented
@@ -194,14 +196,14 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 	return err
 }
 
-func (i *Instance) launchManifest() (*LaunchManifest, error) {
+func (i *Instance) launchManifest() (*minecraft.LaunchManifest, error) {
 	lockfile := i.Lockfile
 	if lockfile == nil {
 		i.initLockfile()
 	}
 	buf, err := ioutil.ReadFile(filepath.Join(i.Directory, "versions", lockfile.McManifestName()))
 	if err == nil {
-		man := LaunchManifest{}
+		man := minecraft.LaunchManifest{}
 		json.Unmarshal(buf, &man)
 		return &man, nil
 	}
@@ -217,19 +219,19 @@ func (i *Instance) launchManifest() (*LaunchManifest, error) {
 	}
 }
 
-func (i *Instance) getVanillaManifest(v string) (*LaunchManifest, error) {
+func (i *Instance) getVanillaManifest(v string) (*minecraft.LaunchManifest, error) {
 	buf, err := ioutil.ReadFile(filepath.Join(i.Directory, "versions", v, v+".json"))
 	if err != nil {
 		return i.fetchVanillaManifest(v)
 		// return nil, err
 	}
-	instructions := LaunchManifest{}
+	instructions := minecraft.LaunchManifest{}
 	json.Unmarshal(buf, &instructions)
 	return &instructions, nil
 }
 
-func (i *Instance) fetchFabricManifest(lock *manifest.FabricLock) (*LaunchManifest, error) {
-	manifest := LaunchManifest{}
+func (i *Instance) fetchFabricManifest(lock *manifest.FabricLock) (*minecraft.LaunchManifest, error) {
+	manifest := minecraft.LaunchManifest{}
 	loader := lock.FabricLoader
 	mappings := lock.Mapping
 	minecraft := lock.Minecraft
@@ -256,7 +258,7 @@ func (i *Instance) fetchFabricManifest(lock *manifest.FabricLock) (*LaunchManife
 	return &manifest, nil
 }
 
-func (i *Instance) fetchVanillaManifest(version string) (*LaunchManifest, error) {
+func (i *Instance) fetchVanillaManifest(version string) (*minecraft.LaunchManifest, error) {
 	mcVersions, err := GetMinecraftReleases(context.TODO())
 	if err != nil {
 		return nil, err
@@ -272,7 +274,7 @@ func (i *Instance) fetchVanillaManifest(version string) (*LaunchManifest, error)
 		return nil, ErrorNoVersion
 	}
 
-	manifest := LaunchManifest{}
+	manifest := minecraft.LaunchManifest{}
 	res, err := http.Get(manifestURL)
 	if err != nil {
 		return nil, err
@@ -313,8 +315,8 @@ func (i *Instance) fetchVanillaManifest(version string) (*LaunchManifest, error)
 }
 
 // FindMissingLibraries returns all missing assets
-func (i *Instance) FindMissingLibraries(man *LaunchManifest) (Libraries, error) {
-	missing := Libraries{}
+func (i *Instance) FindMissingLibraries(man *minecraft.LaunchManifest) (minecraft.Libraries, error) {
+	missing := minecraft.Libraries{}
 
 	libs := man.Libraries.Required()
 	globalDir := filepath.Join(i.Directory, "libraries")
@@ -332,8 +334,8 @@ func (i *Instance) FindMissingLibraries(man *LaunchManifest) (Libraries, error) 
 }
 
 // FindMissingAssets returns all missing assets
-func (i *Instance) FindMissingAssets(man *LaunchManifest) ([]McAssetObject, error) {
-	assets := mcAssetsIndex{}
+func (i *Instance) FindMissingAssets(man *minecraft.LaunchManifest) ([]minecraft.AssetObject, error) {
+	assets := minecraft.AssetIndex{}
 
 	assetJSONPath := filepath.Join(i.Directory, "assets/indexes", man.Assets+".json")
 	buf, err := ioutil.ReadFile(assetJSONPath)
@@ -356,7 +358,7 @@ func (i *Instance) FindMissingAssets(man *LaunchManifest) ([]McAssetObject, erro
 	}
 	json.Unmarshal(buf, &assets)
 
-	missing := make([]McAssetObject, 0)
+	missing := make([]minecraft.AssetObject, 0)
 
 	for _, asset := range assets.Objects {
 		file := filepath.Join(i.Directory, "assets/objects", asset.UnixPath())

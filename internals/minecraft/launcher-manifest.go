@@ -1,4 +1,4 @@
-package instances
+package minecraft
 
 import (
 	"encoding/json"
@@ -36,7 +36,7 @@ type LaunchManifest struct {
 }
 
 // Libraries as a collection of minecraft libs
-type Libraries []lib
+type Libraries []Lib
 
 // Required returns only the required library file (matching rules)
 func (l Libraries) Required() Libraries {
@@ -68,7 +68,8 @@ OUTER:
 	return required
 }
 
-type lib struct {
+// Lib is one minecraft library
+type Lib struct {
 	Name      string `json:"name"`
 	Downloads struct {
 		Artifact    artifact            `json:"artifact"`
@@ -79,7 +80,8 @@ type lib struct {
 	Natives map[string]string `json:"natives"`
 }
 
-func (l *lib) Filepath() string {
+// Filepath returns the target filepath for this library
+func (l *Lib) Filepath() string {
 
 	if l.Natives[runtime.GOOS] != "" {
 		nativeID, _ := l.Natives[runtime.GOOS]
@@ -99,7 +101,8 @@ func (l *lib) Filepath() string {
 	return libPath
 }
 
-func (l *lib) DownloadURL() string {
+// DownloadURL returns the Download URL this library
+func (l *Lib) DownloadURL() string {
 	switch {
 	case l.Natives[runtime.GOOS] != "":
 		nativeID, _ := l.Natives[runtime.GOOS]
@@ -153,24 +156,25 @@ type mcJarDownload struct {
 	URL  string `json:"url"`
 }
 
-type mcAssetsIndex struct {
-	Objects map[string]McAssetObject
+// AssetIndex is just a map containing AssetObjects
+type AssetIndex struct {
+	Objects map[string]AssetObject
 }
 
-// McAssetObject is one minecraft asset
-type McAssetObject struct {
+// AssetObject is one minecraft asset
+type AssetObject struct {
 	Hash string
 	Size int
 }
 
 // UnixPath returns the path including the folder
 // example: /fe/fe32f3b8…
-func (a *McAssetObject) UnixPath() string {
+func (a *AssetObject) UnixPath() string {
 	return a.Hash[:2] + "/" + a.Hash
 }
 
 // DownloadURL returns the download url for this asset
-func (a *McAssetObject) DownloadURL() string {
+func (a *AssetObject) DownloadURL() string {
 	return "https://resources.download.minecraft.net/" + a.UnixPath()
 }
 
