@@ -103,7 +103,7 @@ var publishCmd = &cobra.Command{
 		if err == api.ErrorNotFound {
 			if nonInteractive != true {
 				create := boolPrompt(&promptui.Prompt{
-					Label:     "Project does not exists yet. Do you want to create it",
+					Label:     "Project " + m.Package.Name + " does not exists yet. Do you want to create it",
 					Default:   "Y",
 					IsConfirm: true,
 				})
