@@ -134,7 +134,7 @@ func (m *McInstance) Launch(opts *LaunchOptions) error {
 	// finally append the minecraft.jar
 	jarTarget := launchManifest.Jar
 	if jarTarget == "" {
-		jarTarget = launchManifest.Assets
+		jarTarget = launchManifest.InheritsFrom
 	}
 	mcJar := filepath.Join(globalDir, "versions", jarTarget, jarTarget+".jar")
 	cpArgs = append(cpArgs, mcJar)
@@ -278,7 +278,7 @@ func (m *McInstance) launchManifest() (*LaunchManifest, error) {
 
 	switch m.Platform() {
 	case PlatformFabric:
-		return m.fetchFabricManifest(lockfile.Fabric.FabricLoader, lockfile.Fabric.Mapping)
+		return m.fetchFabricManifest(lockfile.Fabric)
 	case PlatformForge:
 		// TODO: forge
 		panic("Forge is not supported")
@@ -324,7 +324,9 @@ func (m *McInstance) ResolveVanilaVersion(ctx context.Context) (*MinecraftReleas
 }
 
 func (m *McInstance) ResolveRequirements(ctx context.Context) error {
-	m.Lockfile = manifest.NewLockfile()
+	if m.Lockfile == nil {
+		m.Lockfile = manifest.NewLockfile()
+	}
 	switch m.Platform() {
 	case PlatformFabric:
 		lock, err := m.ResolveFabricRequirement(ctx)
@@ -404,8 +406,11 @@ func (m *McInstance) ResolveFabricRequirement(ctx context.Context) (*manifest.Fa
 	}, nil
 }
 
-func (m *McInstance) fetchFabricManifest(loader string, mappings string) (*LaunchManifest, error) {
+func (m *McInstance) fetchFabricManifest(lock *manifest.FabricLock) (*LaunchManifest, error) {
 	manifest := LaunchManifest{}
+	loader := lock.FabricLoader
+	mappings := lock.Mapping
+	minecraft := lock.Minecraft
 	res, err := http.Get("https://fabricmc.net/download/vanilla?format=profileJson&loader=" + url.QueryEscape(loader) + "&yarn=" + url.QueryEscape(mappings))
 	if err != nil {
 		return nil, err
@@ -415,7 +420,7 @@ func (m *McInstance) fetchFabricManifest(loader string, mappings string) (*Launc
 	if err != nil {
 		return nil, err
 	}
-	version := m.Manifest.Requirements.Minecraft + "-fabric-" + loader
+	version := minecraft + "-fabric-" + loader
 	dir := filepath.Join(m.Directory, "versions", m.Manifest.Requirements.Minecraft+"-fabric-"+loader)
 	os.MkdirAll(dir, os.ModePerm)
 	if err != nil {

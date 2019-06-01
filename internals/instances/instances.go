@@ -23,14 +23,9 @@ const compatMMCFormat = 1
 
 var (
 	// FlavourVanilla is a vanilla minecraft instance
-	// usually installed with the official minecraft launcher
 	FlavourVanilla uint8 = 1
-	// FlavourMMC is a minecraft instance initiated with MultiMC
-	FlavourMMC uint8 = 2
 	// FlavourServer is a server side instance
 	FlavourServer uint8 = 3
-	// FlavourMinepkg is the native minepkg instance
-	FlavourMinepkg uint8 = 4
 
 	// PlatformVanilla is a vanilla minecraft instance
 	PlatformVanilla uint8 = 1
@@ -53,6 +48,7 @@ type McInstance struct {
 	Manifest          *manifest.Manifest
 	Lockfile          *manifest.Lockfile
 	MojangCredentials *api.MojangAuthResponse
+	MinepkgAPI        *api.MinepkgAPI
 }
 
 // Platform returns the type of loader required to start this instance

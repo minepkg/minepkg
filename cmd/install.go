@@ -16,14 +16,11 @@ var installCmd = &cobra.Command{
 	Aliases: []string{"isntall", "i"},
 	Run: func(cmd *cobra.Command, args []string) {
 		instance, err := instances.DetectInstance()
+		instance.MinepkgAPI = apiClient
 		if err != nil {
 			logger.Fail("Instance problem: " + err.Error())
 		}
 		fmt.Printf("Installing to %s\n", instance.Desc())
-		if instance.Flavour == instances.FlavourMMC {
-			logger.Warn("MultiMC support is not officialy endorsed.")
-			logger.Log("Report bugs to http://github.com/fiws/minepkg/issues")
-		}
 		fmt.Println() // empty line
 
 		// create mod dir if not already present

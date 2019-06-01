@@ -56,7 +56,7 @@ var launchCmd = &cobra.Command{
 		}
 
 		// resolve requirements
-		if instance.Lockfile == nil {
+		if instance.Lockfile == nil || instance.Lockfile.HasRequirements() == false {
 			s.Suffix = " Preparing launch – Resolving Requirements"
 			instance.ResolveRequirements(context.TODO())
 			instance.SaveLockfile()
@@ -95,6 +95,12 @@ var launchCmd = &cobra.Command{
 		if err = mgr.Start(context.TODO()); err != nil {
 			logger.Fail(err.Error())
 		}
+
+		s.Suffix = " Downloading dependencies"
+		if err := instance.EnsureDependencies(context.TODO()); err != nil {
+			logger.Fail(err.Error())
+		}
+
 		s.Stop()
 
 		fmt.Println("\nLaunching Minecraft …")

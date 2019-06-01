@@ -3,8 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,14 +15,6 @@ import (
 	"github.com/fiws/minepkg/internals/instances"
 	"github.com/manifoldco/promptui"
 )
-
-type cache struct {
-	baseDir string
-}
-
-func (c *cache) store() {
-
-}
 
 func installFromMinepkg(mods []string, instance *instances.McInstance) error {
 
@@ -80,32 +70,20 @@ func installFromMinepkg(mods []string, instance *instances.McInstance) error {
 	}
 
 	task.Step("🔎", "Resolving Dependencies")
-	res := api.NewResolver(apiClient)
-	res.Resolve(releases)
 	for _, release := range releases {
 		instance.Manifest.AddDependency(release.Project, release.Version)
-		target := filepath.Join(cacheDir, release.Filename())
-		mgr.Add(downloadmgr.NewHTTPItem(release.DownloadURL(), target))
 	}
-
-	// logger.Info("The following Dependencies will be downloaded:")
-	// logger.Info(strings.Join())
-	task.Step("🚚", "Downloading Packages")
-
-	files, err := ioutil.ReadDir(instance.ModsDirectory)
+	instance.UpdateLockfileDependencies()
+	missingFiles, err := instance.FindMissingDependencies()
 	if err != nil {
-		log.Fatal(err)
+		logger.Fail(err.Error())
 	}
 
-	for _, f := range files {
-		switch mode := f.Mode(); {
-		case mode.IsRegular():
-			logger.Warn("ignoring file in mods not placed by minepkg: " + f.Name())
-		case mode&os.ModeSymlink != 0:
-			os.Remove(filepath.Join(instance.ModsDirectory, f.Name()))
-		case mode&os.ModeNamedPipe != 0:
-			fmt.Println("named pipe?! what is this")
-		}
+	task.Step("🚚", fmt.Sprintf("Downloading %d Packages", len(missingFiles)))
+	for _, m := range missingFiles {
+		fmt.Printf("%+v\n", m)
+		p := filepath.Join(cacheDir, m.Project, m.Version+".jar")
+		mgr.Add(downloadmgr.NewHTTPItem(m.URL, p))
 	}
 
 	s.Start()
@@ -113,16 +91,11 @@ func installFromMinepkg(mods []string, instance *instances.McInstance) error {
 		logger.Fail(err.Error())
 	}
 
-	for _, release := range res.Resolved {
-		from := filepath.Join(cacheDir, release.Filename())
-		to := filepath.Join(instance.ModsDirectory, release.Filename())
-		err := os.Symlink(from, to)
-		if err != nil {
-			panic(err)
-		}
-	}
+	instance.LinkDependencies()
+
 	s.Stop()
 	instance.Manifest.Save()
+	instance.SaveLockfile()
 	fmt.Println("updated minepkg.toml")
 
 	return nil

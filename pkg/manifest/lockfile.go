@@ -54,6 +54,11 @@ type DependencyLock struct {
 	URL      string `toml:"url" json:"url"`
 }
 
+// Filename returns the dependency in the "project@version.jar" format
+func (d *DependencyLock) Filename() string {
+	return d.Project + "@" + d.Version + ".jar"
+}
+
 // McManifestName returns the Minecraft Launcher Manifest name
 func (l *Lockfile) McManifestName() string {
 	switch {
@@ -64,6 +69,11 @@ func (l *Lockfile) McManifestName() string {
 	default:
 		return l.Vanilla.Minecraft
 	}
+}
+
+// HasRequirements returns true if lockfile has some requirements
+func (l *Lockfile) HasRequirements() bool {
+	return l.Fabric != nil || l.Forge != nil || l.Vanilla != nil
 }
 
 // Buffer returns the manifest as toml in Buffer form
@@ -87,6 +97,11 @@ func (l *Lockfile) String() string {
 // AddDependency adds a new dependency to the lockfile
 func (l *Lockfile) AddDependency(dep *DependencyLock) {
 	l.Dependencies[dep.Project] = dep
+}
+
+// ClearDependencies removes all dependencies
+func (l *Lockfile) ClearDependencies() {
+	l.Dependencies = make(map[string]*DependencyLock)
 }
 
 // NewLockfile returns a new lockfile
