@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/mholt/archiver"
@@ -19,7 +20,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var version string
+var (
+	version    string
+	serverMode bool
+)
+
+func init() {
+	launchCmd.Flags().BoolVarP(&serverMode, "server", "s", false, "Start a server instead of a client")
+}
 
 var launchCmd = &cobra.Command{
 	Use:     "launch",
@@ -72,19 +80,21 @@ var launchCmd = &cobra.Command{
 			logger.Fail(err.Error())
 		}
 
-		missingAssets, err := instance.FindMissingAssets(launchManifest)
-		if err != nil {
-			logger.Fail(err.Error())
+		if serverMode != true {
+			missingAssets, err := instance.FindMissingAssets(launchManifest)
+			if err != nil {
+				logger.Fail(err.Error())
+			}
+
+			for _, asset := range missingAssets {
+				target := filepath.Join(instance.Directory, "assets/objects", asset.UnixPath())
+				mgr.Add(downloadmgr.NewHTTPItem(asset.DownloadURL(), target))
+			}
 		}
 
 		missingLibs, err := instance.FindMissingLibraries(launchManifest)
 		if err != nil {
 			logger.Fail(err.Error())
-		}
-
-		for _, asset := range missingAssets {
-			target := filepath.Join(instance.Directory, "assets/objects", asset.UnixPath())
-			mgr.Add(downloadmgr.NewHTTPItem(asset.DownloadURL(), target))
 		}
 
 		for _, lib := range missingLibs {
@@ -103,11 +113,17 @@ var launchCmd = &cobra.Command{
 
 		s.Stop()
 
+		// TODO: This is just a hack
+		if serverMode == true {
+			launchManifest.MainClass = strings.Replace(launchManifest.MainClass, "Client", "Server", -1)
+		}
+
 		fmt.Println("\nLaunching Minecraft …")
 		opts := &instances.LaunchOptions{
 			LaunchManifest: launchManifest,
 			SkipDownload:   true,
 			Java:           java,
+			Server:         serverMode,
 		}
 		err = instance.Launch(opts)
 		if err != nil {

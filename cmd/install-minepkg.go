@@ -81,7 +81,6 @@ func installFromMinepkg(mods []string, instance *instances.Instance) error {
 
 	task.Step("🚚", fmt.Sprintf("Downloading %d Packages", len(missingFiles)))
 	for _, m := range missingFiles {
-		fmt.Printf("%+v\n", m)
 		p := filepath.Join(cacheDir, m.Project, m.Version+".jar")
 		mgr.Add(downloadmgr.NewHTTPItem(m.URL, p))
 	}

@@ -57,6 +57,7 @@ type LaunchOptions struct {
 	// Offline is not implemented
 	Offline bool
 	Java    string
+	Server  bool
 }
 
 // Launch starts the minecraft instance
@@ -176,7 +177,12 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 		"-XX:G1HeapRegionSize=32M",
 		launchManifest.MainClass,
 	}
-	cmdArgs = append(cmdArgs, strings.Split(args, " ")...)
+
+	if opts.Server == false {
+		cmdArgs = append(cmdArgs, strings.Split(args, " ")...)
+	} else {
+		cmdArgs = append(cmdArgs, "nogui")
+	}
 
 	// fmt.Println("cmd: ")
 	// fmt.Println(cmdArgs)
@@ -235,6 +241,20 @@ func (i *Instance) fetchFabricManifest(lock *manifest.FabricLock) (*minecraft.La
 	loader := lock.FabricLoader
 	mappings := lock.Mapping
 	minecraft := lock.Minecraft
+
+	version := minecraft + "-fabric-" + loader
+	dir := filepath.Join(i.Directory, "versions", i.Manifest.Requirements.Minecraft+"-fabric-"+loader)
+	file := filepath.Join(dir, version+".json")
+
+	// cached
+	if rawMan, err := ioutil.ReadFile(file); err == nil {
+		err := json.Unmarshal(rawMan, &manifest)
+		if err != nil {
+			return nil, err
+		}
+		return &manifest, nil
+	}
+
 	res, err := http.Get("https://fabricmc.net/download/vanilla?format=profileJson&loader=" + url.QueryEscape(loader) + "&yarn=" + url.QueryEscape(mappings))
 	if err != nil {
 		return nil, err
@@ -244,8 +264,6 @@ func (i *Instance) fetchFabricManifest(lock *manifest.FabricLock) (*minecraft.La
 	if err != nil {
 		return nil, err
 	}
-	version := minecraft + "-fabric-" + loader
-	dir := filepath.Join(i.Directory, "versions", i.Manifest.Requirements.Minecraft+"-fabric-"+loader)
 	os.MkdirAll(dir, os.ModePerm)
 	if err != nil {
 		return nil, err
