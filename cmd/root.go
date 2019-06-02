@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/gookit/color"
+
 	"github.com/fiws/minepkg/pkg/api"
 
 	"github.com/fiws/minepkg/internals/cmdlog"
@@ -24,6 +26,10 @@ var logger *cmdlog.Logger = cmdlog.New()
 var globalDir = "/tmp"
 var apiClient = api.New()
 var loginData = &api.AuthResponse{}
+
+var (
+	disableColors bool
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -100,11 +106,16 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	// Global flags
+	rootCmd.PersistentFlags().BoolVarP(&disableColors, "no-color", "", false, "disable color output")
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.minepkg/config.toml)")
 }
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
+	if disableColors == true {
+		color.Disable()
+	}
+
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)

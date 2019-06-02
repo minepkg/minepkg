@@ -10,6 +10,7 @@ require (
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/fatih/color v1.7.0
 	github.com/golang/snappy v0.0.1 // indirect
+	github.com/gookit/color v1.1.7
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/juju/ansiterm v0.0.0-20180109212912-720a0952cc2a // indirect
 	github.com/logrusorgru/aurora v0.0.0-20181002194514-a7b3b318ed4e

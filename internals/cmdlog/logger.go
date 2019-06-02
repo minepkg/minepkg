@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/logrusorgru/aurora"
+	"github.com/gookit/color"
 )
 
 // Logger loggs pretty stuff to the console
@@ -30,7 +30,7 @@ func (l *Logger) pritEmoji(e string) {
 
 // Headline prints a blue line
 func (l *Logger) Headline(s string) {
-	l.println(aurora.Cyan(s).Bold().String())
+	color.Style{color.FgCyan, color.OpBold}.Println(s)
 }
 
 // Info prints a "normal" line
@@ -40,19 +40,19 @@ func (l *Logger) Info(s string) {
 
 // Log prints a black line
 func (l *Logger) Log(s string) {
-	l.println(aurora.Gray(s).String())
+	color.LightWhite.Println(s)
 }
 
 // Warn will print a warning
 func (l *Logger) Warn(s string) {
 	l.pritEmoji("⚠️ ")
-	l.println(aurora.Brown(s).Bold().String())
+	color.Style{color.FgYellow, color.OpBold}.Println(s)
 }
 
 // Fail will print the given message with PrintLn and then exit 1
 func (l *Logger) Fail(s string) {
 	l.pritEmoji("💣")
-	l.println(aurora.Red(s).Bold().String())
+	color.Style{color.FgRed, color.OpBold}.Println(s)
 	os.Exit(1)
 }
 
@@ -68,6 +68,11 @@ func (l *Logger) NewTask(end int) *Task {
 // New returns a new Logger
 func New() *Logger {
 	emojis := runtime.GOOS != "windows"
+
+	// disable color for CI
+	if os.Getenv("CI") != "" {
+		color.Disable()
+	}
 	return &Logger{emojis: emojis, color: true}
 }
 
@@ -81,15 +86,15 @@ type Task struct {
 // Step prints progress
 func (l *Task) Step(e string, s string) {
 	l.current++
-	text := aurora.Sprintf(
-		aurora.Cyan("[%d / %d] %s %s").Bold(),
+	text := color.Cyan.Sprintf(
+		"[%d / %d] %s %s",
 		l.current,
 		l.end,
 		e,
 		s,
 	)
 
-	// we don't use l.println here, because setp headlines should have no indentation
+	// we don't use l.println here, because step headlines should have no indentation
 	fmt.Println(text)
 }
 
