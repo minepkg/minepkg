@@ -3,11 +3,8 @@ package instances
 import (
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -74,33 +71,6 @@ func (i *Instance) Desc() string {
 		aurora.BgGray(depCount).Black().String(),
 	}
 	return strings.Join(build, "")
-}
-
-// Download downloads a mod into the mod directory
-func (i *Instance) Download(name string, url string) error {
-	res, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	if res.StatusCode != 200 {
-		return fmt.Errorf("Unexpected status code %d for %s", res.StatusCode, url)
-	}
-	dest, err := os.Create(path.Join(i.ModsDirectory, name))
-	if err != nil {
-		return err
-	}
-	io.Copy(dest, res.Body)
-	return nil
-}
-
-// Add a new mod using a reader
-func (i *Instance) Add(name string, r io.Reader) error {
-	dest, err := os.Create(path.Join(i.ModsDirectory, name))
-	if err != nil {
-		return err
-	}
-	_, err = io.Copy(dest, r)
-	return err
 }
 
 // DetectInstance tries to detect a minecraft instance
