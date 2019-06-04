@@ -97,6 +97,11 @@ func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, versionReq
 		return nil, err
 	}
 
+	// found nothing
+	if len(releases) == 0 {
+		return nil, ErrNotMatchingRelease
+	}
+
 	if versionRequirement == "latest" || versionRequirement == "*" {
 		return releases[0], nil
 	}

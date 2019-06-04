@@ -28,8 +28,6 @@ var (
 	ErrorLaunchNotImplemented = errors.New("Can only launch vanilla instances (for now)")
 	// ErrorNoCredentials is returned when an instance is launched without `MojangProfile` beeing set
 	ErrorNoCredentials = errors.New("Can not launch without mojang credentials")
-	// ErrorNoFabricLoader is returned if the wanted fabric version was not found
-	ErrorNoFabricLoader = errors.New("Could not find wanted fabric version")
 )
 
 // GetLaunchManifest returns the merged manifest for the instance

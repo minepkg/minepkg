@@ -2,10 +2,18 @@ package instances
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Masterminds/semver"
 	"github.com/fiws/minepkg/pkg/manifest"
+)
+
+var (
+	// ErrorNoFabricLoader is returned if the wanted fabric version was not found
+	ErrNoFabricLoader = errors.New("Could not find wanted fabric version")
+	// ErrNoFabricMapping is returned if the wanted fabric mapping was not found
+	ErrNoFabricMapping = errors.New("Could not find fabric mapping for minecraft version")
 )
 
 // ResolveRequirements returns a manifest `VanillaLock`, `FabricLock` or `ForgeLock`
@@ -90,6 +98,10 @@ func (i *Instance) resolveFabricRequirement(ctx context.Context) (*manifest.Fabr
 		}
 	}
 
+	if foundMapping == nil {
+		return nil, ErrNoFabricMapping
+	}
+
 	var foundLoader *fabricLoaderVersion
 	// find newest compatible version
 	for _, v := range fabricLoaders {
@@ -108,7 +120,7 @@ func (i *Instance) resolveFabricRequirement(ctx context.Context) (*manifest.Fabr
 	}
 
 	if foundLoader == nil {
-		return nil, ErrorNoFabricLoader
+		return nil, ErrNoFabricLoader
 	}
 
 	return &manifest.FabricLock{

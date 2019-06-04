@@ -99,6 +99,7 @@ func init() {
 	rootCmd.AddCommand(installCmd)
 	rootCmd.AddCommand(updateCmd)
 	rootCmd.AddCommand(updateReqCmd)
+	rootCmd.AddCommand(tryCmd)
 	rootCmd.AddCommand(publishCmd)
 	rootCmd.AddCommand(buildCmd)
 	rootCmd.AddCommand(launchCmd)

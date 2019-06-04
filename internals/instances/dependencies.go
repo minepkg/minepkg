@@ -17,7 +17,7 @@ import (
 )
 
 // UpdateLockfileDependencies resolves all dependencies
-func (i *Instance) UpdateLockfileDependencies() {
+func (i *Instance) UpdateLockfileDependencies() error {
 	if i.Lockfile == nil {
 		i.Lockfile = manifest.NewLockfile()
 	} else {
@@ -25,7 +25,10 @@ func (i *Instance) UpdateLockfileDependencies() {
 	}
 
 	res := NewResolver(i.MinepkgAPI)
-	res.ResolveManifest(i.Manifest)
+	err := res.ResolveManifest(i.Manifest)
+	if err != nil {
+		return err
+	}
 	for _, release := range res.Resolved {
 		i.Lockfile.AddDependency(&manifest.DependencyLock{
 			Project:  release.Project,
@@ -34,6 +37,8 @@ func (i *Instance) UpdateLockfileDependencies() {
 			URL:      release.DownloadURL(),
 		})
 	}
+
+	return nil
 }
 
 // FindMissingDependencies returns all dependencies that are not present
@@ -135,7 +140,10 @@ func (r *Resolver) ResolveManifest(man *manifest.Manifest) error {
 		if err != nil {
 			return err
 		}
-		r.ResolveSingle(release)
+		err = r.ResolveSingle(release)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

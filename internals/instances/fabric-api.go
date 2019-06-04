@@ -108,7 +108,7 @@ func getFabricLoaderForGameVersion(ctx context.Context, mcVersion string) (*fabr
 
 	// TODO: version matching
 	if len(loaders) == 0 {
-		return nil, ErrorNoFabricLoader
+		return nil, ErrNoFabricLoader
 	}
 	matched := loaders[0]
 

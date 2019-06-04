@@ -66,8 +66,10 @@ func (l *Lockfile) McManifestName() string {
 		return l.Fabric.Minecraft + "-fabric-" + l.Fabric.FabricLoader
 	case l.Forge != nil:
 		return l.Forge.Minecraft + "-forge-" + l.Forge.ForgeLoader
-	default:
+	case l.Vanilla != nil:
 		return l.Vanilla.Minecraft
+	default:
+		panic("lockfile has no fabric, forge or vanila requirement")
 	}
 }
 

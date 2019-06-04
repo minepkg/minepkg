@@ -25,6 +25,10 @@ func (d *DownloadManager) Start(ctx context.Context) error {
 	var sem = make(chan int, 16)
 	errc := make(chan error)
 
+	if d.queue == nil {
+		return nil
+	}
+
 	go func() {
 		for _, item := range d.queue {
 			sem <- 1
@@ -40,7 +44,9 @@ func (d *DownloadManager) Start(ctx context.Context) error {
 		if maybeErr != nil {
 			return maybeErr
 		}
-		d.OnProgress(int(float32(i) / float32(len(d.queue)) * 100))
+		if d.OnProgress != nil {
+			d.OnProgress(int(float32(i) / float32(len(d.queue)) * 100))
+		}
 	}
 	return nil
 }
