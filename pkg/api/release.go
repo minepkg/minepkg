@@ -31,6 +31,9 @@ func (r *Release) Filename() string {
 
 // DownloadURL returns the download url for this release
 func (r *Release) DownloadURL() string {
+	if r.FileLocation == "" {
+		return ""
+	}
 	return baseAPI + "/projects/" + r.Identifier() + "/download"
 }
 

@@ -48,6 +48,7 @@ type Release struct {
 	Project      string        `json:"Project"`
 	Version      string        `json:"version"`
 	IPFSHash     string        `json:"ipfsHash"`
+	FileLocation string        `json:"fileLocation"`
 	Published    bool          `json:"published"`
 	Requirements Requirements  `json:"requirements"`
 	Dependencies []*Dependency `json:"dependencies"`

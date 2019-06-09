@@ -49,6 +49,9 @@ func (i *Instance) FindMissingDependencies() ([]*manifest.DependencyLock, error)
 	cacheDir := filepath.Join(i.Directory, "cache")
 
 	for _, dep := range deps {
+		if dep.URL == "" {
+			continue // skip dependencies without download url
+		}
 		p := filepath.Join(dep.Project, dep.Version+".jar")
 		if _, err := os.Stat(filepath.Join(cacheDir, p)); os.IsNotExist(err) {
 			missing = append(missing, dep)
@@ -80,6 +83,10 @@ func (i *Instance) LinkDependencies() error {
 	}
 
 	for _, dep := range i.Lockfile.Dependencies {
+		// skip packages with no binary
+		if dep.URL == "" {
+			continue
+		}
 		from := filepath.Join(cacheDir, dep.Project, dep.Version+".jar")
 		to := filepath.Join(i.ModsDirectory, dep.Filename())
 
@@ -161,20 +168,19 @@ func (r *Resolver) Resolve(releases []*api.Release) error {
 
 // ResolveSingle resolves all dependencies of a single release
 func (r *Resolver) ResolveSingle(release *api.Release) error {
-
 	r.Resolved[release.Project] = release
 	// TODO: parallelize
 	for _, d := range release.Dependencies {
 		_, ok := r.Resolved[d.Name]
 		if ok == true {
-			return nil
+			continue
 		}
 		r.Resolved[d.Name] = nil
 		release, err := d.Resolve(context.TODO())
 		if err != nil {
 			return err
 		}
-		r.ResolveSingle(release)
+		return r.ResolveSingle(release)
 	}
 
 	return nil

@@ -28,7 +28,10 @@ func installManifest(instance *instances.Instance) {
 	}
 
 	task.Step("🔎", "Resolving Dependencies")
-	instance.UpdateLockfileDependencies()
+	err := instance.UpdateLockfileDependencies()
+	if err != nil {
+		logger.Fail(err.Error())
+	}
 	missingFiles, err := instance.FindMissingDependencies()
 	if err != nil {
 		logger.Fail(err.Error())
