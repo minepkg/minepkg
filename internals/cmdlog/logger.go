@@ -71,6 +71,7 @@ func New() *Logger {
 
 	// disable color for CI
 	if os.Getenv("CI") != "" {
+		emojis = false
 		color.Disable()
 	}
 	return &Logger{emojis: emojis, color: true}
