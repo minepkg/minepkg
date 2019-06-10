@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -36,6 +37,8 @@ var launchCmd = &cobra.Command{
 	Aliases: []string{"run", "start", "play"},
 	Run: func(cmd *cobra.Command, args []string) {
 		instance, err := instances.DetectInstance()
+		instance.MinepkgAPI = apiClient
+
 		if err != nil {
 			logger.Fail("Instance problem: " + err.Error())
 		}
@@ -109,6 +112,20 @@ var launchCmd = &cobra.Command{
 		s.Suffix = " Downloading dependencies"
 		if err := instance.EnsureDependencies(context.TODO()); err != nil {
 			logger.Fail(err.Error())
+		}
+
+		// TODO: handle this with the login check at the start
+		s.Suffix = " Refreshing Token"
+		if err := instance.RefreshToken(); err != nil {
+			logger.Fail(err.Error())
+		}
+
+		loginData.Mojang = instance.MojangCredentials
+		creds, err := json.Marshal(loginData)
+
+		credFile := filepath.Join(globalDir, "credentials.json")
+		if err := ioutil.WriteFile(credFile, creds, 0700); err != nil {
+			logger.Fail("Count not write credentials file: " + err.Error())
 		}
 
 		s.Stop()

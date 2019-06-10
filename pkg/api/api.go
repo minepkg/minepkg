@@ -151,6 +151,62 @@ func (m *MinepkgAPI) MojangTokenLogin(accessToken string, clientToken string) (*
 	return &auth, nil
 }
 
+// MojangEnsureToken checks if the token need to be refreshed and does so it required. it returns a valid token
+func (m *MinepkgAPI) MojangEnsureToken(accessToken string, clientToken string) (*MojangAuthResponse, error) {
+	ok, _ := m.mojangCheckValid(accessToken, clientToken)
+	if ok == true {
+		return &MojangAuthResponse{AccessToken: accessToken, ClientToken: clientToken}, nil
+	}
+	return m.MojangRefreshToken(accessToken, clientToken)
+}
+
+func (m *MinepkgAPI) mojangCheckValid(accessToken string, clientToken string) (bool, error) {
+	loginData := struct {
+		AccessToken string `json:"accessToken"`
+		ClientToken string `json:"clientToken"`
+	}{accessToken, clientToken}
+
+	res, err := m.postJSON(context.TODO(), "https://authserver.mojang.com/validate", loginData)
+	if err != nil {
+		return false, err
+	}
+
+	if res.StatusCode != http.StatusNoContent {
+		err := &mojangError{}
+		return false, err
+	}
+
+	return true, nil
+}
+
+// MojangRefreshToken refreshed the given token
+func (m *MinepkgAPI) MojangRefreshToken(accessToken string, clientToken string) (*MojangAuthResponse, error) {
+	loginData := struct {
+		AccessToken string `json:"accessToken"`
+		ClientToken string `json:"clientToken"`
+	}{accessToken, clientToken}
+
+	res, err := m.postJSON(context.TODO(), "https://authserver.mojang.com/refresh", loginData)
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		minepkgErr := &mojangError{}
+		if err := parseJSON(res, minepkgErr); err != nil {
+			return nil, errors.New("mojang API did response with unexpected status " + res.Status)
+		}
+		return nil, minepkgErr
+	}
+
+	auth := MojangAuthResponse{}
+	if err := parseJSON(res, &auth); err != nil {
+		return nil, err
+	}
+
+	return &auth, nil
+}
+
 // GetAccount gets the account information
 func (m *MinepkgAPI) GetAccount(ctx context.Context) (*User, error) {
 	res, err := m.get(ctx, baseAPI+"/account")

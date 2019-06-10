@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	// ErrorNoFabricLoader is returned if the wanted fabric version was not found
+	// ErrNoFabricLoader is returned if the wanted fabric version was not found
 	ErrNoFabricLoader = errors.New("Could not find wanted fabric version")
 	// ErrNoFabricMapping is returned if the wanted fabric mapping was not found
 	ErrNoFabricMapping = errors.New("Could not find fabric mapping for minecraft version")

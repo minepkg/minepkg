@@ -196,3 +196,18 @@ func (i *Instance) SaveLockfile() error {
 	lockfile := i.Lockfile.Buffer()
 	return ioutil.WriteFile("minepkg-lock.toml", lockfile.Bytes(), os.ModePerm)
 }
+
+// RefreshToken refreshed the mojang token
+func (i *Instance) RefreshToken() error {
+	newCreds, err := i.MinepkgAPI.MojangEnsureToken(
+		i.MojangCredentials.AccessToken,
+		i.MojangCredentials.ClientToken,
+	)
+	if err != nil {
+		return err
+	}
+	fmt.Println(newCreds)
+	i.MojangCredentials.AccessToken = newCreds.AccessToken
+	i.MojangCredentials.ClientToken = newCreds.ClientToken
+	return nil
+}
