@@ -46,6 +46,7 @@ type Project struct {
 type Release struct {
 	client       *MinepkgAPI
 	Project      string        `json:"Project"`
+	Platform     string        `json:"platform"`
 	Version      string        `json:"version"`
 	IPFSHash     string        `json:"ipfsHash"`
 	FileLocation string        `json:"fileLocation"`

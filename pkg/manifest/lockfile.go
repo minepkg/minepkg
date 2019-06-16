@@ -59,6 +59,20 @@ func (d *DependencyLock) Filename() string {
 	return d.Project + "@" + d.Version + ".jar"
 }
 
+// MinecraftVersion returns the Minecraft version
+func (l *Lockfile) MinecraftVersion() string {
+	switch {
+	case l.Fabric != nil:
+		return l.Fabric.Minecraft
+	case l.Forge != nil:
+		return l.Forge.Minecraft
+	case l.Vanilla != nil:
+		return l.Vanilla.Minecraft
+	default:
+		panic("lockfile has no fabric, forge or vanila requirement")
+	}
+}
+
 // McManifestName returns the Minecraft Launcher Manifest name
 func (l *Lockfile) McManifestName() string {
 	switch {

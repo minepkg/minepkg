@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fiws/minepkg/pkg/api"
 	"github.com/fiws/minepkg/pkg/manifest"
 
 	"github.com/briandowns/spinner"
@@ -56,7 +57,13 @@ var tryCmd = &cobra.Command{
 		if len(comp) == 2 {
 			version = comp[1]
 		}
-		release, err := apiClient.FindRelease(context.TODO(), name, version)
+
+		reqs := &api.RequirementQuery{
+			Version:   version,
+			Minecraft: "*",
+			Plattform: "fabric", // TODO!!!
+		}
+		release, err := apiClient.FindRelease(context.TODO(), name, reqs)
 		if err != nil {
 			logger.Fail(err.Error())
 		}
@@ -139,6 +146,11 @@ var tryCmd = &cobra.Command{
 
 		s.Suffix = " Downloading dependencies"
 		if err := instance.EnsureDependencies(context.TODO()); err != nil {
+			logger.Fail(err.Error())
+		}
+
+		s.Suffix = " Refreshing Token"
+		if err := instance.RefreshToken(); err != nil {
 			logger.Fail(err.Error())
 		}
 

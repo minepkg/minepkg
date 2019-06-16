@@ -17,5 +17,9 @@ import (
 
 // Resolve tries to fetch a matching release to this dependency requirement
 func (d *Dependency) Resolve(ctx context.Context) (*Release, error) {
-	return d.client.FindRelease(ctx, d.Name, d.VersionRequirement)
+	reqs := &RequirementQuery{
+		Version:   d.VersionRequirement,
+		Plattform: "fabric", // TODO: not static!
+	}
+	return d.client.FindRelease(ctx, d.Name, reqs)
 }

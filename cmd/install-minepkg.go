@@ -41,7 +41,14 @@ func installFromMinepkg(mods []string, instance *instances.Instance) error {
 		if len(comp) == 2 {
 			version = comp[1]
 		}
-		release, err := apiClient.FindRelease(context.TODO(), name, version)
+
+		reqs := &api.RequirementQuery{
+			Version:   version,
+			Minecraft: instance.Lockfile.MinecraftVersion(),
+			Plattform: instance.Manifest.PlatformString(),
+		}
+
+		release, err := apiClient.FindRelease(context.TODO(), name, reqs)
 		if err != nil {
 			return err
 		}

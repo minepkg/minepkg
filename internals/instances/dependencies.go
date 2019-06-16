@@ -143,7 +143,14 @@ func NewResolver(client *api.MinepkgAPI) *Resolver {
 func (r *Resolver) ResolveManifest(man *manifest.Manifest) error {
 
 	for name, version := range man.Dependencies {
-		release, err := r.client.FindRelease(context.TODO(), name, version)
+
+		reqs := &api.RequirementQuery{
+			Version:   version,
+			Minecraft: man.Requirements.Minecraft,
+			Plattform: "fabric", // TODO: not hardcoded!
+		}
+
+		release, err := r.client.FindRelease(context.TODO(), name, reqs)
 		if err != nil {
 			return err
 		}

@@ -34,7 +34,7 @@ func (r *Release) DownloadURL() string {
 	if r.FileLocation == "" {
 		return ""
 	}
-	return baseAPI + "/projects/" + r.Identifier() + "/download"
+	return baseAPI + "/projects/" + r.Identifier() + "/download?platform=" + r.Platform
 }
 
 // Upload uploads the jar or zipfile for a release
@@ -89,13 +89,22 @@ func (m *MinepkgAPI) GetRelease(ctx context.Context, project string, version str
 // GetReleaseList gets a all available releases for a project
 func (m *MinepkgAPI) GetReleaseList(ctx context.Context, project string) ([]*Release, error) {
 	p := Project{client: m, Name: project}
-	return p.GetReleases(ctx)
+	return p.GetReleases(ctx, "")
+}
+
+// RequirementQuery is a query for a release describing contained requirements
+type RequirementQuery struct {
+	Version   string
+	Minecraft string
+	Plattform string
 }
 
 // FindRelease gets the latest release matching the versionRequirement (can be "latest" or a semver requirement)
-func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, versionRequirement string) (*Release, error) {
+func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *RequirementQuery) (*Release, error) {
 	p := Project{client: m, Name: project}
-	releases, err := p.GetReleases(ctx)
+
+	versionRequirement := reqs.Version
+	releases, err := p.GetReleases(ctx, reqs.Plattform)
 	if err != nil {
 		return nil, err
 	}
@@ -105,6 +114,7 @@ func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, versionReq
 		return nil, ErrNotMatchingRelease
 	}
 
+	// TODO: handle prereleases
 	if versionRequirement == "latest" || versionRequirement == "*" {
 		return releases[0], nil
 	}

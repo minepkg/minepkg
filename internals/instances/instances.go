@@ -206,7 +206,7 @@ func (i *Instance) RefreshToken() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(newCreds)
+
 	i.MojangCredentials.AccessToken = newCreds.AccessToken
 	i.MojangCredentials.ClientToken = newCreds.ClientToken
 	return nil

@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+
 	"github.com/fiws/minepkg/pkg/manifest"
 )
 
@@ -74,8 +75,12 @@ func (p *Project) CreateRelease(ctx context.Context, m *manifest.Manifest) (*Rel
 }
 
 // GetReleases gets a all available releases for this project
-func (p *Project) GetReleases(ctx context.Context) ([]*Release, error) {
-	res, err := p.client.get(ctx, baseAPI+"/projects/"+p.Name+"/releases")
+func (p *Project) GetReleases(ctx context.Context, platform string) ([]*Release, error) {
+	platformParam := "?platform=fabric"
+	if platform != "" {
+		platformParam = "?platform=" + platform
+	}
+	res, err := p.client.get(ctx, baseAPI+"/projects/"+p.Name+"/releases"+platformParam)
 	if err != nil {
 		return nil, err
 	}

@@ -90,6 +90,18 @@ type Manifest struct {
 // Dependencies are the dependencies of a mod or modpack
 type Dependencies map[string]string
 
+// PlatformString returns the required platform as a string (vanilla, fabric or forge)
+func (m *Manifest) PlatformString() string {
+	switch {
+	case m.Requirements.Fabric != "":
+		return "fabric"
+	case m.Requirements.Forge != "":
+		return "forge"
+	default:
+		return "vanilla"
+	}
+}
+
 // AddDependency adds a new dependency to the manifest
 func (m *Manifest) AddDependency(name string, version string) {
 	if m.Dependencies == nil {
