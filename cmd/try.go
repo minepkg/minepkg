@@ -45,11 +45,11 @@ var tryCmd = &cobra.Command{
 			MinepkgAPI:    apiClient,
 		}
 
-		if loginData.Mojang == nil {
-			logger.Info("You need to sign in with your mojang account to launch minecraft")
-			login()
+		creds, err := ensureMojangAuth()
+		if err != nil {
+			logger.Fail(err.Error())
 		}
-		instance.MojangCredentials = loginData.Mojang
+		instance.MojangCredentials = creds.Mojang
 
 		comp := strings.Split(args[0], "@")
 		name := comp[0]
@@ -149,10 +149,10 @@ var tryCmd = &cobra.Command{
 			logger.Fail(err.Error())
 		}
 
-		s.Suffix = " Refreshing Token"
-		if err := instance.RefreshToken(); err != nil {
-			logger.Fail(err.Error())
-		}
+		// s.Suffix = " Refreshing Token"
+		// if err := instance.RefreshToken(); err != nil {
+		// 	logger.Fail(err.Error())
+		// }
 
 		s.Stop()
 

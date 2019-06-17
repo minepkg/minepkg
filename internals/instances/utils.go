@@ -2,7 +2,6 @@ package instances
 
 import (
 	"archive/zip"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -46,6 +45,7 @@ func v(s string) string {
 	return "${" + s + "}"
 }
 
+// TODO: remove
 func existOrDownload(lib minecraft.Lib) {
 	home, _ := homedir.Dir()
 	globalDir := filepath.Join(home, ".minepkg/libraries")
@@ -68,7 +68,6 @@ func existOrDownload(lib minecraft.Lib) {
 	if res.StatusCode != http.StatusOK {
 		panic(url + " did not return status code 200")
 	}
-	fmt.Println("downloading: " + path)
 	// create directory first
 	os.MkdirAll(filepath.Dir(path), 0755)
 	// file next
