@@ -106,6 +106,7 @@ func installFromMinepkg(mods []string, instance *instances.Instance) error {
 	instance.SaveManifest()
 	instance.SaveLockfile()
 	fmt.Println("updated minepkg.toml")
+	fmt.Println("You can now launch Minecraft using \"minepkg launch\"")
 
 	return nil
 }

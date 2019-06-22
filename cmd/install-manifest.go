@@ -56,5 +56,5 @@ func installManifest(instance *instances.Instance) {
 
 	s.Stop()
 	instance.SaveLockfile()
-	fmt.Println("updated minepkg.toml")
+	fmt.Println("You can now launch Minecraft using \"minepkg launch\"")
 }
