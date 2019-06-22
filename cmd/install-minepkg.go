@@ -81,6 +81,9 @@ func installFromMinepkg(mods []string, instance *instances.Instance) error {
 		instance.Manifest.AddDependency(release.Project, release.Version)
 	}
 	instance.UpdateLockfileDependencies()
+	for _, dep := range instance.Lockfile.Dependencies {
+		fmt.Printf(" - %s@%s\n", dep.Project, dep.Version)
+	}
 	missingFiles, err := instance.FindMissingDependencies()
 	if err != nil {
 		logger.Fail(err.Error())

@@ -53,7 +53,7 @@ Edit the minepkg.toml to change the version requirements.
 
 		logger.Headline("Updating installed requirements")
 
-		instance.ResolveRequirements(context.TODO())
+		instance.UpdateLockfileRequirements(context.TODO())
 		lock := instance.Lockfile
 		switch {
 		case lock.Fabric != nil:

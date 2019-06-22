@@ -16,6 +16,12 @@ var (
 	ErrDependencyConflicts = errors.New("A dependency with that name is already present")
 )
 
+// PlatformLock describes a quierable platform (fabric, forge)
+type PlatformLock interface {
+	PlatformName() string
+	MinecraftVersion() string
+}
+
 // Lockfile includes resolved dependencies and requirements
 type Lockfile struct {
 	LockfileVersion int                        `toml:"lockfileVersion" json:"lockfileVersion"`
@@ -32,10 +38,22 @@ type FabricLock struct {
 	Mapping      string `toml:"mapping" json:"mapping"`
 }
 
+// PlatformName returns the string fabric
+func (f *FabricLock) PlatformName() string { return "fabric" }
+
+// MinecraftVersion returns the minecraft version
+func (f *FabricLock) MinecraftVersion() string { return f.Minecraft }
+
 // VanillaLock describes resolved vanilla requirements
 type VanillaLock struct {
 	Minecraft string `toml:"minecraft" json:"minecraft"`
 }
+
+// PlatformName returns the string vanilla
+func (v *VanillaLock) PlatformName() string { return "vanilla" }
+
+// MinecraftVersion returns the minecraft version
+func (v *VanillaLock) MinecraftVersion() string { return v.Minecraft }
 
 // ForgeLock describes resolved forge requirements
 // this is not used for now, because forge does not provide a API
@@ -44,6 +62,12 @@ type ForgeLock struct {
 	Minecraft   string `toml:"minecraft" json:"minecraft"`
 	ForgeLoader string `toml:"forgeLoader" json:"forgeLoader"`
 }
+
+// PlatformName returns the string vanilla
+func (f *ForgeLock) PlatformName() string { return "forge" }
+
+// MinecraftVersion returns the minecraft version
+func (f *ForgeLock) MinecraftVersion() string { return f.Minecraft }
 
 // DependencyLock is a single resolved dependency
 type DependencyLock struct {
@@ -68,6 +92,20 @@ func (l *Lockfile) MinecraftVersion() string {
 		return l.Forge.Minecraft
 	case l.Vanilla != nil:
 		return l.Vanilla.Minecraft
+	default:
+		panic("lockfile has no fabric, forge or vanila requirement")
+	}
+}
+
+// PlatformLock returns the platform lock object (fabric, forge or vanilla lock)
+func (l *Lockfile) PlatformLock() PlatformLock {
+	switch {
+	case l.Fabric != nil:
+		return l.Fabric
+	case l.Forge != nil:
+		return l.Forge
+	case l.Vanilla != nil:
+		return l.Vanilla
 	default:
 		panic("lockfile has no fabric, forge or vanila requirement")
 	}

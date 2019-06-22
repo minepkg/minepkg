@@ -68,7 +68,7 @@ var launchCmd = &cobra.Command{
 		// resolve requirements
 		if instance.Lockfile == nil || instance.Lockfile.HasRequirements() == false {
 			s.Suffix = " Preparing launch – Resolving Requirements"
-			instance.ResolveRequirements(context.TODO())
+			instance.UpdateLockfileRequirements(context.TODO())
 			instance.SaveLockfile()
 		}
 

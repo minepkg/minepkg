@@ -85,7 +85,7 @@ var tryCmd = &cobra.Command{
 		}
 		instance.Manifest.AddDependency(release.Project, release.Version)
 
-		if err := instance.ResolveRequirements(context.TODO()); err != nil {
+		if err := instance.UpdateLockfileRequirements(context.TODO()); err != nil {
 			logger.Fail(err.Error())
 		}
 		if err := instance.UpdateLockfileDependencies(); err != nil {

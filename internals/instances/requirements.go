@@ -16,9 +16,9 @@ var (
 	ErrNoFabricMapping = errors.New("Could not find fabric mapping for minecraft version")
 )
 
-// ResolveRequirements returns a manifest `VanillaLock`, `FabricLock` or `ForgeLock`
+// UpdateLockfileRequirements updates the internal lockfile manifest with `VanillaLock`, `FabricLock` or `ForgeLock`
 // containing the resolved requirements (semver requirement to actual version)
-func (i *Instance) ResolveRequirements(ctx context.Context) error {
+func (i *Instance) UpdateLockfileRequirements(ctx context.Context) error {
 	if i.Lockfile == nil {
 		i.Lockfile = manifest.NewLockfile()
 	}

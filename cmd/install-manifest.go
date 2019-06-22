@@ -32,6 +32,9 @@ func installManifest(instance *instances.Instance) {
 	if err != nil {
 		logger.Fail(err.Error())
 	}
+	for _, dep := range instance.Lockfile.Dependencies {
+		fmt.Printf(" - %s@%s\n", dep.Project, dep.Version)
+	}
 	missingFiles, err := instance.FindMissingDependencies()
 	if err != nil {
 		logger.Fail(err.Error())

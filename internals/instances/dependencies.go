@@ -11,8 +11,6 @@ import (
 
 	"github.com/fiws/minepkg/internals/downloadmgr"
 
-	"github.com/fiws/minepkg/pkg/api"
-
 	"github.com/fiws/minepkg/pkg/manifest"
 )
 
@@ -20,11 +18,14 @@ import (
 func (i *Instance) UpdateLockfileDependencies() error {
 	if i.Lockfile == nil {
 		i.Lockfile = manifest.NewLockfile()
+		if err := i.UpdateLockfileRequirements(context.TODO()); err != nil {
+			return err
+		}
 	} else {
 		i.Lockfile.ClearDependencies()
 	}
 
-	res := NewResolver(i.MinepkgAPI)
+	res := NewResolver(i.MinepkgAPI, i.Lockfile.PlatformLock())
 	err := res.ResolveManifest(i.Manifest)
 	if err != nil {
 		return err
@@ -125,70 +126,5 @@ func (i *Instance) EnsureDependencies(ctx context.Context) error {
 	if err := i.LinkDependencies(); err != nil {
 		return err
 	}
-	return nil
-}
-
-// Resolver resolves given the mods of given dependencies
-type Resolver struct {
-	Resolved map[string]*api.Release
-	client   *api.MinepkgAPI
-}
-
-// NewResolver returns a new resolver
-func NewResolver(client *api.MinepkgAPI) *Resolver {
-	return &Resolver{Resolved: make(map[string]*api.Release), client: client}
-}
-
-// ResolveManifest resolves a manifest
-func (r *Resolver) ResolveManifest(man *manifest.Manifest) error {
-
-	for name, version := range man.Dependencies {
-
-		reqs := &api.RequirementQuery{
-			Version:   version,
-			Minecraft: man.Requirements.Minecraft,
-			Plattform: "fabric", // TODO: not hardcoded!
-		}
-
-		release, err := r.client.FindRelease(context.TODO(), name, reqs)
-		if err != nil {
-			return err
-		}
-		err = r.ResolveSingle(release)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// Resolve find all dependencies from the given `id`
-// and adds it to the `resolved` map. Nothing is returned
-func (r *Resolver) Resolve(releases []*api.Release) error {
-	for _, release := range releases {
-		r.ResolveSingle(release)
-	}
-
-	return nil
-}
-
-// ResolveSingle resolves all dependencies of a single release
-func (r *Resolver) ResolveSingle(release *api.Release) error {
-	r.Resolved[release.Project] = release
-	// TODO: parallelize
-	for _, d := range release.Dependencies {
-		_, ok := r.Resolved[d.Name]
-		if ok == true {
-			continue
-		}
-		r.Resolved[d.Name] = nil
-		release, err := d.Resolve(context.TODO())
-		if err != nil {
-			return err
-		}
-		return r.ResolveSingle(release)
-	}
-
 	return nil
 }
