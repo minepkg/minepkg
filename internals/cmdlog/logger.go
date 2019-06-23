@@ -28,6 +28,13 @@ func (l *Logger) pritEmoji(e string) {
 	}
 }
 
+func (l *Logger) spritEmoji(e string) string {
+	if l.emojis == true {
+		return e
+	}
+	return ""
+}
+
 // Headline prints a blue line
 func (l *Logger) Headline(s string) {
 	color.Style{color.FgCyan, color.OpBold}.Println(s)
@@ -91,7 +98,7 @@ func (l *Task) Step(e string, s string) {
 		"[%d / %d] %s %s",
 		l.current,
 		l.end,
-		e,
+		l.spritEmoji(e),
 		s,
 	)
 
