@@ -31,14 +31,22 @@ func login() {
 		Label:    "Please enter your Mojang username (email)",
 		Validate: basicValidation,
 	}
-	username, _ := uPrompt.Run()
+	username, err := uPrompt.Run()
+	if err != nil {
+		fmt.Println("Aborting")
+		os.Exit(0)
+	}
 
 	pPrompt := promptui.Prompt{
 		Label:    "Please enter your Mojang password",
 		Validate: basicValidation,
 		Mask:     '■',
 	}
-	password, _ := pPrompt.Run()
+	password, err := pPrompt.Run()
+	if err != nil {
+		fmt.Println("Aborting")
+		os.Exit(0)
+	}
 
 	client := api.New()
 

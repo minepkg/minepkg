@@ -185,7 +185,3 @@ func downloadJava(dir string) (string, error) {
 
 	return javaBin(dir), nil
 }
-
-func init() {
-	// launchCmd.Flags().StringVarP(&version, "run-version", "r", "", "Version to start. Uses the latest compatible if not present")
-}

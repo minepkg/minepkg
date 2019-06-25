@@ -37,7 +37,7 @@ var installCmd = &cobra.Command{
 		firstArg := args[0]
 		if strings.HasPrefix(firstArg, "https://") {
 			switch {
-			// got a curseforge url
+			// got a minepkg url
 			case strings.HasPrefix(firstArg, "https://minepkg.io/projects/"):
 				projectname := firstArg[28:] // url minus first bits (just the name)
 				err = installFromMinepkg([]string{projectname}, instance)
