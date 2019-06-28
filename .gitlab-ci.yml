@@ -53,3 +53,27 @@ github release:
     - github-release release --user fiws --repo minepkg --tag $CI_COMMIT_REF_NAME
     - github-release upload --user fiws --repo minepkg --tag $CI_COMMIT_REF_NAME --name "minepkg-linux-amd64" --file out/minepkg
     - github-release upload --user fiws --repo minepkg --tag $CI_COMMIT_REF_NAME --name "minepkg-windows-amd64" --file out/minepkg.exe
+
+gcs release:
+  stage: release
+  image: google/cloud-sdk:slim
+  only:
+    - /^v\d+\.\d+\.\d+-?.*$/
+  script: |
+    # auth
+    gcloud config set project minepkg-io
+    echo $GCP_DEV_SERVICEACCOUNT > ./gcp-secret.json
+    gcloud auth activate-service-account --key-file gcp-secret.json
+    # upload binaries to GCS
+    VERSION=`echo $CI_COMMIT_REF_NAME | cut -c 2-`
+    gsutil -m cp out/minepkg gs://minepkg-client/$VERSION/minepkg-linux-amd64
+    gsutil -m cp out/minepkg.exe gs://minepkg-client/$VERSION/minepkg-windows-amd64.exe
+    # generate and upload latest version manifest
+    echo -e '{
+      "version": "'$VERSION'",
+      "binaries": {
+        "win": "https://storage.googleapis.com/minepkg-client/'$VERSION'/minepkg-windows-amd64.exe",
+        "linux": "https://storage.googleapis.com/minepkg-client/'$VERSION'/minepkg-linux-amd64"
+      }
+    }' > latest-version.json
+    gsutil -m cp latest-version.json gs://minepkg-client
