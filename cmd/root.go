@@ -39,8 +39,8 @@ var rootCmd = &cobra.Command{
 	Long: `Manage Minecraft mods with ease.
 
 Examples:
-	minepkg init -l fabric
-	minepkg install modmenu@latest
+  minepkg init -l fabric
+  minepkg install modmenu@latest
   minepkg install https://minepkg.io/projects/desire-paths
 `,
 }
