@@ -24,10 +24,12 @@ import (
 )
 
 var (
-	// ErrorLaunchNotImplemented is returned if attemting to start a non vanilla instance
-	ErrorLaunchNotImplemented = errors.New("Can only launch vanilla instances (for now)")
-	// ErrorNoCredentials is returned when an instance is launched without `MojangProfile` beeing set
-	ErrorNoCredentials = errors.New("Can not launch without mojang credentials")
+	// ErrLaunchNotImplemented is returned if attemting to start a non vanilla instance
+	ErrLaunchNotImplemented = errors.New("Can only launch vanilla instances (for now)")
+	// ErrNoCredentials is returned when an instance is launched without `MojangProfile` beeing set
+	ErrNoCredentials = errors.New("Can not launch without mojang credentials")
+	// ErrNoPaidAccount is returned when an instance is launched without `MojangProfile` beeing set
+	ErrNoPaidAccount = errors.New("You need to buy Minecraft to launch it")
 )
 
 // GetLaunchManifest returns the merged manifest for the instance
@@ -70,7 +72,13 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 	creds := i.MojangCredentials
 	profile := creds.SelectedProfile
 	if profile == nil {
-		return ErrorNoCredentials
+		return ErrNoCredentials
+	}
+
+	// do not allow non paid accounts to start minecraft
+	// (demo mode is not implemented)
+	if profile.Paid != true {
+		return ErrNoPaidAccount
 	}
 
 	// this file tells us howto construct the start command
