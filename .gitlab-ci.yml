@@ -48,6 +48,7 @@ github release:
   stage: release
   only:
     - /^v\d+\.\d+\.\d+-?.*$/
+  when: manual
   script:
     - go get github.com/aktau/github-release
     - github-release release --user fiws --repo minepkg --tag $CI_COMMIT_REF_NAME
