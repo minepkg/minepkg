@@ -104,6 +104,8 @@ func init() {
 	rootCmd.AddCommand(buildCmd)
 	rootCmd.AddCommand(launchCmd)
 	rootCmd.AddCommand(completionCmd)
+	rootCmd.AddCommand(selfupdateCmd)
+	rootCmd.AddCommand(selftestCmd)
 	cobra.OnInitialize(initConfig)
 
 	// Global flags
