@@ -68,7 +68,7 @@ var selfupdateCmd = &cobra.Command{
 
 		fmt.Println("Downloading new version")
 		// TODO: if this version is newer
-		newCli, err := ioutil.TempFile("", parsed.Version)
+		newCli, err := ioutil.TempFile(filepath.Dir(toUpdate), parsed.Version)
 		newCli.Chmod(0700)
 		download, err := http.Get(parsed.PlatformBinary())
 		io.Copy(newCli, download.Body)
@@ -77,14 +77,17 @@ var selfupdateCmd = &cobra.Command{
 
 		fmt.Println("Testing new version")
 		test := exec.Command(newCli.Name(), "selftest")
-		if err := test.Run(); err != nil {
+		out, err := test.Output()
+		if err != nil {
 			logger.Fail("Update aborted. Self test of new update failed:\n " + err.Error())
 		}
-		if out, err := test.Output(); err != nil || string(out) != "Selftest OK" {
+		if string(out) != "Selftest OK\n" {
 			logger.Fail("Update aborted. Self test of new update failed:\nInvalid output. Please open a bug report")
 		}
 
-		os.Rename(newCli.Name(), toUpdate)
+		if err := os.Rename(newCli.Name(), toUpdate); err != nil {
+			logger.Fail(err.Error())
+		}
 		fmt.Println("minepkg CLI was updated successfully")
 
 	},
