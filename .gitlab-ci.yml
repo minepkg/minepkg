@@ -78,7 +78,7 @@ gcs release:
     # upload binaries to GCS
     VERSION=`echo $CI_COMMIT_REF_NAME | cut -c 2-`
     gsutil -m cp out/minepkg gs://minepkg-client/$VERSION/minepkg-linux-amd64
-    gsutil -m cp out/minepkg-macos gs://minepkg-client/$VERSION/minepkg-macos-amd64.exe
+    gsutil -m cp out/minepkg-macos gs://minepkg-client/$VERSION/minepkg-macos-amd64
     gsutil -m cp out/minepkg.exe gs://minepkg-client/$VERSION/minepkg-windows-amd64.exe
     # copy binaries to static 'latest' directory
     gsutil -m cp gs://minepkg-client/$VERSION/* gs://minepkg-client/latest
