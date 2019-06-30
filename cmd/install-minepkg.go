@@ -34,6 +34,13 @@ func installFromMinepkg(mods []string, instance *instances.Instance) error {
 		s.Suffix = fmt.Sprintf(" Downloading %v", p) + "%"
 	}
 
+	// resolve requirements
+	if instance.Lockfile == nil || instance.Lockfile.HasRequirements() == false {
+		s.Suffix = " Resolving Requirements"
+		instance.UpdateLockfileRequirements(context.TODO())
+		instance.SaveLockfile()
+	}
+
 	for i, name := range mods {
 		comp := strings.Split(name, "@")
 		name = comp[0]
