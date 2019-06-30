@@ -27,7 +27,7 @@ func (m *minepkgClientVersions) PlatformBinary() string {
 	switch runtime.GOOS {
 	case "linux":
 		return m.Binaries.Linux
-	case "macos":
+	case "darwin": // macOS
 		return m.Binaries.MacOS
 	case "windows":
 		return m.Binaries.Win

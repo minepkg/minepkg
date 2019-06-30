@@ -112,6 +112,11 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 
 	libs := launchManifest.Libraries.Required()
 
+	osName := runtime.GOOS
+	if osName == "darwin" {
+		osName = "macos"
+	}
+
 	for _, lib := range libs {
 
 		if opts.SkipDownload != true {
@@ -121,7 +126,7 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 		// copy natives. not sure if this implementation is complete
 		if len(lib.Natives) != 0 {
 			// extract native to temp dir
-			nativeID, _ := lib.Natives[runtime.GOOS]
+			nativeID, _ := lib.Natives[osName]
 			native := lib.Downloads.Classifiers[nativeID]
 
 			p := filepath.Join(libDir, native.Path)

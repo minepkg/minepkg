@@ -14,6 +14,11 @@ type Libraries []Lib
 func (l Libraries) Required() Libraries {
 	required := make(Libraries, 0)
 
+	osName := runtime.GOOS
+	if osName == "darwin" {
+		osName = "macos"
+	}
+
 OUTER:
 	for _, lib := range l {
 
@@ -26,7 +31,7 @@ OUTER:
 
 		// copy natives. not sure if this implementation is complete
 		if len(lib.Natives) != 0 {
-			_, ok := lib.Natives[runtime.GOOS]
+			_, ok := lib.Natives[osName]
 			// skip native not available for this platform
 			if ok != true {
 				continue
@@ -55,8 +60,13 @@ type Lib struct {
 // Filepath returns the target filepath for this library
 func (l *Lib) Filepath() string {
 
-	if l.Natives[runtime.GOOS] != "" {
-		nativeID, _ := l.Natives[runtime.GOOS]
+	osName := runtime.GOOS
+	if osName == "darwin" {
+		osName = "macos"
+	}
+
+	if l.Natives[osName] != "" {
+		nativeID, _ := l.Natives[osName]
 		native := l.Downloads.Classifiers[nativeID]
 		return native.Path
 	}
@@ -75,9 +85,14 @@ func (l *Lib) Filepath() string {
 
 // DownloadURL returns the Download URL this library
 func (l *Lib) DownloadURL() string {
+	osName := runtime.GOOS
+	if osName == "darwin" {
+		osName = "macos"
+	}
+
 	switch {
-	case l.Natives[runtime.GOOS] != "":
-		nativeID, _ := l.Natives[runtime.GOOS]
+	case l.Natives[osName] != "":
+		nativeID, _ := l.Natives[osName]
 		return l.Downloads.Classifiers[nativeID].URL
 	case l.Downloads.Artifact.URL != "":
 		return l.Downloads.Artifact.URL

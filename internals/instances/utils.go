@@ -51,8 +51,12 @@ func existOrDownload(lib minecraft.Lib) {
 	globalDir := filepath.Join(home, ".minepkg/libraries")
 	path := filepath.Join(globalDir, lib.Filepath())
 	url := lib.DownloadURL()
-	if lib.Natives[runtime.GOOS] != "" {
-		nativeID, _ := lib.Natives[runtime.GOOS]
+	osName := runtime.GOOS
+	if osName == "darwin" {
+		osName = "macos"
+	}
+	if lib.Natives[osName] != "" {
+		nativeID, _ := lib.Natives[osName]
 		native := lib.Downloads.Classifiers[nativeID]
 		url = native.URL
 		path = filepath.Join(globalDir, native.Path)

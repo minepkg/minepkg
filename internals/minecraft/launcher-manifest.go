@@ -42,6 +42,11 @@ type libRule struct {
 }
 
 func (r libRule) Applies() bool {
+	osName := runtime.GOOS
+	if osName == "darwin" {
+		osName = "macos"
+	}
+
 	// Features? Do not not know what to do with this. skip it
 	if len(r.Features) != 0 {
 		return false
@@ -49,10 +54,10 @@ func (r libRule) Applies() bool {
 	// TODO: there are more rules (arch for example)
 	switch {
 	// allow block but does not match os
-	case r.Action == "allow" && r.OS.Name != runtime.GOOS:
+	case r.Action == "allow" && r.OS.Name != osName:
 		return false
 	// disallow block matches os
-	case r.Action == "disallow" && r.OS.Name == runtime.GOOS:
+	case r.Action == "disallow" && r.OS.Name == osName:
 		return false
 	// must match otherwise
 	default:
