@@ -164,7 +164,7 @@ func downloadJava(dir string) (string, error) {
 	case "windows":
 		ext = ".zip"
 		url = "https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u212-b03/OpenJDK8U-jre_x64_windows_hotspot_8u212b03.zip"
-	case "osx":
+	case "macos":
 		url = "https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u212-b03/OpenJDK8U-jre_x64_mac_hotspot_8u212b03.tar.gz"
 	}
 	res, err := http.Get(url)

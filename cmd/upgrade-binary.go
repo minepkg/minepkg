@@ -71,7 +71,10 @@ var selfupdateCmd = &cobra.Command{
 		newCli, err := ioutil.TempFile(filepath.Dir(toUpdate), parsed.Version)
 		newCli.Chmod(0700)
 		download, err := http.Get(parsed.PlatformBinary())
-		io.Copy(newCli, download.Body)
+		_, err = io.Copy(newCli, download.Body)
+		if err != nil {
+			logger.Fail(err.Error())
+		}
 
 		newCli.Close()
 
