@@ -74,7 +74,7 @@ type DependencyLock struct {
 	Project  string `toml:"project" json:"project"`
 	Version  string `toml:"version" json:"version"`
 	IPFSHash string `toml:"ipfsHash" json:"ipfsHash"`
-	Sha1     string `toml:"sha1" json:"sha1"`
+	Sha256   string `toml:"Sha256" json:"Sha256"`
 	URL      string `toml:"url" json:"url"`
 }
 

@@ -49,6 +49,7 @@ type Release struct {
 	Platform     string        `json:"platform"`
 	Version      string        `json:"version"`
 	IPFSHash     string        `json:"ipfsHash"`
+	Sha256       string        `json:"sha256"`
 	FileLocation string        `json:"fileLocation"`
 	Published    bool          `json:"published"`
 	Requirements Requirements  `json:"requirements"`

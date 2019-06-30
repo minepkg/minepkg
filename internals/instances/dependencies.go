@@ -35,6 +35,7 @@ func (i *Instance) UpdateLockfileDependencies() error {
 			Project:  release.Project,
 			Version:  release.Version,
 			IPFSHash: release.IPFSHash,
+			Sha256:   release.Sha256,
 			URL:      release.DownloadURL(),
 		})
 	}
