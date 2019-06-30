@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -166,6 +167,8 @@ func downloadJava(dir string) (string, error) {
 		url = "https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u212-b03/OpenJDK8U-jre_x64_windows_hotspot_8u212b03.zip"
 	case "darwin": // macOS
 		url = "https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u212-b03/OpenJDK8U-jre_x64_mac_hotspot_8u212b03.tar.gz"
+	default:
+		return "", errors.New("Unknown operating system. Can't download java for it")
 	}
 	res, err := http.Get(url)
 	if err != nil {
