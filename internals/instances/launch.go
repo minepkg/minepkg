@@ -70,14 +70,14 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 	}
 
 	creds := i.MojangCredentials
-	profile := creds.SelectedProfile
-	if profile == nil {
+	if creds == nil {
 		return ErrNoCredentials
 	}
 
+	profile := creds.SelectedProfile
 	// do not allow non paid accounts to start minecraft
 	// (demo mode is not implemented)
-	if profile.Paid != true {
+	if profile == nil || profile.Paid != true {
 		return ErrNoPaidAccount
 	}
 
