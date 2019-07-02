@@ -67,7 +67,7 @@ func installFromMinepkg(mods []string, instance *instances.Instance) error {
 	}
 
 	if len(releases) == 1 {
-		logger.Info("Installing " + releases[0].Project + "@" + releases[0].Version)
+		logger.Info("Installing " + releases[0].Package.Name + "@" + releases[0].Package.Version)
 	} else {
 		// TODO: list mods
 		prompt := promptui.Prompt{
@@ -85,7 +85,7 @@ func installFromMinepkg(mods []string, instance *instances.Instance) error {
 
 	task.Step("🔎", "Resolving Dependencies")
 	for _, release := range releases {
-		instance.Manifest.AddDependency(release.Project, release.Version)
+		instance.Manifest.AddDependency(release.Package.Name, release.Package.Version)
 	}
 	instance.UpdateLockfileDependencies()
 	for _, dep := range instance.Lockfile.Dependencies {

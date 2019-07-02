@@ -69,20 +69,20 @@ func (r *Resolver) Resolve(releases []*api.Release) error {
 
 // ResolveSingle resolves all dependencies of a single release
 func (r *Resolver) ResolveSingle(release *api.Release) error {
-	r.Resolved[release.Project] = release
+	r.Resolved[release.Package.Name] = release
 	// TODO: parallelize
-	for _, d := range release.Dependencies {
-		_, ok := r.Resolved[d.Name]
+	for name, versionRequirement := range release.Dependencies {
+		_, ok := r.Resolved[name]
 		if ok == true {
 			continue
 		}
-		r.Resolved[d.Name] = nil
+		r.Resolved[name] = nil
 		reqs := &api.RequirementQuery{
 			Minecraft: r.GlobalReqs.MinecraftVersion(),
-			Version:   d.VersionRequirement,
+			Version:   versionRequirement,
 			Plattform: r.GlobalReqs.PlatformName(),
 		}
-		release, err := r.client.FindRelease(context.TODO(), d.Name, reqs)
+		release, err := r.client.FindRelease(context.TODO(), name, reqs)
 		if err != nil {
 			return err
 		}

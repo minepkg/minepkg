@@ -32,10 +32,10 @@ func (i *Instance) UpdateLockfileDependencies() error {
 	}
 	for _, release := range res.Resolved {
 		i.Lockfile.AddDependency(&manifest.DependencyLock{
-			Project:  release.Project,
-			Version:  release.Version,
-			IPFSHash: release.IPFSHash,
-			Sha256:   release.Sha256,
+			Project:  release.Package.Name,
+			Version:  release.Package.Version,
+			IPFSHash: release.Meta.IPFSHash,
+			Sha256:   release.Meta.Sha256,
 			URL:      release.DownloadURL(),
 		})
 	}

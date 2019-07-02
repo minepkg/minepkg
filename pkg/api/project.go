@@ -51,15 +51,8 @@ func (m *MinepkgAPI) CreateProject(p *Project) (*Project, error) {
 }
 
 // CreateRelease will create a new release
-func (p *Project) CreateRelease(ctx context.Context, m *manifest.Manifest) (*Release, error) {
-	wrap := struct {
-		Manifest *manifest.Manifest `json:"manifest"`
-		MetaOnly bool               `json:"metaOnly"`
-	}{
-		Manifest: m,
-		MetaOnly: m.Package.Type == manifest.TypeModpack,
-	}
-	res, err := p.client.postJSON(ctx, baseAPI+"/projects/"+m.Package.Name+"/releases", wrap)
+func (p *Project) CreateRelease(ctx context.Context, man *manifest.Manifest) (*Release, error) {
+	res, err := p.client.postJSON(ctx, baseAPI+"/releases", man)
 	if err != nil {
 		return nil, err
 	}

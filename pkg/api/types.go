@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/Masterminds/semver"
+	"github.com/fiws/minepkg/pkg/manifest"
 )
 
 const (
@@ -44,21 +45,18 @@ type Project struct {
 
 // Release is a released version of a project
 type Release struct {
-	client       *MinepkgAPI
-	Project      string        `json:"Project"`
-	Platform     string        `json:"platform"`
-	Version      string        `json:"version"`
-	IPFSHash     string        `json:"ipfsHash"`
-	Sha256       string        `json:"sha256"`
-	FileLocation string        `json:"fileLocation"`
-	Published    bool          `json:"published"`
-	Requirements Requirements  `json:"requirements"`
-	Dependencies []*Dependency `json:"dependencies"`
+	*manifest.Manifest
+	client *MinepkgAPI
+	Meta   struct {
+		IPFSHash  string `json:"ipfsHash"`
+		Sha256    string `json:"sha256"`
+		Published bool   `json:"published"`
+	} `json:"meta"`
 }
 
 // SemverVersion returns the Version as a `semver.Version` struct
 func (r *Release) SemverVersion() *semver.Version {
-	return semver.MustParse(r.Version)
+	return semver.MustParse(r.Package.Version)
 }
 
 // Requirements contains the wanted Minecraft version

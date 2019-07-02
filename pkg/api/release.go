@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -14,14 +15,11 @@ var ErrNotMatchingRelease = errors.New("No matching release found for this depen
 
 func (r *Release) decorate(c *MinepkgAPI) {
 	r.client = c
-	for _, d := range r.Dependencies {
-		d.client = c
-	}
 }
 
 // Identifier returns this release in a "project@version" format. eg: `fabric@0.2.0`
 func (r *Release) Identifier() string {
-	return r.Project + "@" + r.Version
+	return r.Package.Name + "@" + r.Package.Version
 }
 
 // Filename returns this release in a "project@version.jar" format. eg: `fabric@0.2.0.jar`
@@ -31,17 +29,20 @@ func (r *Release) Filename() string {
 
 // DownloadURL returns the download url for this release
 func (r *Release) DownloadURL() string {
-	if r.FileLocation == "" {
+	// TODO: not only mods can be downloaded
+	if r.Package.Type != "mod" {
 		return ""
 	}
-	return baseAPI + "/projects/" + r.Identifier() + "/download?platform=" + r.Platform
+	return fmt.Sprintf("%s/releases/%s/%s/download", baseAPI, r.Package.Platform, r.Identifier())
 }
 
 // Upload uploads the jar or zipfile for a release
 func (r *Release) Upload(reader io.Reader) (*Release, error) {
 	// prepare request
 	client := r.client
-	req, err := http.NewRequest("POST", baseAPI+"/projects/"+r.Project+"@"+r.Version+"/upload", reader)
+
+	url := fmt.Sprintf("%s/releases/%s/%s/upload", baseAPI, r.Package.Platform, r.Identifier())
+	req, err := http.NewRequest("POST", url, reader)
 	if err != nil {
 		return nil, err
 	}
@@ -68,8 +69,9 @@ func (r *Release) Upload(reader io.Reader) (*Release, error) {
 }
 
 // GetRelease gets a single release from a project
-func (m *MinepkgAPI) GetRelease(ctx context.Context, project string, version string) (*Release, error) {
-	res, err := m.get(ctx, baseAPI+"/projects/"+project+"@"+version)
+// `identifier` is a project@version string
+func (m *MinepkgAPI) GetRelease(ctx context.Context, platform string, identifier string) (*Release, error) {
+	res, err := m.get(ctx, baseAPI+"/releases/"+platform+"/"+identifier)
 	if err != nil {
 		return nil, err
 	}

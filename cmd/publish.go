@@ -166,10 +166,11 @@ var publishCmd = &cobra.Command{
 		// check if version exists
 		logger.Log("Checking if release exists")
 
-		release, err := apiClient.GetRelease(context.TODO(), m.Package.Name, m.Package.Version)
+		// TODO: static fabric is bad!
+		release, err := apiClient.GetRelease(context.TODO(), "fabric", m.Package.Name+"@"+m.Package.Version)
 
 		switch {
-		case err == nil && release.Published != false:
+		case err == nil && release.Meta.Published != false:
 			logger.Fail("Release already published!")
 		case err != nil && err != api.ErrorNotFound:
 			// unknown error
@@ -183,7 +184,7 @@ var publishCmd = &cobra.Command{
 			if err != nil {
 				logger.Fail(err.Error())
 			}
-			logger.Info(" ✓ Released " + release.Version)
+			logger.Info(" ✓ Released " + release.Package.Version)
 			return
 		}
 
@@ -256,7 +257,7 @@ var publishCmd = &cobra.Command{
 			logger.Fail(err.Error())
 		}
 
-		logger.Info(" ✓ Released " + release.Version)
+		logger.Info(" ✓ Released " + release.Package.Version)
 	},
 }
 

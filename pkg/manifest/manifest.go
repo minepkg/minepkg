@@ -58,7 +58,9 @@ type Manifest struct {
 		// The version may include prerelease information like `1.2.2-beta.0` or build
 		// related information `1.2.1+B7382-2018`.
 		// The version can be omited. In that case minepkg will try to use git tags
-		Version  string   `toml:"version,omitempty" json:"version,omitempty"`
+		Version string `toml:"version,omitempty" json:"version,omitempty"`
+		// Platform incidates the supported playform of this package. can be `fabric`, `forge` or `vanilla`
+		Platform string   `toml:"platform,omitempty" json:"platform,omitempty"`
 		License  string   `toml:"license,omitempty" json:"license,omitempty"`
 		Provides []string `toml:"provides,omitempty" json:"provides,omitempty"`
 	} `toml:"package" json:"package"`
@@ -77,6 +79,11 @@ type Manifest struct {
 		// Forge is the minimum forge version required
 		// no semver here, because forge does not follow semver
 		Forge string `toml:"forge,omitempty" json:"forge,omitempty"`
+		// MinepkgCompanion is the version of the minepkg companion plugin that is going to be added to modpacks.
+		// This has no effect on other types of packages
+		// `latest` is assumed if this field is omited. `none` can be used to exclude the companion
+		// plugin from a modpack – but this is not recommended
+		MinepkgCompanion string `toml:"minepkgCompanion,omitempty" json:"minepkgCompanion,omitempty"`
 	} `toml:"requirements" json:"requirements"`
 	// Dependencies lists runtime dependencies of this package
 	// this list can contain mods and modpacks

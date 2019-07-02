@@ -83,7 +83,7 @@ var tryCmd = &cobra.Command{
 			instance.Manifest.AddDependency("roughlyenoughitems", "*")
 			instance.Manifest.AddDependency("modmenu", "*")
 		}
-		instance.Manifest.AddDependency(release.Project, release.Version)
+		instance.Manifest.AddDependency(release.Package.Name, release.Package.Version)
 
 		if err := instance.UpdateLockfileRequirements(context.TODO()); err != nil {
 			logger.Fail(err.Error())
@@ -148,11 +148,6 @@ var tryCmd = &cobra.Command{
 		if err := instance.EnsureDependencies(context.TODO()); err != nil {
 			logger.Fail(err.Error())
 		}
-
-		// s.Suffix = " Refreshing Token"
-		// if err := instance.RefreshToken(); err != nil {
-		// 	logger.Fail(err.Error())
-		// }
 
 		s.Stop()
 
