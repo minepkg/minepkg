@@ -29,8 +29,8 @@ func (r *Release) Filename() string {
 
 // DownloadURL returns the download url for this release
 func (r *Release) DownloadURL() string {
-	// TODO: not only mods can be downloaded
-	if r.Package.Type != "mod" {
+	// TODO: works but is kind of wonky
+	if r.Meta.Sha256 == "" {
 		return ""
 	}
 	return fmt.Sprintf("%s/releases/%s/%s/download", baseAPI, r.Package.Platform, r.Identifier())

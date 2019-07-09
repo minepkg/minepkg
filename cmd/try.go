@@ -40,7 +40,6 @@ var tryCmd = &cobra.Command{
 		instance := instances.Instance{
 			Directory:     globalDir,
 			ModsDirectory: filepath.Join(tempDir, "mods"),
-			Manifest:      manifest.New(),
 			Lockfile:      manifest.NewLockfile(),
 			MinepkgAPI:    apiClient,
 		}
@@ -72,6 +71,7 @@ var tryCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		instance.Manifest = release.Manifest
 		fmt.Println("Creating temporary modpack with " + release.Identifier())
 
 		// TODO: if fabric !!!
@@ -88,9 +88,11 @@ var tryCmd = &cobra.Command{
 		if err := instance.UpdateLockfileRequirements(context.TODO()); err != nil {
 			logger.Fail(err.Error())
 		}
-		if err := instance.UpdateLockfileDependencies(); err != nil {
+		if err := instance.UpdateLockfileDependencies(context.TODO()); err != nil {
 			logger.Fail(err.Error())
 		}
+
+		instance.SaveLockfile()
 
 		// Prepare launch
 		s := spinner.New(spinner.CharSets[9], 300*time.Millisecond) // Build our new spinner

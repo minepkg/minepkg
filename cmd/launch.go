@@ -18,6 +18,7 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/fiws/minepkg/internals/downloadmgr"
 	"github.com/fiws/minepkg/internals/instances"
+	"github.com/fiws/minepkg/pkg/api"
 	"github.com/spf13/cobra"
 )
 
@@ -31,16 +32,72 @@ func init() {
 }
 
 var launchCmd = &cobra.Command{
-	Use:     "launch",
-	Short:   "Launch a minecraft instance",
-	Long:    ``, // TODO
+	Use:   "launch [modpack]",
+	Short: "Launch a local or remote modpack.",
+	Long: `If a modpack name or URL is supplied, that modpack will be launched.
+	Alternativly: Can be used in directories containing a minepkg.toml manifest to launch that modpack.
+	`, // TODO
 	Aliases: []string{"run", "start", "play"},
 	Run: func(cmd *cobra.Command, args []string) {
-		instance, err := instances.DetectInstance()
-		instance.MinepkgAPI = apiClient
+		var instance *instances.Instance
 
-		if err != nil {
-			logger.Fail("Instance problem: " + err.Error())
+		if len(args) == 0 {
+			instance, err := instances.DetectInstance()
+			instance.MinepkgAPI = apiClient
+
+			if err != nil {
+				logger.Fail("Instance problem: " + err.Error())
+			}
+		} else {
+			reqs := &api.RequirementQuery{
+				Plattform: "fabric", // TODO: not static!
+				Minecraft: "*",
+				Version:   "latest", // TODO: get from id
+			}
+			release, err := apiClient.FindRelease(context.TODO(), args[0], reqs)
+			if err != nil {
+				logger.Fail(err.Error())
+			}
+
+			// TODO: check if exists
+			// TODO: check error
+			instanceDir := filepath.Join(globalDir, "instances", release.Package.Name+"@"+release.Package.Platform)
+			os.MkdirAll(filepath.Join(globalDir, "instances", release.Package.Name+"@"+release.Package.Platform), os.ModePerm)
+			wd, err := os.Getwd()
+			if err != nil {
+				logger.Fail(err.Error())
+			}
+			// change dir to the instance
+			os.Chdir(instanceDir)
+			// back to current directory after minecraft stops
+			defer os.Chdir(wd)
+
+			instance = &instances.Instance{
+				Directory:     globalDir,
+				ModsDirectory: filepath.Join(instanceDir, "mods"),
+				Manifest:      release.Manifest,
+				MinepkgAPI:    apiClient,
+			}
+
+			// TODO: only show when there actually is a update. ask user?
+			logger.Headline("Updating instance")
+			// maybe not update requirements every time
+			if err := instance.UpdateLockfileRequirements(context.TODO()); err != nil {
+				logger.Fail(err.Error())
+			}
+			if err := instance.UpdateLockfileDependencies(context.TODO()); err != nil {
+				logger.Fail(err.Error())
+			}
+
+			instance.SaveManifest()
+			instance.SaveLockfile()
+		}
+
+		switch {
+		case instance.Manifest.Package.Type != "modpack":
+			logger.Fail("Can only launch modpacks. You can use \"minepkg try\" if you want to test a mod.")
+		case instance.Manifest.PlatformString() != "fabric":
+			logger.Fail("Can only launch fabric modpacks for now. Sorry.")
 		}
 
 		// launch instance

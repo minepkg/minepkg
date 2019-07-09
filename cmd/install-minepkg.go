@@ -87,7 +87,7 @@ func installFromMinepkg(mods []string, instance *instances.Instance) error {
 	for _, release := range releases {
 		instance.Manifest.AddDependency(release.Package.Name, release.Package.Version)
 	}
-	instance.UpdateLockfileDependencies()
+	instance.UpdateLockfileDependencies(context.TODO())
 	for _, dep := range instance.Lockfile.Dependencies {
 		fmt.Printf(" - %s@%s\n", dep.Project, dep.Version)
 	}

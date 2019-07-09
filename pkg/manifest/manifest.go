@@ -117,6 +117,14 @@ func (m *Manifest) AddDependency(name string, version string) {
 	m.Dependencies[name] = version
 }
 
+// RemoveDependency removes a dependecy from the manifest
+func (m *Manifest) RemoveDependency(name string) {
+	if m.Dependencies == nil {
+		m.Dependencies = make(map[string]string)
+	}
+	delete(m.Dependencies, name)
+}
+
 // Buffer returns the manifest as toml in Buffer form
 func (m *Manifest) Buffer() *bytes.Buffer {
 	buf := new(bytes.Buffer)

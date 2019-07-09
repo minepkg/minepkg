@@ -15,18 +15,29 @@ import (
 )
 
 // UpdateLockfileDependencies resolves all dependencies
-func (i *Instance) UpdateLockfileDependencies() error {
+func (i *Instance) UpdateLockfileDependencies(ctx context.Context) error {
 	if i.Lockfile == nil {
 		i.Lockfile = manifest.NewLockfile()
-		if err := i.UpdateLockfileRequirements(context.TODO()); err != nil {
+		if err := i.UpdateLockfileRequirements(ctx); err != nil {
 			return err
 		}
 	} else {
 		i.Lockfile.ClearDependencies()
 	}
 
+	// add our companion mod if not disabled by user or non fabric
+	if i.Manifest.Requirements.MinepkgCompanion != "none" && i.Manifest.PlatformString() == "fabric" {
+		// just add it to the manifest. this is pretty hacky
+		v := "latest"
+		if i.Manifest.Requirements.MinepkgCompanion != "" {
+			v = i.Manifest.Requirements.MinepkgCompanion
+		}
+		i.Manifest.AddDependency("minepkg-companion", v)
+	}
+
 	res := NewResolver(i.MinepkgAPI, i.Lockfile.PlatformLock())
 	err := res.ResolveManifest(i.Manifest)
+
 	if err != nil {
 		return err
 	}
@@ -39,6 +50,10 @@ func (i *Instance) UpdateLockfileDependencies() error {
 			URL:      release.DownloadURL(),
 		})
 	}
+
+	// This is kind of a hack
+	// remove minepkg-companion if it was there
+	i.Manifest.RemoveDependency("minepkg-companion")
 
 	return nil
 }

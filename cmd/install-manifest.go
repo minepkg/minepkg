@@ -28,7 +28,7 @@ func installManifest(instance *instances.Instance) {
 	}
 
 	task.Step("🔎", "Resolving Dependencies")
-	err := instance.UpdateLockfileDependencies()
+	err := instance.UpdateLockfileDependencies(context.TODO())
 	if err != nil {
 		logger.Fail(err.Error())
 	}
@@ -42,7 +42,7 @@ func installManifest(instance *instances.Instance) {
 
 	task.Step("🚚", fmt.Sprintf("Downloading %d Packages", len(missingFiles)))
 	for _, m := range missingFiles {
-		fmt.Printf("%+v\n", m)
+		fmt.Printf(" - %s@%s\n", m.Project, m.Version)
 		p := filepath.Join(cacheDir, m.Project, m.Version+".jar")
 		mgr.Add(downloadmgr.NewHTTPItem(m.URL, p))
 	}
