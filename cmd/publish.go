@@ -395,6 +395,16 @@ func findJar() string {
 
 	shortest := files[0]
 	for _, file := range files[1:] {
+		name := file.Name()
+		base := filepath.Base(name)
+
+		// filter out dev and sources jars
+		switch {
+		case strings.HasSuffix(base, "dev.jar"):
+			continue
+		case strings.HasSuffix(base, "sources.jar"):
+			continue
+		}
 		if len(file.Name()) < len(shortest.Name()) {
 			shortest = file
 		}
