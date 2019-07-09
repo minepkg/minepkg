@@ -92,7 +92,7 @@ func (i *Instance) LinkDependencies() error {
 	}
 
 	for _, f := range files {
-		if strings.HasPrefix("custom-", f.Name()) {
+		if strings.HasSuffix(f.Name(), "custom.jar") {
 			fmt.Println("ignoring custom mod " + f.Name())
 		} else {
 			os.Remove(filepath.Join(i.ModsDirectory, f.Name()))

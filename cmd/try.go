@@ -78,7 +78,7 @@ var tryCmd = &cobra.Command{
 		{
 			// TODO: use real requirements !!!
 			instance.Manifest.Requirements.Fabric = "*"
-			instance.Manifest.Requirements.Minecraft = "1.14.2"
+			instance.Manifest.Requirements.Minecraft = "1.14.3"
 			instance.Manifest.AddDependency("fabric", "*")
 			instance.Manifest.AddDependency("roughlyenoughitems", "*")
 			instance.Manifest.AddDependency("modmenu", "*")

@@ -42,7 +42,8 @@ var launchCmd = &cobra.Command{
 		var instance *instances.Instance
 
 		if len(args) == 0 {
-			instance, err := instances.DetectInstance()
+			var err error
+			instance, err = instances.DetectInstance()
 			instance.MinepkgAPI = apiClient
 
 			if err != nil {
