@@ -7,12 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/fiws/minepkg/pkg/api"
-
-	"github.com/fatih/color"
 )
-
-var infoColor = color.New(color.FgCyan).Add(color.Bold)
-var successColor = color.New(color.FgGreen)
 
 // HumanUint32 returns the number in a human readable format
 func HumanUint32(num uint32) string {

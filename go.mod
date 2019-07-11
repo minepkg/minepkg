@@ -8,7 +8,7 @@ require (
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1 // indirect
 	github.com/dsnet/compress v0.0.1 // indirect
-	github.com/fatih/color v1.7.0
+	github.com/fatih/color v1.7.0 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/gookit/color v1.1.7
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
