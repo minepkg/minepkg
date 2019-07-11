@@ -55,9 +55,10 @@ type LaunchOptions struct {
 	// SkipDownload will NOT download missing assets & libraries
 	SkipDownload bool
 	// Offline is not implemented
-	Offline bool
-	Java    string
-	Server  bool
+	Offline    bool
+	Java       string
+	Server     bool
+	JoinServer string
 }
 
 // Launch starts the minecraft instance
@@ -204,6 +205,14 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 		opts.Java = "java"
 	}
 	cmd := exec.Command(opts.Java, cmdArgs...)
+
+	if opts.JoinServer != "" {
+		cmd.Env = append(os.Environ(), "MINEPKG_COMPANION_PLAY=server://"+opts.JoinServer)
+	}
+
+	if opts.Server == true {
+		cmd.Stdin = os.Stdin
+	}
 
 	// TODO: detatch from process
 	cmd.Stdout = os.Stdout

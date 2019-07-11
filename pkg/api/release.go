@@ -51,7 +51,7 @@ func (r *Release) Upload(reader io.Reader) (*Release, error) {
 	req.Header.Set("Content-Type", "application/java-archive")
 
 	// execute request and handle response
-	res, err := client.http.Do(req)
+	res, err := client.HTTP.Do(req)
 	if err != nil {
 		return nil, err
 	}

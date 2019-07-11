@@ -104,6 +104,7 @@ func init() {
 	rootCmd.AddCommand(publishCmd)
 	rootCmd.AddCommand(buildCmd)
 	rootCmd.AddCommand(launchCmd)
+	rootCmd.AddCommand(joinCmd)
 	rootCmd.AddCommand(completionCmd)
 	rootCmd.AddCommand(selfupdateCmd)
 	rootCmd.AddCommand(selftestCmd)

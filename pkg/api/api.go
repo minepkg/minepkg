@@ -31,7 +31,8 @@ func getAPIUrl() string {
 // MinepkgAPI contains credentials and methods to talk
 // to the minepkg api
 type MinepkgAPI struct {
-	http   *http.Client
+	// HTTP is the internal http client
+	HTTP   *http.Client
 	APIKey string
 	JWT    string
 	User   *User
@@ -40,7 +41,7 @@ type MinepkgAPI struct {
 // New returns a new MinepkgAPI instance
 func New() *MinepkgAPI {
 	return &MinepkgAPI{
-		http: http.DefaultClient,
+		HTTP: http.DefaultClient,
 	}
 }
 
@@ -48,7 +49,7 @@ func New() *MinepkgAPI {
 // supplied as a first paramter
 func NewWithClient(client *http.Client) *MinepkgAPI {
 	return &MinepkgAPI{
-		http: client,
+		HTTP: client,
 	}
 }
 
@@ -254,7 +255,7 @@ func (m *MinepkgAPI) PutRelease(project string, version string, reader io.Reader
 	req.Header.Set("Content-Type", "application/java-archive")
 
 	// execute request and handle response
-	res, err := m.http.Do(req)
+	res, err := m.HTTP.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -279,7 +280,7 @@ func (m *MinepkgAPI) get(ctx context.Context, url string) (*http.Response, error
 		return nil, err
 	}
 	m.decorate(req)
-	return m.http.Do(req)
+	return m.HTTP.Do(req)
 }
 
 // postJSON posts json
@@ -295,7 +296,7 @@ func (m *MinepkgAPI) postJSON(ctx context.Context, url string, data interface{})
 	}
 
 	m.decorate(req)
-	return m.http.Do(req)
+	return m.HTTP.Do(req)
 }
 
 func (m *MinepkgAPI) post(ctx context.Context, url string, body io.Reader) (*http.Response, error) {
@@ -306,7 +307,7 @@ func (m *MinepkgAPI) post(ctx context.Context, url string, body io.Reader) (*htt
 	}
 
 	m.decorate(req)
-	return m.http.Do(req)
+	return m.HTTP.Do(req)
 }
 
 func (m *MinepkgAPI) put(ctx context.Context, url string, body io.Reader) (*http.Response, error) {
@@ -317,7 +318,7 @@ func (m *MinepkgAPI) put(ctx context.Context, url string, body io.Reader) (*http
 	}
 
 	m.decorate(req)
-	return m.http.Do(req)
+	return m.HTTP.Do(req)
 }
 
 func checkResponse(res *http.Response) error {
@@ -347,6 +348,11 @@ func (m *MinepkgAPI) decorate(req *http.Request) {
 	case m.APIKey != "":
 		req.Header.Set("API-KEY", m.APIKey)
 	}
+}
+
+// DecorateRequest decorates a provided http request with the User-Agent header and a auth header if set
+func (m *MinepkgAPI) DecorateRequest(req *http.Request) {
+	m.decorate(req)
 }
 
 func parseJSON(res *http.Response, i interface{}) error {

@@ -5,9 +5,21 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 
 	"github.com/fiws/minepkg/pkg/api"
 )
+
+// MinepkgMapping is a server mapping (very unfinished)
+type MinepkgMapping struct {
+	Platform string `json:"platform"`
+	Modpack  string `json:"modpack"`
+}
+
+func splitPackageName(id string) (string, string) {
+	arr := strings.Split(id, "@")
+	return arr[0], arr[1]
+}
 
 // HumanUint32 returns the number in a human readable format
 func HumanUint32(num uint32) string {
