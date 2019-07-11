@@ -49,7 +49,7 @@ func ensureMojangAuth() (*api.AuthResponse, error) {
 			apiClient.User = loginData.User
 		} else {
 			logger.Info("You need to sign in with your mojang account to launch minecraft")
-			login()
+			loginData = login()
 		}
 	}
 

@@ -23,7 +23,7 @@ var loginCmd = &cobra.Command{
 	},
 }
 
-func login() {
+func login() *api.AuthResponse {
 	fmt.Println("Please sign in with your Mojang (Minecraft) credentials")
 	fmt.Println("Your password is sent encrypted to Mojang directly and NOT saved anywhere.")
 
@@ -63,6 +63,8 @@ func login() {
 		logger.Fail("Count not write credentials file: " + err.Error())
 	}
 	fmt.Println("Succesfully loged into minepkg.io")
+
+	return loginData
 }
 
 func basicValidation(input string) error {

@@ -31,22 +31,16 @@ var (
 )
 
 func init() {
-	initCmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite all the things")
-	initCmd.Flags().StringVarP(&loader, "loader", "l", "forge", "Set the required loader to forge, fabric or none.")
+	initCmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite the minepkg.toml if one exists")
 }
 
 var initCmd = &cobra.Command{
-	Use:   "init [modpack/mod]",
-	Short: "Creates a new mod or modpack in the current directory. Can also generate a minepkg.toml for existing directories.",
+	Use:   "init [name]",
+	Short: "Creates a new mod or modpack in the current directory.",
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		if _, err := ioutil.ReadFile("./minepkg.toml"); err == nil && force != true {
 			logger.Fail("This directory already contains a minepkg.toml. Use --force to overwrite it")
-		}
-
-		manifestType := manifest.TypeMod
-		if len(args) == 0 || args[0] == "" || args[0] == "modpack" {
-			manifestType = manifest.TypeModpack
 		}
 
 		man := manifest.Manifest{}
@@ -82,7 +76,16 @@ var initCmd = &cobra.Command{
 		wd, _ := os.Getwd()
 
 		logger.Info("[package]")
-		man.Package.Type = manifestType
+		man.Package.Type = selectPrompt(&promptui.Select{
+			Label: "Type",
+			Items: []string{"mod", "modpack"},
+		})
+
+		man.Package.Platform = selectPrompt(&promptui.Select{
+			Label: "Platform",
+			Items: []string{"fabric", "forge"},
+		})
+
 		man.Package.Name = stringPrompt(&promptui.Prompt{
 			Label:   "Name",
 			Default: strcase.KebabCase(filepath.Base(wd)),
@@ -176,7 +179,7 @@ var initCmd = &cobra.Command{
 		}
 
 		// generate hooks section for mods
-		if manifestType == manifest.TypeMod {
+		if man.Package.Type == manifest.TypeMod {
 			files, err := ioutil.ReadDir("./")
 			if err != nil {
 				logger.Fail(err.Error())
@@ -207,6 +210,15 @@ var initCmd = &cobra.Command{
 		}
 		logger.Info(" ✓ Created minepkg.toml")
 	},
+}
+
+func selectPrompt(prompt *promptui.Select) string {
+	_, res, err := prompt.Run()
+	if err != nil {
+		fmt.Println("Aborting")
+		os.Exit(1)
+	}
+	return res
 }
 
 func stringPrompt(prompt *promptui.Prompt) string {

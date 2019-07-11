@@ -44,11 +44,11 @@ var launchCmd = &cobra.Command{
 		if len(args) == 0 {
 			var err error
 			instance, err = instances.DetectInstance()
-			instance.MinepkgAPI = apiClient
 
 			if err != nil {
 				logger.Fail("Instance problem: " + err.Error())
 			}
+			instance.MinepkgAPI = apiClient
 		} else {
 			reqs := &api.RequirementQuery{
 				Plattform: "fabric", // TODO: not static!
