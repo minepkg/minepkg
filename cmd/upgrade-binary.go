@@ -88,7 +88,20 @@ var selfupdateCmd = &cobra.Command{
 			logger.Fail("Update aborted. Self test of new update failed:\nInvalid output. Please open a bug report")
 		}
 
+		if runtime.GOOS == "windows" {
+			if err := os.Rename(toUpdate, toUpdate+".old"); err != nil {
+				logger.Fail(err.Error())
+			}
+		}
+
 		if err := os.Rename(newCli.Name(), toUpdate); err != nil {
+			if runtime.GOOS == "windows" {
+				// revert to old version
+				if err := os.Rename(toUpdate+".old", toUpdate); err != nil {
+					panic("This is bad... You might have to install minepkg manually again. Sorry")
+				}
+				logger.Fail("Upgrade failed. Reverted to old version. Please open a bug report")
+			}
 			logger.Fail(err.Error())
 		}
 		fmt.Println("minepkg CLI was updated successfully")
