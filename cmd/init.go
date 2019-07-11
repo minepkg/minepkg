@@ -44,11 +44,6 @@ var initCmd = &cobra.Command{
 		}
 
 		man := manifest.Manifest{}
-
-		loader = strings.ToLower(loader)
-		if loader != "forge" && loader != "fabric" && loader != "none" {
-			logger.Fail("Allowed values for loader option: forge, fabric or none")
-		}
 		var (
 			// emptyDir bool
 			gitRepo bool
@@ -78,7 +73,7 @@ var initCmd = &cobra.Command{
 		logger.Info("[package]")
 		man.Package.Type = selectPrompt(&promptui.Select{
 			Label: "Type",
-			Items: []string{"mod", "modpack"},
+			Items: []string{"modpack", "mod"},
 		})
 
 		man.Package.Platform = selectPrompt(&promptui.Select{
@@ -146,7 +141,19 @@ var initCmd = &cobra.Command{
 		fmt.Println("")
 		logger.Info("[requirements]")
 
-		switch loader {
+		fmt.Println(man.PlatformString())
+
+		switch man.Package.Platform {
+		case "fabric":
+			man.Requirements.Fabric = stringPrompt(&promptui.Prompt{
+				Label: "Minimum Fabric version",
+				// TODO: validation
+			})
+			man.Requirements.Minecraft = stringPrompt(&promptui.Prompt{
+				Label:   "Supported Minecraft version",
+				Default: "1.14",
+				// TODO: validation
+			})
 		case "forge":
 			forgeReleases := <-chForgeVersions
 			man.Requirements.Forge = stringPrompt(&promptui.Prompt{
@@ -160,17 +167,7 @@ var initCmd = &cobra.Command{
 				Default: forgeReleases.Versions[0].McVersion,
 				// TODO: validation
 			})
-		case "fabric":
-			man.Requirements.Fabric = stringPrompt(&promptui.Prompt{
-				Label: "Minimum Fabric version",
-				// TODO: validation
-			})
-			man.Requirements.Minecraft = stringPrompt(&promptui.Prompt{
-				Label:   "Supported Minecraft version",
-				Default: "1.14",
-				// TODO: validation
-			})
-		case "none":
+		default:
 			man.Requirements.Minecraft = stringPrompt(&promptui.Prompt{
 				Label:   "Supported Minecraft version",
 				Default: "1.14",
