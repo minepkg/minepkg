@@ -58,6 +58,9 @@ func ensureMojangAuth() (*api.AuthResponse, error) {
 			logger.Info("You need to sign in with your mojang account to launch minecraft")
 			loginData = login()
 		}
+	} else {
+		logger.Info("You need to sign in with your mojang account to launch minecraft")
+		loginData = login()
 	}
 
 	newCreds, err := apiClient.MojangEnsureToken(
