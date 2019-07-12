@@ -68,7 +68,7 @@ var selfupdateCmd = &cobra.Command{
 
 		fmt.Println("Downloading new version")
 		// TODO: if this version is newer
-		newCli, err := ioutil.TempFile(filepath.Dir(toUpdate), parsed.Version)
+		newCli, err := ioutil.TempFile("", parsed.Version)
 		newCli.Chmod(0700)
 		download, err := http.Get(parsed.PlatformBinary())
 		_, err = io.Copy(newCli, download.Body)
