@@ -73,6 +73,9 @@ func ensureMojangAuth() (*api.AuthResponse, error) {
 	loginData.Mojang.AccessToken = newCreds.AccessToken
 	loginData.Mojang.ClientToken = newCreds.ClientToken
 
+	apiClient.JWT = loginData.Token
+	apiClient.User = loginData.User
+
 	// TODO: only do when needed
 	{
 		creds, err := json.Marshal(loginData)
