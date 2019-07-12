@@ -19,6 +19,24 @@
 * Saves your installed mods in a sharable `minepkg.toml`
   * `minepkg.toml` modpacks can extend other modpacks
 
+## Installation
+
+### Linux & MacOS
+
+Run this in your favourite shell. The installation will require sudo rights.
+
+```bash
+source <(curl -s https://storage.googleapis.com/minepkg-client/linux-installer.sh)
+```
+
+### Windows
+
+Run this in **powershell**
+
+```
+. { iwr -useb https://storage.googleapis.com/minepkg-client/windows-installer.ps1} | iex; minepkg
+```
+
 ## Usage
 
 ```
