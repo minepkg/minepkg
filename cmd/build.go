@@ -1,14 +1,12 @@
 package cmd
 
 import (
-	"bufio"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"runtime"
 	"time"
-
-	"github.com/briandowns/spinner"
 
 	"github.com/BurntSushi/toml"
 	"github.com/fiws/minepkg/pkg/manifest"
@@ -16,11 +14,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func init() {
+	buildCmd.Flags().BoolVarP(&nonInteractive, "non-interactive", "y", false, "Answers all interactive questions with the default")
+}
+
 var buildCmd = &cobra.Command{
 	Use:   "build",
 	Short: "Runs the build hook (or falls back to gradle build)",
 	Run: func(cmd *cobra.Command, args []string) {
 		startTime := time.Now()
+
+		if os.Getenv("CI") != "" {
+			nonInteractive = true
+		}
 
 		minepkg, err := ioutil.ReadFile("./minepkg.toml")
 		if err != nil {
@@ -52,30 +58,27 @@ var buildCmd = &cobra.Command{
 		if runtime.GOOS == "windows" {
 			build = exec.Command("cmd", []string{"/C", buildScript}...)
 		}
-		stdout, _ := build.StdoutPipe()
-		err = build.Start()
-		if err != nil {
-			logger.Fail("Build step failed. Aborting")
+
+		if nonInteractive == true {
+			terminalOutput(build)
 		}
 
-		logger.Info("Starting build")
-		s := spinner.New(spinner.CharSets[9], 100*time.Millisecond) // Build our new spinner
-		s.Prefix = " "
-		s.Start()
-		s.Suffix = " [no build output yet]"
-
-		scanner := bufio.NewScanner(stdout)
-
-		for scanner.Scan() {
-			s.Suffix = " " + scanner.Text()
+		var spinner func()
+		if nonInteractive != true {
+			spinner = spinnerOutput(build)
 		}
-		stdout.Close()
+
+		build.Start()
+		if nonInteractive != true {
+			spinner()
+		}
+
 		err = build.Wait()
 		if err != nil {
+			// TODO: output logs or something
+			fmt.Println(err)
 			logger.Fail("Build step failed. Aborting")
 		}
-		s.Suffix = ""
-		s.Stop()
 
 		logger.Info("Finished build in " + time.Now().Sub(startTime).String())
 	},
