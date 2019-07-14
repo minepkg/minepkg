@@ -393,7 +393,9 @@ func findJar() string {
 		logger.Fail("No build files found in ./build/libs")
 	}
 
-	shortest := files[0]
+	chosen := files[0]
+
+search:
 	for _, file := range files[1:] {
 		name := file.Name()
 		base := filepath.Base(name)
@@ -404,11 +406,17 @@ func findJar() string {
 			continue
 		case strings.HasSuffix(base, "sources.jar"):
 			continue
+		// worldedit uses dist for the runnable jars. lets hope this
+		// does not break any other mods
+		case strings.HasSuffix(base, "dist.jar"):
+			// we choose this file and stop
+			chosen = file
+			break search
 		}
-		if len(file.Name()) < len(shortest.Name()) {
-			shortest = file
+		if len(file.Name()) < len(chosen.Name()) {
+			chosen = file
 		}
 	}
 
-	return filepath.Join("./build/libs", shortest.Name())
+	return filepath.Join("./build/libs", chosen.Name())
 }
