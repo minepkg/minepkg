@@ -16,8 +16,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	overwriteMcVersion     string
+	overwriteFabricVersion string
+	overwriteCompanion     string
+	plain                  bool
+)
+
 func init() {
 	tryCmd.Flags().BoolVarP(&serverMode, "server", "s", false, "Start a server instead of a client")
+	tryCmd.Flags().StringVarP(&overwriteMcVersion, "requirements.minecraft", "", "", "Overwrite the required Minecraft version")
+	tryCmd.Flags().StringVarP(&overwriteFabricVersion, "requirements.fabric", "", "", "Overwrite the required fabric version")
+	tryCmd.Flags().StringVarP(&overwriteCompanion, "requirements.minepkgCompanion", "", "", "Overwrite the required minepkg companion version")
+	tryCmd.Flags().BoolVarP(&plain, "plain", "p", false, "Do not include default mods for testing")
 	rootCmd.AddCommand(tryCmd)
 }
 
@@ -73,11 +84,20 @@ var tryCmd = &cobra.Command{
 		instance.Manifest = release.Manifest
 		fmt.Println("Creating temporary modpack with " + release.Identifier())
 
+		if overwriteFabricVersion != "" {
+			instance.Manifest.Requirements.Fabric = overwriteFabricVersion
+		}
+		if overwriteMcVersion != "" {
+			fmt.Println("mc version overwritten!")
+			instance.Manifest.Requirements.Minecraft = overwriteMcVersion
+		}
+		if overwriteCompanion != "" {
+			fmt.Println("companion overwritten!")
+			instance.Manifest.Requirements.MinepkgCompanion = overwriteCompanion
+		}
+
 		// TODO: if fabric !!!
-		{
-			// TODO: use real requirements !!!
-			instance.Manifest.Requirements.Fabric = "*"
-			instance.Manifest.Requirements.Minecraft = "1.14.3"
+		if plain != true && instance.Manifest.PlatformString() == "fabric" {
 			instance.Manifest.AddDependency("fabric", "*")
 			instance.Manifest.AddDependency("roughlyenoughitems", "*")
 			instance.Manifest.AddDependency("modmenu", "*")
@@ -92,6 +112,7 @@ var tryCmd = &cobra.Command{
 		}
 
 		instance.SaveLockfile()
+		// os.Exit(0)
 
 		cliLauncher := launch.CLILauncher{Instance: &instance, ServerMode: serverMode}
 		cliLauncher.Prepare()

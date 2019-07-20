@@ -5,6 +5,9 @@ import (
 	"strings"
 )
 
+// SupportedLauncherVersion indicates the maximum Launch Manifest version that is supported
+const SupportedLauncherVersion = 21
+
 // LaunchManifest is a version.json manifest that is used to launch minecraft instances
 type LaunchManifest struct {
 	// MinecraftArguments are used before 1.13 (?)
@@ -30,7 +33,9 @@ type LaunchManifest struct {
 		TotalSize int    `json:"totalSize"`
 		URL       string `json:"url"`
 	} `json:"assetIndex"`
-	InheritsFrom string `json:"inheritsFrom"`
+	InheritsFrom           string `json:"inheritsFrom"`
+	ID                     string `json:"id"`
+	MinimumLauncherVersion string `json:"minimumLauncherVersion"`
 }
 
 type libRule struct {
@@ -53,6 +58,12 @@ func (r libRule) Applies() bool {
 	}
 	// TODO: there are more rules (arch for example)
 	switch {
+	// allow with no OS allows everything
+	case r.Action == "allow" && r.OS.Name == "":
+		return true
+	// disallow with no OS blocks everything
+	case r.Action == "disallow" && r.OS.Name == "":
+		return false
 	// allow block but does not match os
 	case r.Action == "allow" && r.OS.Name != osName:
 		return false

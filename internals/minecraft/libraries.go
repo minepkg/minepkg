@@ -19,14 +19,15 @@ func (l Libraries) Required() Libraries {
 		osName = "macos"
 	}
 
-OUTER:
 	for _, lib := range l {
 
+		include := true
 		for _, rule := range lib.Rules {
 			// skip here rules do not apply
-			if rule.Applies() != true {
-				continue OUTER
-			}
+			include = rule.Applies()
+		}
+		if include == false {
+			continue
 		}
 
 		// copy natives. not sure if this implementation is complete

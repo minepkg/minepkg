@@ -158,6 +158,9 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 	if jarTarget == "" {
 		jarTarget = launchManifest.InheritsFrom
 	}
+	if jarTarget == "" {
+		jarTarget = launchManifest.ID
+	}
 	mcJar := filepath.Join(i.VersionsDir(), jarTarget, jarTarget+".jar")
 	cpArgs = append(cpArgs, mcJar)
 

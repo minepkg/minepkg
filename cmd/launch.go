@@ -93,8 +93,8 @@ var launchCmd = &cobra.Command{
 		switch {
 		case instance.Manifest.Package.Type != "modpack":
 			logger.Fail("Can only launch modpacks. You can use \"minepkg try\" if you want to test a mod.")
-		case instance.Manifest.PlatformString() != "fabric":
-			logger.Fail("Can only launch fabric modpacks for now. Sorry.")
+		case instance.Manifest.PlatformString() == "forge":
+			logger.Fail("Can not launch forge modpacks for now. Sorry.")
 		}
 
 		// launch instance
