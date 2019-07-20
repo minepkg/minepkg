@@ -31,27 +31,6 @@ var joinCmd = &cobra.Command{
 	Example: `  minepkg join demoserver.minepkg.io`,
 	Aliases: []string{"i-wanna-play-on"},
 	Run: func(cmd *cobra.Command, args []string) {
-		tempDir, err := ioutil.TempDir("", args[0])
-		wd, _ := os.Getwd()
-		os.Chdir(tempDir) // change working directory to temporary dir
-
-		defer os.RemoveAll(tempDir) // cleanup dir after minecraft is closed
-		defer os.Chdir(wd)          // move back to working directory
-		if err != nil {
-			logger.Fail(err.Error())
-		}
-		instance := instances.Instance{
-			GlobalDir:     globalDir,
-			ModsDirectory: filepath.Join(tempDir, "mods"),
-			Lockfile:      manifest.NewLockfile(),
-			MinepkgAPI:    apiClient,
-		}
-
-		creds, err := ensureMojangAuth()
-		if err != nil {
-			logger.Fail(err.Error())
-		}
-		instance.MojangCredentials = creds.Mojang
 
 		host := args[0]
 		rawIP, err := net.LookupHost(host)
@@ -96,12 +75,46 @@ var joinCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		instance.Manifest = release.Manifest
-		fmt.Println("Creating temporary modpack with " + release.Identifier())
+		// looks like we can join this server, so we start initializing the instance stuff here
+		instance := instances.Instance{
+			GlobalDir:  globalDir,
+			Lockfile:   manifest.NewLockfile(),
+			MinepkgAPI: apiClient,
+		}
 
+		instanceDir := filepath.Join(instance.InstancesDir(), "server:"+ip+":"+release.Package.Name+"@"+release.Package.Platform)
+		os.MkdirAll(instanceDir, os.ModePerm)
+
+		instance.ModsDirectory = filepath.Join(instanceDir, "mods")
+		wd, err := os.Getwd()
+		if err != nil {
+			logger.Fail(err.Error())
+		}
+		// change dir to the instance
+		if err := os.Chdir(instanceDir); err != nil {
+			logger.Fail(err.Error())
+		}
+
+		defer os.Chdir(wd) // move back to working directory
+		if err != nil {
+			logger.Fail(err.Error())
+		}
+
+		creds, err := ensureMojangAuth()
+		if err != nil {
+			logger.Fail(err.Error())
+		}
+		instance.MojangCredentials = creds.Mojang
+
+		instance.Manifest = release.Manifest
+		fmt.Println("Using modpack " + release.Identifier())
+
+		// force the latest requirements
 		if err := instance.UpdateLockfileRequirements(context.TODO()); err != nil {
 			logger.Fail(err.Error())
 		}
+
+		// force the latest dependencies
 		if err := instance.UpdateLockfileDependencies(context.TODO()); err != nil {
 			logger.Fail(err.Error())
 		}

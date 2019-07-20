@@ -58,8 +58,8 @@ var launchCmd = &cobra.Command{
 
 			// TODO: check if exists
 			// TODO: check error
-			instanceDir := filepath.Join(globalDir, "instances", release.Package.Name+"@"+release.Package.Platform)
-			os.MkdirAll(filepath.Join(globalDir, "instances", release.Package.Name+"@"+release.Package.Platform), os.ModePerm)
+			instanceDir := filepath.Join(instance.InstancesDir(), release.Package.Name+"@"+release.Package.Platform)
+			os.MkdirAll(filepath.Join(instance.InstancesDir(), release.Package.Name+"@"+release.Package.Platform), os.ModePerm)
 			wd, err := os.Getwd()
 			if err != nil {
 				logger.Fail(err.Error())

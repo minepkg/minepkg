@@ -56,9 +56,14 @@ func (i *Instance) AssetsDir() string {
 	return filepath.Join(i.GlobalDir, "assets")
 }
 
-// LibariesDir returns the path to the libraries directory
+// LibrariesDir returns the path to the libraries directory
 func (i *Instance) LibrariesDir() string {
 	return filepath.Join(i.GlobalDir, "libraries")
+}
+
+// InstancesDir returns the path to the instances directory
+func (i *Instance) InstancesDir() string {
+	return filepath.Join(i.GlobalDir, "instances")
 }
 
 // Platform returns the type of loader required to start this instance
