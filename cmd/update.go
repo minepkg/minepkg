@@ -13,6 +13,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func init() {
+	rootCmd.AddCommand(updateCmd)
+	rootCmd.AddCommand(updateReqCmd)
+}
+
 var updateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "updates all installed dependencies",
@@ -94,12 +99,12 @@ Edit the minepkg.toml to change the version requirements.
 		}
 
 		for _, asset := range missingAssets {
-			target := filepath.Join(instance.Directory, "assets/objects", asset.UnixPath())
+			target := filepath.Join(instance.GlobalDir, "assets/objects", asset.UnixPath())
 			mgr.Add(downloadmgr.NewHTTPItem(asset.DownloadURL(), target))
 		}
 
 		for _, lib := range missingLibs {
-			target := filepath.Join(instance.Directory, "libraries", lib.Filepath())
+			target := filepath.Join(instance.GlobalDir, "libraries", lib.Filepath())
 			mgr.Add(downloadmgr.NewHTTPItem(lib.DownloadURL(), target))
 		}
 

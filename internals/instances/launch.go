@@ -19,8 +19,6 @@ import (
 	"github.com/fiws/minepkg/internals/minecraft"
 
 	"github.com/fiws/minepkg/pkg/manifest"
-
-	homedir "github.com/mitchellh/go-homedir"
 )
 
 var (
@@ -63,8 +61,6 @@ type LaunchOptions struct {
 
 // Launch starts the minecraft instance
 func (i *Instance) Launch(opts *LaunchOptions) error {
-	home, _ := homedir.Dir()
-	globalDir := filepath.Join(home, ".minepkg")
 	cwd, err := os.Getwd()
 	if err != nil {
 		panic(err)
@@ -93,6 +89,19 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 		}
 	}
 
+	// ensure some java binary is set
+	if opts.Java == "" {
+		opts.Java = i.javaBin()
+		// no local java installation
+		if opts.Java == "" {
+			// download java
+			if err := i.UpdateJava(); err != nil {
+				return err
+			}
+			opts.Java = i.javaBinary
+		}
+	}
+
 	// Download assets if not skipped
 	if opts.SkipDownload != true {
 		i.ensureAssets(launchManifest)
@@ -106,7 +115,7 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 	}
 
 	defer os.RemoveAll(tmpDir) // cleanup dir after minecraft is closed
-	libDir := filepath.Join(globalDir, "libraries")
+	libDir := filepath.Join(i.LibrariesDir())
 
 	// build that spooky -cp arg
 	var cpArgs []string
@@ -149,14 +158,14 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 	if jarTarget == "" {
 		jarTarget = launchManifest.InheritsFrom
 	}
-	mcJar := filepath.Join(globalDir, "versions", jarTarget, jarTarget+".jar")
+	mcJar := filepath.Join(i.VersionsDir(), jarTarget, jarTarget+".jar")
 	cpArgs = append(cpArgs, mcJar)
 
 	replacer := strings.NewReplacer(
 		v("auth_player_name"), profile.Name,
 		v("version_name"), jarTarget,
 		v("game_directory"), cwd,
-		v("assets_root"), filepath.Join(i.Directory, "assets"),
+		v("assets_root"), filepath.Join(i.AssetsDir()),
 		v("assets_index_name"), launchManifest.Assets, // asset index version
 		v("auth_uuid"), profile.ID, // profile id
 		v("auth_access_token"), creds.AccessToken,
@@ -227,7 +236,7 @@ func (i *Instance) launchManifest() (*minecraft.LaunchManifest, error) {
 	if lockfile == nil {
 		i.initLockfile()
 	}
-	buf, err := ioutil.ReadFile(filepath.Join(i.Directory, "versions", lockfile.McManifestName()))
+	buf, err := ioutil.ReadFile(filepath.Join(i.VersionsDir(), lockfile.McManifestName()))
 	if err == nil {
 		man := minecraft.LaunchManifest{}
 		json.Unmarshal(buf, &man)
@@ -246,7 +255,7 @@ func (i *Instance) launchManifest() (*minecraft.LaunchManifest, error) {
 }
 
 func (i *Instance) getVanillaManifest(v string) (*minecraft.LaunchManifest, error) {
-	buf, err := ioutil.ReadFile(filepath.Join(i.Directory, "versions", v, v+".json"))
+	buf, err := ioutil.ReadFile(filepath.Join(i.VersionsDir(), v, v+".json"))
 	if err != nil {
 		return i.fetchVanillaManifest(v)
 		// return nil, err
@@ -263,7 +272,7 @@ func (i *Instance) fetchFabricManifest(lock *manifest.FabricLock) (*minecraft.La
 	minecraft := lock.Minecraft
 
 	version := minecraft + "-fabric-" + loader
-	dir := filepath.Join(i.Directory, "versions", i.Manifest.Requirements.Minecraft+"-fabric-"+loader)
+	dir := filepath.Join(i.VersionsDir(), i.Manifest.Requirements.Minecraft+"-fabric-"+loader)
 	file := filepath.Join(dir, version+".json")
 
 	// cached
@@ -323,7 +332,7 @@ func (i *Instance) fetchVanillaManifest(version string) (*minecraft.LaunchManife
 		return nil, err
 	}
 
-	dir := filepath.Join(i.Directory, "versions", version)
+	dir := filepath.Join(i.VersionsDir(), version)
 	os.MkdirAll(dir, os.ModePerm)
 	if err != nil {
 		return nil, err
@@ -357,7 +366,7 @@ func (i *Instance) FindMissingLibraries(man *minecraft.LaunchManifest) (minecraf
 	missing := minecraft.Libraries{}
 
 	libs := man.Libraries.Required()
-	globalDir := filepath.Join(i.Directory, "libraries")
+	globalDir := i.LibrariesDir()
 
 	for _, lib := range libs {
 		path := filepath.Join(globalDir, lib.Filepath())
@@ -375,7 +384,7 @@ func (i *Instance) FindMissingLibraries(man *minecraft.LaunchManifest) (minecraf
 func (i *Instance) FindMissingAssets(man *minecraft.LaunchManifest) ([]minecraft.AssetObject, error) {
 	assets := minecraft.AssetIndex{}
 
-	assetJSONPath := filepath.Join(i.Directory, "assets/indexes", man.Assets+".json")
+	assetJSONPath := filepath.Join(i.AssetsDir(), "indexes", man.Assets+".json")
 	buf, err := ioutil.ReadFile(assetJSONPath)
 	if err != nil {
 		res, err := http.Get(man.AssetIndex.URL)
@@ -388,7 +397,7 @@ func (i *Instance) FindMissingAssets(man *minecraft.LaunchManifest) ([]minecraft
 			return nil, err
 		}
 
-		os.MkdirAll(filepath.Join(i.Directory, "assets/indexes"), os.ModePerm)
+		os.MkdirAll(filepath.Join(i.AssetsDir(), "indexes"), os.ModePerm)
 		err = ioutil.WriteFile(assetJSONPath, buf, 0666)
 		if err != nil {
 			return nil, err
@@ -399,7 +408,7 @@ func (i *Instance) FindMissingAssets(man *minecraft.LaunchManifest) ([]minecraft
 	missing := make([]minecraft.AssetObject, 0)
 
 	for _, asset := range assets.Objects {
-		file := filepath.Join(i.Directory, "assets/objects", asset.UnixPath())
+		file := filepath.Join(i.AssetsDir(), "objects", asset.UnixPath())
 		if _, err := os.Stat(file); os.IsNotExist(err) {
 			missing = append(missing, asset)
 		}

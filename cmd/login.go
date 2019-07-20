@@ -14,6 +14,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func init() {
+	rootCmd.AddCommand(loginCmd)
+}
+
 var loginCmd = &cobra.Command{
 	Use:     "login",
 	Aliases: []string{"signin", "register", "signup"},

@@ -8,6 +8,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func init() {
+	rootCmd.AddCommand(removeCmd)
+}
+
 var removeCmd = &cobra.Command{
 	Use:     "remove <package>",
 	Short:   "removes specified package from the manifest",

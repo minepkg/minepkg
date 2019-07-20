@@ -32,11 +32,12 @@ var (
 
 func init() {
 	initCmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite the minepkg.toml if one exists")
+	rootCmd.AddCommand(initCmd)
 }
 
 var initCmd = &cobra.Command{
 	Use:   "init [name]",
-	Short: "Creates a new mod or modpack in the current directory.",
+	Short: "Creates a new mod or modpack in the current directory",
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		if _, err := ioutil.ReadFile("./minepkg.toml"); err == nil && force != true {

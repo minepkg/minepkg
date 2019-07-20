@@ -14,6 +14,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func init() {
+	rootCmd.AddCommand(selfupdateCmd)
+	rootCmd.AddCommand(selftestCmd)
+}
+
 type minepkgClientVersions struct {
 	Version  string `json:"version"`
 	Binaries struct {

@@ -94,20 +94,6 @@ func init() {
 	// TODO: remove this after a few releases (fixes #61)
 	os.Chmod(globalDir, 0755)
 
-	rootCmd.AddCommand(loginCmd)
-	rootCmd.AddCommand(initCmd)
-	rootCmd.AddCommand(installCmd)
-	rootCmd.AddCommand(updateCmd)
-	rootCmd.AddCommand(removeCmd)
-	rootCmd.AddCommand(updateReqCmd)
-	rootCmd.AddCommand(tryCmd)
-	rootCmd.AddCommand(publishCmd)
-	rootCmd.AddCommand(buildCmd)
-	rootCmd.AddCommand(launchCmd)
-	rootCmd.AddCommand(joinCmd)
-	rootCmd.AddCommand(completionCmd)
-	rootCmd.AddCommand(selfupdateCmd)
-	rootCmd.AddCommand(selftestCmd)
 	cobra.OnInitialize(initConfig)
 
 	// Global flags

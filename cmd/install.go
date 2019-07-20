@@ -9,11 +9,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func init() {
+	rootCmd.AddCommand(installCmd)
+}
+
 var installCmd = &cobra.Command{
 	Use:     "install [name/url/id]",
 	Short:   "installz packages",
-	Long:    `Just install them packages noaw`,
-	Aliases: []string{"isntall", "i"},
+	Long:    `Adds packages to your local modpack or mod. Launch the modpack with minepkg launch`,
+	Aliases: []string{"isntall", "i", "add"},
 	Run: func(cmd *cobra.Command, args []string) {
 		instance, err := instances.DetectInstance()
 		instance.MinepkgAPI = apiClient

@@ -16,11 +16,12 @@ import (
 
 func init() {
 	buildCmd.Flags().BoolVarP(&nonInteractive, "non-interactive", "y", false, "Answers all interactive questions with the default")
+	rootCmd.AddCommand(buildCmd)
 }
 
 var buildCmd = &cobra.Command{
 	Use:   "build",
-	Short: "Runs the build hook (or falls back to gradle build)",
+	Short: "Runs the build hook (falls back to gradle build)",
 	Run: func(cmd *cobra.Command, args []string) {
 		startTime := time.Now()
 

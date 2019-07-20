@@ -95,8 +95,8 @@ func (i *Instance) ensureAssets(man *minecraft.LaunchManifest) error {
 	for _, asset := range missing {
 		fileRes, err := http.Get(asset.DownloadURL())
 		// TODO: check status code and all the things!
-		os.MkdirAll(filepath.Join(i.Directory, "assets/objects", asset.Hash[:2]), os.ModePerm)
-		dest, err := os.Create(filepath.Join(i.Directory, "assets/objects", asset.UnixPath()))
+		os.MkdirAll(filepath.Join(i.GlobalDir, "assets/objects", asset.Hash[:2]), os.ModePerm)
+		dest, err := os.Create(filepath.Join(i.GlobalDir, "assets/objects", asset.UnixPath()))
 		if err != nil {
 			return err
 		}

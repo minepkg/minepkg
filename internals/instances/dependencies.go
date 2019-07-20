@@ -63,7 +63,7 @@ func (i *Instance) FindMissingDependencies() ([]*manifest.DependencyLock, error)
 	missing := make([]*manifest.DependencyLock, 0)
 
 	deps := i.Lockfile.Dependencies
-	cacheDir := filepath.Join(i.Directory, "cache")
+	cacheDir := filepath.Join(i.GlobalDir, "cache")
 
 	for _, dep := range deps {
 		if dep.URL == "" {
@@ -80,7 +80,7 @@ func (i *Instance) FindMissingDependencies() ([]*manifest.DependencyLock, error)
 
 // LinkDependencies links or copies all missing dependencies into the mods folder
 func (i *Instance) LinkDependencies() error {
-	cacheDir := filepath.Join(i.Directory, "cache")
+	cacheDir := filepath.Join(i.GlobalDir, "cache")
 
 	files, err := ioutil.ReadDir(i.ModsDirectory)
 	if err != nil {
@@ -123,7 +123,7 @@ func (i *Instance) LinkDependencies() error {
 
 // EnsureDependencies downloads missing dependencies
 func (i *Instance) EnsureDependencies(ctx context.Context) error {
-	cacheDir := filepath.Join(i.Directory, "cache")
+	cacheDir := filepath.Join(i.GlobalDir, "cache")
 
 	missingFiles, err := i.FindMissingDependencies()
 	if err != nil {

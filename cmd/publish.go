@@ -46,11 +46,12 @@ func init() {
 	publishCmd.Flags().BoolVarP(&skipBuild, "skip-build", "", false, "Skips building the package")
 	publishCmd.Flags().BoolVarP(&nonInteractive, "non-interactive", "y", false, "Answers all interactive questions with the default")
 	publishCmd.Flags().StringVarP(&release, "release", "r", "", "The release version number to publish")
+	rootCmd.AddCommand(publishCmd)
 }
 
 var publishCmd = &cobra.Command{
 	Use:   "publish",
-	Short: "Publishes a local mod in the current directory",
+	Short: "Publishes the local package in the current directory",
 	Run: func(cmd *cobra.Command, args []string) {
 
 		// overwrite api

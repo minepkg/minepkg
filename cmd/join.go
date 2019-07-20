@@ -10,22 +10,25 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
+	"github.com/fiws/minepkg/cmd/launch"
 	"github.com/fiws/minepkg/pkg/api"
 	"github.com/fiws/minepkg/pkg/manifest"
 
-	"github.com/briandowns/spinner"
-	"github.com/fiws/minepkg/internals/downloadmgr"
 	"github.com/fiws/minepkg/internals/instances"
 	"github.com/spf13/cobra"
 )
 
+func init() {
+	rootCmd.AddCommand(joinCmd)
+}
+
 // TODO: use launch logic (save setup)
 var joinCmd = &cobra.Command{
 	Use:     "join <ip/hostname>",
-	Short:   "Joins a compatible server without any setup.",
+	Short:   "Joins a compatible server without any setup",
 	Long:    `Servers have to be started with \"minepkg launch --server\" for this to work. (For now)`,
+	Example: `  minepkg join demoserver.minepkg.io`,
 	Aliases: []string{"i-wanna-play-on"},
 	Run: func(cmd *cobra.Command, args []string) {
 		tempDir, err := ioutil.TempDir("", args[0])
@@ -38,7 +41,7 @@ var joinCmd = &cobra.Command{
 			logger.Fail(err.Error())
 		}
 		instance := instances.Instance{
-			Directory:     globalDir,
+			GlobalDir:     globalDir,
 			ModsDirectory: filepath.Join(tempDir, "mods"),
 			Lockfile:      manifest.NewLockfile(),
 			MinepkgAPI:    apiClient,
@@ -105,60 +108,14 @@ var joinCmd = &cobra.Command{
 
 		instance.SaveLockfile()
 
-		// Prepare launch
-		s := spinner.New(spinner.CharSets[9], 300*time.Millisecond) // Build our new spinner
-		s.Prefix = " "
-		s.Start()
-		s.Suffix = " Preparing launch"
-
-		java := javaBin(instance.Directory)
-		if java == "" {
-			s.Suffix = " Preparing launch – Downloading java"
-			var err error
-			java, err = downloadJava(instance.Directory)
-			if err != nil {
-				logger.Fail(err.Error())
-			}
-		}
-
-		mgr := downloadmgr.New()
-		mgr.OnProgress = func(p int) {
-			s.Suffix = fmt.Sprintf(" Preparing launch – Downloading %v", p) + "%"
-		}
-
-		launchManifest, err := instance.GetLaunchManifest()
-		if err != nil {
-			logger.Fail(err.Error())
-		}
-
-		missingLibs, err := instance.FindMissingLibraries(launchManifest)
-		if err != nil {
-			logger.Fail(err.Error())
-		}
-
-		for _, lib := range missingLibs {
-			target := filepath.Join(instance.Directory, "libraries", lib.Filepath())
-			mgr.Add(downloadmgr.NewHTTPItem(lib.DownloadURL(), target))
-		}
-
-		if err = mgr.Start(context.TODO()); err != nil {
-			logger.Fail(err.Error())
-		}
-
-		s.Suffix = " Downloading dependencies"
-		if err := instance.EnsureDependencies(context.TODO()); err != nil {
-			logger.Fail(err.Error())
-		}
-
-		s.Stop()
+		cliLauncher := launch.CLILauncher{Instance: &instance, ServerMode: serverMode}
+		cliLauncher.Prepare()
 
 		fmt.Println("\nLaunching Minecraft …")
 		opts := &instances.LaunchOptions{
-			LaunchManifest: launchManifest,
-			Java:           java,
-			JoinServer:     ip,
+			JoinServer: ip,
 		}
-		err = instance.Launch(opts)
+		err = cliLauncher.Launch(opts)
 		if err != nil {
 			logger.Fail(err.Error())
 		}

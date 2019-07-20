@@ -16,14 +16,7 @@ import (
 	strcase "github.com/stoewer/go-strcase"
 )
 
-const compatMMCFormat = 1
-
 var (
-	// FlavourVanilla is a vanilla minecraft instance
-	FlavourVanilla uint8 = 1
-	// FlavourServer is a server side instance
-	FlavourServer uint8 = 3
-
 	// PlatformVanilla is a vanilla minecraft instance
 	PlatformVanilla uint8 = 1
 	// PlatformFabric is a fabric minecraft instance
@@ -39,13 +32,33 @@ var (
 
 // Instance describes a locally installed minecraft instance
 type Instance struct {
-	Flavour           uint8
-	Directory         string
+	IsServer bool
+	// GlobalDir is the directory containing everything required to run minecraft.
+	// this includes the libraries, assets, versions & mod cache folder
+	// it defaults to $HOME/.minepkg
+	GlobalDir         string
 	ModsDirectory     string
 	Manifest          *manifest.Manifest
 	Lockfile          *manifest.Lockfile
 	MojangCredentials *api.MojangAuthResponse
 	MinepkgAPI        *api.MinepkgAPI
+
+	javaBinary string
+}
+
+// VersionsDir returns the path to the versions directory
+func (i *Instance) VersionsDir() string {
+	return filepath.Join(i.GlobalDir, "versions")
+}
+
+// AssetsDir returns the path to the assets directory
+func (i *Instance) AssetsDir() string {
+	return filepath.Join(i.GlobalDir, "assets")
+}
+
+// LibariesDir returns the path to the libraries directory
+func (i *Instance) LibrariesDir() string {
+	return filepath.Join(i.GlobalDir, "libraries")
 }
 
 // Platform returns the type of loader required to start this instance
@@ -84,40 +97,40 @@ func DetectInstance() (*Instance, error) {
 	}
 	modsDir := filepath.Join(dir, "mods")
 
-	var flavour uint8
+	isServer := false
+	isInstance := false
 	for _, entry := range entries {
 		switch entry.Name() {
-		case "versions":
-			flavour = FlavourVanilla
-			break
 		case "server.properties":
-			flavour = FlavourServer
+			isServer = true
+			isInstance = true
 			break
 		case "minepkg.toml":
-			flavour = FlavourServer
-			home, _ := homedir.Dir()
-			dir = filepath.Join(home, ".minepkg")
+			isInstance = true
 			break
 		}
 	}
 
-	if flavour == 0 {
+	if isInstance == false {
 		return nil, ErrorNoInstance
 	}
 
+	home, _ := homedir.Dir()
+	globalDir := filepath.Join(home, ".minepkg")
+
 	instance := &Instance{
-		Flavour:       flavour,
+		IsServer:      isServer,
 		ModsDirectory: modsDir,
-		Directory:     dir,
+		GlobalDir:     globalDir,
 	}
 
-	err = instance.initManifest()
-	if err != nil {
+	// initialize manifest
+	if err := instance.initManifest(); err != nil {
 		return nil, err
 	}
 
-	err = instance.initLockfile()
-	if err != nil {
+	// initialize lockfile
+	if err := instance.initLockfile(); err != nil {
 		return nil, err
 	}
 
