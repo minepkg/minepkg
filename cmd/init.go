@@ -45,10 +45,7 @@ var initCmd = &cobra.Command{
 		}
 
 		man := manifest.Manifest{}
-		var (
-			// emptyDir bool
-			gitRepo bool
-		)
+		var gitRepo bool
 
 		chForgeVersions := make(chan *api.ForgeVersionResponse)
 		go func(ch chan *api.ForgeVersionResponse) {
