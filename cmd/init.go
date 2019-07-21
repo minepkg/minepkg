@@ -187,7 +187,7 @@ var initCmd = &cobra.Command{
 					fmt.Println("")
 					logger.Info("[hooks]")
 					useHook := boolPrompt(&promptui.Prompt{
-						Label:     "Do you want to use \"./gradlew build\" as you build hook",
+						Label:     "Do you want to use \"./gradlew build\" as your build hook",
 						Default:   "Y",
 						IsConfirm: true,
 					})
