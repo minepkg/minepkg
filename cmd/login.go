@@ -66,7 +66,7 @@ func login() *api.AuthResponse {
 	if err := ioutil.WriteFile(credFile, creds, 0700); err != nil {
 		logger.Fail("Count not write credentials file: " + err.Error())
 	}
-	fmt.Println("Succesfully loged into minepkg.io")
+	fmt.Println("Succesfully logged in to minepkg.io")
 
 	return loginData
 }
