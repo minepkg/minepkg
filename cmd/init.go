@@ -50,12 +50,6 @@ var initCmd = &cobra.Command{
 			gitRepo bool
 		)
 
-		// files, err := ioutil.ReadDir("./build/libs")
-		// if err != nil {
-		// 	logger.Fail(err.Error())
-		// }
-		// emptyDir = len(files) == 0
-
 		chForgeVersions := make(chan *api.ForgeVersionResponse)
 		go func(ch chan *api.ForgeVersionResponse) {
 			res, err := apiClient.GetForgeVersions(context.TODO())

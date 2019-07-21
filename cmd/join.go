@@ -96,9 +96,6 @@ var joinCmd = &cobra.Command{
 		}
 
 		defer os.Chdir(wd) // move back to working directory
-		if err != nil {
-			logger.Fail(err.Error())
-		}
 
 		creds, err := ensureMojangAuth()
 		if err != nil {
