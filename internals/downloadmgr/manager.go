@@ -22,7 +22,7 @@ func (d *DownloadManager) Add(i Downloader) {
 
 // Start starts the download queue
 func (d *DownloadManager) Start(ctx context.Context) error {
-	var sem = make(chan int, 16)
+	sem := make(chan int, 16)
 	errc := make(chan error)
 
 	if d.queue == nil {
