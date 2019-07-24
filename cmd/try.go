@@ -34,7 +34,7 @@ func init() {
 
 var tryCmd = &cobra.Command{
 	Use:     "try",
-	Short:   "Try a mod or modpack withouth creating a modpack first",
+	Short:   "Try a mod or modpack without creating a modpack first",
 	Long:    ``, // TODO
 	Aliases: []string{"test"},
 	Run: func(cmd *cobra.Command, args []string) {
