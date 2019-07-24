@@ -53,8 +53,7 @@ Edit the minepkg.toml to change the version requirements.
 		if err != nil {
 			logger.Fail("Instance problem: " + err.Error())
 		}
-		fmt.Printf("Installing to %s\n", instance.Desc())
-		fmt.Println() // empty line
+		fmt.Printf("Installing to %s\n\n", instance.Desc())
 
 		logger.Headline("Updating installed requirements")
 
