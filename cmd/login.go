@@ -20,8 +20,9 @@ func init() {
 
 var loginCmd = &cobra.Command{
 	Use:     "login",
-	Aliases: []string{"signin", "register", "signup"},
-	Short:   "Sign in to minepkg.io using your Mojang account",
+	Aliases: []string{"signin"},
+	Short:   "Sign in to Mojang and minepkg.io using your Mojang account",
+	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		login()
 	},

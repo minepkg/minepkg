@@ -30,6 +30,7 @@ var joinCmd = &cobra.Command{
 	Long:    `Servers have to be started with \"minepkg launch --server\" for this to work. (For now)`,
 	Example: `  minepkg join demoserver.minepkg.io`,
 	Aliases: []string{"i-wanna-play-on"},
+	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
 		host := args[0]

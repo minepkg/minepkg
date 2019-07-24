@@ -26,6 +26,7 @@ This updates the local mods according to the minepkg.toml.
 Edit the minepkg.toml to change the version requirements.
 `,
 	Aliases: []string{"upd"},
+	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		instance, err := instances.DetectInstance()
 		instance.MinepkgAPI = apiClient
@@ -45,8 +46,9 @@ var updateReqCmd = &cobra.Command{
 	Long: `
 This updates the installed requirements according to the minepkg.toml. 
 Edit the minepkg.toml to change the version requirements.
-	`,
+`,
 	Aliases: []string{"update-req"},
+	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		instance, err := instances.DetectInstance()
 		instance.MinepkgAPI = apiClient

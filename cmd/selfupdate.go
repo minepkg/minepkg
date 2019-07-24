@@ -44,6 +44,7 @@ func (m *minepkgClientVersions) PlatformBinary() string {
 var selfupdateCmd = &cobra.Command{
 	Use:   "selfupdate",
 	Short: "Updates minepkg to the latest version",
+	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 
 		toUpdate, err := os.Executable()

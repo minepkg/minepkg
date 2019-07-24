@@ -21,13 +21,14 @@ import (
 // MinepkgVersion is a constant of the current minepkg version
 const MinepkgVersion = "0.0.14"
 
-var cfgFile string
+// TODO: this logger is not so great – also: it should not be global
 var logger *cmdlog.Logger = cmdlog.New()
-var globalDir = "/tmp"
-var apiClient = api.New()
-var loginData = &api.AuthResponse{}
 
 var (
+	cfgFile       string
+	globalDir     = "/tmp"
+	apiClient     = api.New()
+	loginData     = &api.AuthResponse{}
 	disableColors bool
 )
 

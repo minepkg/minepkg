@@ -28,7 +28,7 @@ func (l *Logger) pritEmoji(e string) {
 	}
 }
 
-func (l *Logger) spritEmoji(e string) string {
+func (l *Logger) sprintEmoji(e string) string {
 	if l.emojis == true {
 		return e
 	}
@@ -75,13 +75,15 @@ func (l *Logger) NewTask(end int) *Task {
 // New returns a new Logger
 func New() *Logger {
 	emojis := runtime.GOOS != "windows"
+	colorToggle := true
 
 	// disable color for CI
 	if os.Getenv("CI") != "" {
 		emojis = false
+		colorToggle = false
 		color.Disable()
 	}
-	return &Logger{emojis: emojis, color: true}
+	return &Logger{emojis: emojis, color: colorToggle}
 }
 
 // Task logs but with progress
@@ -98,7 +100,7 @@ func (l *Task) Step(e string, s string) {
 		"[%d / %d] %s %s",
 		l.current,
 		l.end,
-		l.spritEmoji(e),
+		l.sprintEmoji(e),
 		s,
 	)
 

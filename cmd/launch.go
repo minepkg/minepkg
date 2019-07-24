@@ -34,6 +34,7 @@ var launchCmd = &cobra.Command{
 	Alternativly: Can be used in directories containing a minepkg.toml manifest to launch that modpack.
 	`, // TODO
 	Aliases: []string{"run", "start", "play"},
+	Args:    cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var instance *instances.Instance
 

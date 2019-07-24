@@ -23,7 +23,7 @@ import (
 
 var (
 	// ErrLaunchNotImplemented is returned if attemting to start a non vanilla instance
-	ErrLaunchNotImplemented = errors.New("Can only launch vanilla instances (for now)")
+	ErrLaunchNotImplemented = errors.New("Can only launch vanilla & fabric instances (for now)")
 	// ErrNoCredentials is returned when an instance is launched without `MojangProfile` beeing set
 	ErrNoCredentials = errors.New("Can not launch without mojang credentials")
 	// ErrNoPaidAccount is returned when an instance is launched without `MojangProfile` beeing set

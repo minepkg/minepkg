@@ -52,6 +52,7 @@ func init() {
 var publishCmd = &cobra.Command{
 	Use:   "publish",
 	Short: "Publishes the local package in the current directory",
+	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 
 		// overwrite api
@@ -81,16 +82,7 @@ var publishCmd = &cobra.Command{
 			logger.Fail("Your minepkg.toml is missing either forge or fabric in [requirements]")
 		}
 
-		// buf, err := json.Marshal(m)
-		// if err != nil {
-		// 	logger.Fail("Could not convert your minepkg.toml manifest to JSON")
-		// }
-
 		tasks.Log("Checking Authentication")
-		// token := os.Getenv("MINEPKG_API_TOKEN")
-		// if token == "" {
-		// 	logger.Fail("Missing MINEPKG_API_TOKEN environment variable!")
-		// }
 		if apiClient.JWT == "" {
 			logger.Warn("You need to login first")
 			login()

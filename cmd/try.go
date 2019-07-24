@@ -33,10 +33,14 @@ func init() {
 }
 
 var tryCmd = &cobra.Command{
-	Use:     "try",
-	Short:   "Try a mod or modpack without creating a modpack first",
-	Long:    ``, // TODO
+	Use:   "try <package>",
+	Short: "Lets you try a mod or modpack in Minecraft",
+	Long: `
+This creates a temporary Minecraft instance which includes the given mod or modpack. 
+It will be deleted after testing.
+`,
 	Aliases: []string{"test"},
+	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		tempDir, err := ioutil.TempDir("", args[0])
 		wd, _ := os.Getwd()
