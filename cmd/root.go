@@ -41,7 +41,7 @@ var rootCmd = &cobra.Command{
 	Example: `
   minepkg init -l fabric
   minepkg install modmenu@latest
-	minepkg install https://minepkg.io/projects/desire-paths`,
+  minepkg install https://minepkg.io/projects/desire-paths`,
 }
 
 var completionCmd = &cobra.Command{
