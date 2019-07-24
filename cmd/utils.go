@@ -87,7 +87,7 @@ func ensureMojangAuth() (*api.AuthResponse, error) {
 		}
 		credFile := filepath.Join(globalDir, "credentials.json")
 		if err := ioutil.WriteFile(credFile, creds, 0700); err != nil {
-			logger.Fail("Count not write credentials file: " + err.Error())
+			logger.Fail("Could not write credentials file: " + err.Error())
 		}
 	}
 
