@@ -130,6 +130,7 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 	for _, lib := range libs {
 
 		if opts.SkipDownload != true {
+			// TODO: replace with method
 			existOrDownload(lib)
 		}
 

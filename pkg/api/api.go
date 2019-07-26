@@ -226,7 +226,8 @@ func (m *MinepkgAPI) GetAccount(ctx context.Context) (*User, error) {
 	return &user, nil
 }
 
-// GetForgeVersions gets a single release from a project
+// GetForgeVersions gets all available forge versions
+// This currently does not work!
 func (m *MinepkgAPI) GetForgeVersions(ctx context.Context) (*ForgeVersionResponse, error) {
 	res, err := m.get(ctx, baseAPI+"/meta/forge-versions")
 	if err != nil {
