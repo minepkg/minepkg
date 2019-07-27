@@ -2,13 +2,7 @@ package manifest
 
 import (
 	"bytes"
-	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
-	"net/http"
-	"os"
-	"strings"
 
 	"github.com/BurntSushi/toml"
 )
@@ -18,7 +12,7 @@ const newPackageTemplate = `
 # WARNING: This package might not work with future versions
 #   of minepkg and might need to be updated then.
 # This is a preview version of the minepkg.toml format!
-version = 0
+manifestVersion = 0
 
 [package]
 type = "modpack"
@@ -38,116 +32,97 @@ minecraft-version = "1.12.x"
 
 `
 
-// Dependency defines a dependency that can be saved and installed from
-// the minepkg.toml
-type Dependency interface {
-	Identifier() string // Identifier is the (unique) name of the dependency
-	fmt.Stringer        // used as `data` in `name = "[data]"` inside the minepkg.toml
-}
+const (
+	// TypeMod indicates a package containing a single mod
+	TypeMod = "mod"
+	// TypeModpack indicates a package containing a list of mods (modpack)
+	TypeModpack = "modpack"
+)
 
 // Manifest is a collection of data that describes a mod a modpack
 type Manifest struct {
-	Version int `toml:"version"`
-	Package struct {
-		Description string   `toml:"description"`
-		Name        string   `toml:"name"`
-		Type        string   `toml:"type"`
-		Version     string   `toml:"version"`
-		Extends     []string `toml:"extends"`
-	} `toml:"package"`
+	// ManifestVersion specifies the format version
+	// This field is REQUIRED
+	ManifestVersion int `toml:"manifestVersion" json:"manifestVersion"`
+	Package         struct {
+		// Type should be one of `TypeMod` ("mod") or `TypeModpack` ("modpack")
+		Type string `toml:"type" json:"type"`
+		// Name is the name of the package. It may NOT include spaces. It may ONLY consist of
+		// alphanumeric chars but can also include `-` and `_`
+		// Should be unique. (This will be enforced by the minepkg api)
+		// This field is REQUIRED
+		Name        string `toml:"name" json:"name"`
+		Description string `toml:"description" json:"description"`
+		// Version is the version number of this package. A preceeding `v` (like `v2.1.1`) should NOT
+		// be allowed for consistency
+		// The version may include prerelease information like `1.2.2-beta.0` or build
+		// related information `1.2.1+B7382-2018`.
+		// The version can be omited. In that case minepkg will try to use git tags
+		Version string `toml:"version,omitempty" json:"version,omitempty"`
+		// Platform incidates the supported playform of this package. can be `fabric`, `forge` or `vanilla`
+		Platform string   `toml:"platform,omitempty" json:"platform,omitempty"`
+		License  string   `toml:"license,omitempty" json:"license,omitempty"`
+		Provides []string `toml:"provides,omitempty" json:"provides,omitempty"`
+	} `toml:"package" json:"package"`
 	Requirements struct {
-		MinecraftVersion string `toml:"minecraft-version"`
-	} `toml:"requirements"`
-	Dependencies `toml:"dependencies"`
+		// Minecraft is a semver version string describing the required Minecraft version
+		// The Minecraft version is binding and implementers should not install
+		// Mods for non-matching Minecraft versions.
+		// Modpack & Mod Authors are encuraged to use semver to allow a broader install range.
+		// Plain version numbers just default to the `~` semver operator here. Allowing patches but not minor or major versions.
+		// So `1.12.0` and `~1.12.0` are equal
+		// This field is REQUIRED
+		Minecraft string `toml:"minecraft" json:"minecraft"`
+		// Fabric is a semver version string describing the required Fabric version
+		// Only one of `Forge` or `Fabric` may be used
+		Fabric string `toml:"fabric,omitempty" json:"fabric,omitempty"`
+		// Forge is the minimum forge version required
+		// no semver here, because forge does not follow semver
+		Forge string `toml:"forge,omitempty" json:"forge,omitempty"`
+		// MinepkgCompanion is the version of the minepkg companion plugin that is going to be added to modpacks.
+		// This has no effect on other types of packages
+		// `latest` is assumed if this field is omited. `none` can be used to exclude the companion
+		// plugin from a modpack – but this is not recommended
+		MinepkgCompanion string `toml:"minepkgCompanion,omitempty" json:"minepkgCompanion,omitempty"`
+	} `toml:"requirements" json:"requirements"`
+	// Dependencies lists runtime dependencies of this package
+	// this list can contain mods and modpacks
+	Dependencies `toml:"dependencies" json:"dependencies,omitempty"`
+	// Hooks should help mod developers to ease publishing
+	Hooks struct {
+		Build string `toml:"build,omitempty" json:"build,omitempty"`
+	} `toml:"hooks" json:"hooks"`
 }
 
 // Dependencies are the dependencies of a mod or modpack
 type Dependencies map[string]string
 
-// ParsedDependency is returned by `Parsed` to make installing
-// Dependencies easier
-type ParsedDependency struct {
-	Provider string
-	Target   string
-	Meta     string
-}
-
-// Parsed returns a `ParsedDependency` slice including all dependencies
-func (d *Dependencies) Parsed() []ParsedDependency {
-	parsed := make([]ParsedDependency, len(*d))
-
-	i := 0
-	for _, dep := range *d {
-		splited := strings.SplitN(dep, ":", 1)
-		parsed[i] = ParsedDependency{Provider: splited[0], Target: splited[1]}
-		i++
+// PlatformString returns the required platform as a string (vanilla, fabric or forge)
+func (m *Manifest) PlatformString() string {
+	switch {
+	case m.Requirements.Fabric != "":
+		return "fabric"
+	case m.Requirements.Forge != "":
+		return "forge"
+	default:
+		return "vanilla"
 	}
-
-	return parsed
-}
-
-// FullDependencies returns all dependencies including dependencies
-// specified in external toml files (Package.Extends)
-func (m *Manifest) FullDependencies() (*Dependencies, error) {
-
-	deps := Dependencies{}
-	// merge with local deps
-	for k, v := range m.Dependencies {
-		deps[k] = v
-	}
-	fetched := make(map[string]bool)
-
-	var resolve func(urls []string) error
-	resolve = func(urls []string) error {
-		for _, url := range urls {
-			_, ok := fetched[url]
-			if ok == true {
-				break
-			}
-			fetched[url] = true
-			m, err := fetchExtends(url)
-			if err != nil {
-				return err
-			}
-			// merge with deps
-			for k, v := range m.Dependencies {
-				deps[k] = v
-			}
-
-			// recursion – resolve its extends
-			resolve(m.Package.Extends)
-		}
-		return nil
-	}
-
-	err := resolve(m.Package.Extends)
-	if err != nil {
-		return nil, err
-	}
-
-	return &deps, nil
 }
 
 // AddDependency adds a new dependency to the manifest
-func (m *Manifest) AddDependency(d Dependency) {
+func (m *Manifest) AddDependency(name string, version string) {
 	if m.Dependencies == nil {
-		fmt.Println("[dependencies] was not initialized. This should not happen. Please report this")
 		m.Dependencies = make(map[string]string)
 	}
-	m.Dependencies[d.Identifier()] = d.String()
+	m.Dependencies[name] = version
 }
 
-// Save saves the manifest to disk
-func (m *Manifest) Save() error {
-	file, err := os.Create("minepkg.toml")
-	if err != nil {
-		return err
+// RemoveDependency removes a dependecy from the manifest
+func (m *Manifest) RemoveDependency(name string) {
+	if m.Dependencies == nil {
+		m.Dependencies = make(map[string]string)
 	}
-	_, err = io.Copy(file, m.Buffer())
-	if err != nil {
-		return err
-	}
-	return nil
+	delete(m.Dependencies, name)
 }
 
 // Buffer returns the manifest as toml in Buffer form
@@ -168,32 +143,4 @@ func New() *Manifest {
 	manifest := Manifest{}
 	toml.Decode(newPackageTemplate, &manifest)
 	return &manifest
-}
-
-// ResolvedMod is a mod that can be downloaded
-type ResolvedMod struct {
-	Slug        string
-	DownloadURL string
-	FileName    string
-}
-
-// LocalName returns the name that should be used on disk
-func (r *ResolvedMod) LocalName() string {
-	if strings.HasSuffix(r.FileName, ".jar") {
-		return r.FileName
-	}
-
-	return r.FileName + ".jar"
-}
-
-func fetchExtends(url string) (*Manifest, error) {
-	res, err := http.Get(url)
-	b, err := ioutil.ReadAll(res.Body)
-
-	m := Manifest{}
-	err = toml.Unmarshal(b, &m)
-	if err != nil {
-		return nil, err
-	}
-	return &m, nil
 }

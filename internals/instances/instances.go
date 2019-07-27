@@ -3,30 +3,26 @@ package instances
 import (
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/fiws/minepkg/pkg/api"
 	"github.com/fiws/minepkg/pkg/manifest"
 	"github.com/logrusorgru/aurora"
+	homedir "github.com/mitchellh/go-homedir"
 	strcase "github.com/stoewer/go-strcase"
 )
 
-const compatMMCFormat = 1
-
 var (
-	// FlavourVanilla is a vanilla minecraft instance
-	// usually installed with the official minecraft launcher
-	FlavourVanilla uint8 = 1
-	// FlavourMMC is a minecraft instance initiated with MultiMC
-	FlavourMMC uint8 = 2
-	// FlavourServer is a server side instance
-	FlavourServer uint8 = 1
+	// PlatformVanilla is a vanilla minecraft instance
+	PlatformVanilla uint8 = 1
+	// PlatformFabric is a fabric minecraft instance
+	PlatformFabric uint8 = 2
+	// PlatformForge is forge minecraft instance
+	PlatformForge uint8 = 3
 
 	// ErrorNoInstance is returned if no mc instance was found
 	ErrorNoInstance = errors.New("Could not find minecraft instance in this directory")
@@ -34,103 +30,112 @@ var (
 	ErrorNoVersion = errors.New("Could not detect minecraft version")
 )
 
-// McInstance describes a locally installed minecraft instance
-type McInstance struct {
-	Flavour       uint8
-	Directory     string
-	ModsDirectory string
-	Manifest      *manifest.Manifest
+// Instance describes a locally installed minecraft instance
+type Instance struct {
+	IsServer bool
+	// GlobalDir is the directory containing everything required to run minecraft.
+	// this includes the libraries, assets, versions & mod cache folder
+	// it defaults to $HOME/.minepkg
+	GlobalDir         string
+	ModsDirectory     string
+	Manifest          *manifest.Manifest
+	Lockfile          *manifest.Lockfile
+	MojangCredentials *api.MojangAuthResponse
+	MinepkgAPI        *api.MinepkgAPI
+
+	javaBinary string
+}
+
+// VersionsDir returns the path to the versions directory
+func (i *Instance) VersionsDir() string {
+	return filepath.Join(i.GlobalDir, "versions")
+}
+
+// AssetsDir returns the path to the assets directory
+func (i *Instance) AssetsDir() string {
+	return filepath.Join(i.GlobalDir, "assets")
+}
+
+// LibrariesDir returns the path to the libraries directory
+func (i *Instance) LibrariesDir() string {
+	return filepath.Join(i.GlobalDir, "libraries")
+}
+
+// InstancesDir returns the path to the instances directory
+func (i *Instance) InstancesDir() string {
+	return filepath.Join(i.GlobalDir, "instances")
+}
+
+// Platform returns the type of loader required to start this instance
+func (i *Instance) Platform() uint8 {
+	switch {
+	case i.Manifest.Requirements.Fabric != "":
+		return PlatformFabric
+	case i.Manifest.Requirements.Forge != "":
+		return PlatformForge
+	default:
+		return PlatformVanilla
+	}
 }
 
 // Desc returns a one-liner summary of this instance
-func (m *McInstance) Desc() string {
-	var flavourText string
-	switch m.Flavour {
-	case FlavourMMC:
-		flavourText = "MMC"
-	default:
-		flavourText = "Vanilla"
-	}
-	manifest := m.Manifest
+func (i *Instance) Desc() string {
+	manifest := i.Manifest
 
-	flavourText = fmt.Sprintf(" ⌂ %s ", flavourText)
-	version := fmt.Sprintf(" MC %s ", manifest.Requirements.MinecraftVersion)
 	depCount := fmt.Sprintf(" %d deps ", len(manifest.Dependencies))
 	name := fmt.Sprintf(" 📦 %s ", manifest.Package.Name)
 	build := []string{
-		aurora.BgBrown(flavourText).String(),
-		aurora.BgGray(version).Black().String(),
-		" ",
 		aurora.BgBlue(name).String(),
 		aurora.BgGray(depCount).Black().String(),
 	}
 	return strings.Join(build, "")
 }
 
-// Download downloads a mod into the mod directory
-func (m *McInstance) Download(mod *manifest.ResolvedMod) error {
-	res, err := http.Get(mod.DownloadURL)
-	if err != nil {
-		return err
-	}
-	dest, err := os.Create(path.Join(m.ModsDirectory, mod.LocalName()))
-	if err != nil {
-		return err
-	}
-	io.Copy(dest, res.Body)
-	return nil
-}
-
-// Add a new mod using a reader
-func (m *McInstance) Add(name string, r io.Reader) error {
-	dest, err := os.Create(path.Join(m.ModsDirectory, name))
-	if err != nil {
-		return err
-	}
-	_, err = io.Copy(dest, r)
-	return err
-}
-
 // DetectInstance tries to detect a minecraft instance
 // returning it, if succesfull
-func DetectInstance() (*McInstance, error) {
+func DetectInstance() (*Instance, error) {
 	entries, _ := ioutil.ReadDir("./")
 
-	modsDir := "mods"
+	dir, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	modsDir := filepath.Join(dir, "mods")
 
-	var flavour uint8
+	isServer := false
+	isInstance := false
 	for _, entry := range entries {
 		switch entry.Name() {
-		case "mmc-pack.json":
-			flavour = FlavourMMC
-			modsDir = detectMmcModsDir(entries)
-			break
-		case "versions":
-			flavour = FlavourVanilla
-			break
 		case "server.properties":
-			flavour = FlavourServer
+			isServer = true
+			isInstance = true
+			break
+		case "minepkg.toml":
+			isInstance = true
 			break
 		}
 	}
 
-	if flavour == 0 {
+	if isInstance == false {
 		return nil, ErrorNoInstance
 	}
 
-	wd, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
+	home, _ := homedir.Dir()
+	globalDir := filepath.Join(home, ".minepkg")
 
-	instance := &McInstance{
-		Flavour:       flavour,
+	instance := &Instance{
+		IsServer:      isServer,
 		ModsDirectory: modsDir,
-		Directory:     wd,
+		GlobalDir:     globalDir,
 	}
 
-	err = instance.initManifest()
-	if err != nil {
+	// initialize manifest
+	if err := instance.initManifest(); err != nil {
+		return nil, err
+	}
+
+	// initialize lockfile
+	if err := instance.initLockfile(); err != nil {
 		return nil, err
 	}
 
@@ -138,16 +143,19 @@ func DetectInstance() (*McInstance, error) {
 }
 
 // initManifest sets the manifest file or creates one
-func (m *McInstance) initManifest() error {
+func (i *Instance) initManifest() error {
 	minepkg, err := ioutil.ReadFile("./minepkg.toml")
 	if err != nil {
+		if os.IsNotExist(err) != true {
+			return err
+		}
 		manifest := manifest.New()
 		wd, err := os.Getwd()
 		if err != nil {
 			return err
 		}
 		name := filepath.Base(wd)
-		version := m.Version().String()
+		version := "1.14.2" // TODO: not static
 		if version == "" {
 			return ErrorNoVersion
 		}
@@ -155,8 +163,8 @@ func (m *McInstance) initManifest() error {
 		version = version[:len(version)-1] + "x"
 
 		manifest.Package.Name = strcase.KebabCase(name)
-		manifest.Requirements.MinecraftVersion = version
-		m.Manifest = manifest
+		manifest.Requirements.Minecraft = version
+		i.Manifest = manifest
 		return nil
 	}
 
@@ -166,27 +174,43 @@ func (m *McInstance) initManifest() error {
 		return err
 	}
 
-	m.Manifest = &manifest
+	i.Manifest = &manifest
 	return nil
 }
 
-func detectMmcModsDir(e []os.FileInfo) string {
-	for _, entry := range e {
-		name := entry.Name()
-		if name == "minecraft" || name == ".minecraft" {
-			return name + "/mods"
+// initLockfile sets the lockfile or creates one
+func (i *Instance) initLockfile() error {
+	rawLockfile, err := ioutil.ReadFile("./minepkg-lock.toml")
+	if err != nil {
+		// non existing lockfile is not bad
+		if os.IsNotExist(err) {
+			return nil
 		}
+		// this is bad
+		return err
 	}
 
-	return ""
+	lockfile := manifest.Lockfile{}
+	_, err = toml.Decode(string(rawLockfile), &lockfile)
+	if err != nil {
+		return err
+	}
+	if lockfile.Dependencies == nil {
+		lockfile.Dependencies = make(map[string]*manifest.DependencyLock)
+	}
+
+	i.Lockfile = &lockfile
+	return nil
 }
 
-type mmcPack struct {
-	FormatVersion uint32         `json:"formatVersion"`
-	Components    []mmcComponent `json:"components"`
+// SaveManifest saves the manifest to the current directory
+func (i *Instance) SaveManifest() error {
+	manifest := i.Manifest.Buffer()
+	return ioutil.WriteFile("minepkg.toml", manifest.Bytes(), os.ModePerm)
 }
 
-type mmcComponent struct {
-	UID     string `json:"uid"`
-	Version string `json:"version"`
+// SaveLockfile saves the lockfile to the current directory
+func (i *Instance) SaveLockfile() error {
+	lockfile := i.Lockfile.Buffer()
+	return ioutil.WriteFile("minepkg-lock.toml", lockfile.Bytes(), os.ModePerm)
 }

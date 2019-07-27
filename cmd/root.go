@@ -1,9 +1,15 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/gookit/color"
+
+	"github.com/fiws/minepkg/pkg/api"
 
 	"github.com/fiws/minepkg/internals/cmdlog"
 
@@ -13,34 +19,30 @@ import (
 )
 
 // MinepkgVersion is a constant of the current minepkg version
-const MinepkgVersion = "0.0.3"
+const MinepkgVersion = "0.0.14"
 
-var cfgFile string
+// TODO: this logger is not so great – also: it should not be global
 var logger *cmdlog.Logger = cmdlog.New()
-var globalDir = "/tmp"
+
+var (
+	cfgFile       string
+	globalDir     = "/tmp"
+	apiClient     = api.New()
+	loginData     = &api.AuthResponse{}
+	disableColors bool
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Version: MinepkgVersion,
 	Use:     "minepkg",
 	Short:   "Minepkg at your service.",
-	Long: `Manage Minecraft mods with ease.
+	Long:    "Manage Minecraft mods with ease",
 
-Examples:
-  minepkg install rftools
-  minepkg install https://minecraft.curseforge.com/projects/storage-drawers
-  minepkg install https://github.com/McJtyMods/XNet/archive/1.12.zip
-`,
-}
-
-var refreshCmd = &cobra.Command{
-	Use:   "refresh",
-	Short: "Fetches all mods that are available",
-	Long: `minepkg uses a local db to resolve all dependencies. 
-When these become out of date, you should run this.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		refreshDb()
-	},
+	Example: `
+  minepkg init -l fabric
+  minepkg install modmenu@latest
+  minepkg install https://minepkg.io/projects/desire-paths`,
 }
 
 var completionCmd = &cobra.Command{
@@ -75,21 +77,36 @@ func init() {
 	}
 	globalDir = filepath.Join(home, ".minepkg")
 
+	// check if user is logged in
+	if rawCreds, err := ioutil.ReadFile(filepath.Join(globalDir, "credentials.json")); err == nil {
+		if err := json.Unmarshal(rawCreds, &loginData); err == nil && loginData.Token != "" {
+			apiClient.JWT = loginData.Token
+			apiClient.User = loginData.User
+		}
+	}
+
+	token := os.Getenv("MINEPKG_API_TOKEN")
+	if token != "" {
+		apiClient.JWT = token
+		fmt.Println("Using MINEPKG_API_TOKEN for authentication")
+	}
+
 	// TODO: remove this after a few releases (fixes #61)
 	os.Chmod(globalDir, 0755)
 
-	rootCmd.AddCommand(installCmd)
-	// rootCmd.AddCommand(launchCmd)
-	rootCmd.AddCommand(refreshCmd)
-	rootCmd.AddCommand(completionCmd)
 	cobra.OnInitialize(initConfig)
 
 	// Global flags
+	rootCmd.PersistentFlags().BoolVarP(&disableColors, "no-color", "", false, "disable color output")
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.minepkg/config.toml)")
 }
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
+	if disableColors == true {
+		color.Disable()
+	}
+
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)

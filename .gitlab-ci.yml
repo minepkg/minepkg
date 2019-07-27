@@ -23,6 +23,15 @@ windows build:
     paths:
       - out/minepkg.exe
 
+macos build:
+  stage: build
+  script:
+    - echo "building for macOS"
+    - GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o out/minepkg-macos
+  artifacts:
+    paths:
+      - out/minepkg-macos
+
 linux packages:
   stage: package
   image: "tenzer/fpm:no-entrypoint"
@@ -48,8 +57,38 @@ github release:
   stage: release
   only:
     - /^v\d+\.\d+\.\d+-?.*$/
+  when: manual
   script:
     - go get github.com/aktau/github-release
     - github-release release --user fiws --repo minepkg --tag $CI_COMMIT_REF_NAME
     - github-release upload --user fiws --repo minepkg --tag $CI_COMMIT_REF_NAME --name "minepkg-linux-amd64" --file out/minepkg
+    - github-release upload --user fiws --repo minepkg --tag $CI_COMMIT_REF_NAME --name "minepkg-macos-amd64" --file out/minepkg-macos
     - github-release upload --user fiws --repo minepkg --tag $CI_COMMIT_REF_NAME --name "minepkg-windows-amd64" --file out/minepkg.exe
+
+gcs release:
+  stage: release
+  image: google/cloud-sdk:slim
+  only:
+    - /^v\d+\.\d+\.\d+-?.*$/
+  script: |
+    # auth
+    gcloud config set project minepkg-io
+    echo $GCP_DEV_SERVICEACCOUNT > ./gcp-secret.json
+    gcloud auth activate-service-account --key-file gcp-secret.json
+    # upload binaries to GCS
+    VERSION=`echo $CI_COMMIT_REF_NAME | cut -c 2-`
+    gsutil -m cp out/minepkg gs://minepkg-client/$VERSION/minepkg-linux-amd64
+    gsutil -m cp out/minepkg-macos gs://minepkg-client/$VERSION/minepkg-macos-amd64
+    gsutil -m cp out/minepkg.exe gs://minepkg-client/$VERSION/minepkg-windows-amd64.exe
+    # copy binaries to static 'latest' directory
+    gsutil -m cp gs://minepkg-client/$VERSION/* gs://minepkg-client/latest
+    # generate and upload latest version manifest
+    echo -e '{
+      "version": "'$VERSION'",
+      "binaries": {
+        "win": "https://storage.googleapis.com/minepkg-client/'$VERSION'/minepkg-windows-amd64.exe",
+        "macos": "https://storage.googleapis.com/minepkg-client/'$VERSION'/minepkg-macos-amd64",
+        "linux": "https://storage.googleapis.com/minepkg-client/'$VERSION'/minepkg-linux-amd64"
+      }
+    }' > latest-version.json
+    gsutil -m cp latest-version.json gs://minepkg-client

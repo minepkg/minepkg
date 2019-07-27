@@ -14,11 +14,28 @@
 
 ## Features
 
-* Installs mods from CurseForge (with dependency resolution)
-* Compiles mods from source zip files (eg. from GitHub) with docker
+* Installs mods from [minepkg](https://minepkg.io/) (with dependency resolution)
+* Can launch Minecraft
 * Saves your installed mods in a sharable `minepkg.toml`
   * `minepkg.toml` modpacks can extend other modpacks
-* Works with vanilla and MultiMC instances (MultiMC support is unofficial)
+
+## Installation
+
+### Linux & MacOS
+
+Run this in your favourite shell. The installation will require/ask for sudo rights.
+
+```bash
+source <(curl -s https://storage.googleapis.com/minepkg-client/linux-installer.sh)
+```
+
+### Windows
+
+Run this in **powershell**
+
+```
+. { iwr -useb https://storage.googleapis.com/minepkg-client/windows-installer.ps1} | iex; minepkg
+```
 
 ## Usage
 
@@ -63,6 +80,3 @@ cd minepkg
 go run main.go --help
 ```
 
-## Thanks to
-
-* dries007 for [cursemeta](https://github.com/dries007/CurseMeta) – used to talk to CurseForge API

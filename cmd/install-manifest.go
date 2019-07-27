@@ -1,62 +1,60 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/briandowns/spinner"
-	"github.com/fiws/minepkg/internals/curse"
+	"github.com/fiws/minepkg/internals/downloadmgr"
+
 	"github.com/fiws/minepkg/internals/instances"
 )
 
 // installManifest installs dependencies from the minepkg.toml
-func installManifest(instance *instances.McInstance) {
-	task := logger.NewTask(3)
+func installManifest(instance *instances.Instance) {
+	cacheDir := filepath.Join(globalDir, "cache")
 
-	task.Step("📚", "Searching local mod DB.")
-	db := readDbOrDownload()
+	task := logger.NewTask(2)
 
-	deps, err := instance.Manifest.FullDependencies()
-	if err != nil {
-		task.Fail("Failed to extend " + err.Error())
-	}
+	task.Info("Installing minepkg.toml dependencies")
+	s := spinner.New(spinner.CharSets[9], 300*time.Millisecond) // Build our new spinner
+	s.Prefix = " "
 
-	mods := make([]*curse.Mod, len(*deps))
-
-	i := 0
-	for name := range *deps {
-		resolved := db.modBySlug(name)
-		if resolved == nil {
-			task.Fail("Could not resolve " + name)
-		}
-		mods[i] = resolved
-		i++
+	mgr := downloadmgr.New()
+	mgr.OnProgress = func(p int) {
+		s.Suffix = fmt.Sprintf(" Downloading %v", p) + "%"
 	}
 
 	task.Step("🔎", "Resolving Dependencies")
-	resolver := curse.NewResolver()
+	err := instance.UpdateLockfileDependencies(context.TODO())
+	if err != nil {
+		logger.Fail(err.Error())
+	}
+	for _, dep := range instance.Lockfile.Dependencies {
+		fmt.Printf(" - %s@%s\n", dep.Project, dep.Version)
+	}
+	missingFiles, err := instance.FindMissingDependencies()
+	if err != nil {
+		logger.Fail(err.Error())
+	}
 
-	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond) // Build our new spinner
-	s.Prefix = "  "
+	task.Step("🚚", fmt.Sprintf("Downloading %d Packages", len(missingFiles)))
+	for _, m := range missingFiles {
+		fmt.Printf(" - %s@%s\n", m.Project, m.Version)
+		p := filepath.Join(cacheDir, m.Project, m.Version+".jar")
+		mgr.Add(downloadmgr.NewHTTPItem(m.URL, p))
+	}
+
 	s.Start()
-	for _, mod := range mods {
-		s.Suffix = "  Resolving " + mod.Slug
-		resolver.Resolve(mod.ID, instance.Manifest.Requirements.MinecraftVersion)
+	if err := mgr.Start(context.TODO()); err != nil {
+		logger.Fail(err.Error())
 	}
+
+	instance.LinkDependencies()
+
 	s.Stop()
-	resolved := resolver.Resolved
-
-	for _, mod := range resolved {
-		task.Log(fmt.Sprintf("requires %s", mod.FileName))
-	}
-
-	task.Step("🚚", "Downloading Mods")
-
-	for _, mod := range resolved {
-		err := instance.Download(&mod)
-		if err != nil {
-			logger.Fail(fmt.Sprintf("Could not download %s (%s)"+mod.FileName, err))
-		}
-		task.Log(fmt.Sprintf("downloaded %s", mod.FileName))
-	}
+	instance.SaveLockfile()
+	fmt.Println("You can now launch Minecraft using \"minepkg launch\"")
 }
