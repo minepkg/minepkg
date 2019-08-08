@@ -38,7 +38,14 @@ func (i *Instance) javaBin() string {
 	localJava, err := ioutil.ReadDir(javaPath)
 
 	if err == nil && len(localJava) != 0 {
-		i.javaBinary = filepath.Join(javaPath, localJava[0].Name(), "bin/java")
+		bin := "bin/java" // linux. somehow also works with windows
+		switch runtime.GOOS {
+		case "windows": // macOS
+			bin = "bin/java.exe"
+		case "darwin": // macOS
+			bin = "Contents/Home/bin/java"
+		}
+		i.javaBinary = filepath.Join(javaPath, localJava[0].Name(), bin)
 		return i.javaBinary
 	}
 
