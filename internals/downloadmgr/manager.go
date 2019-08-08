@@ -86,6 +86,12 @@ func (i *HTTPItem) Download(ctx context.Context) error {
 
 // NewHTTPItem creates a Item to be queued that will download the file using HTTP(S)
 func NewHTTPItem(URL string, Target string) *HTTPItem {
+	if URL == "" {
+		panic("Download URL can not be empty")
+	}
+	if Target == "" {
+		panic("Target can not be empty")
+	}
 	return &HTTPItem{URL, Target, 0, ""}
 }
 

@@ -20,10 +20,12 @@ import (
 var (
 	version    string
 	serverMode bool
+	debugMode  bool
 )
 
 func init() {
 	launchCmd.Flags().BoolVarP(&serverMode, "server", "s", false, "Start a server instead of a client")
+	launchCmd.Flags().BoolVarP(&debugMode, "debug", "", false, "Do not start, just debug")
 	rootCmd.AddCommand(launchCmd)
 }
 
@@ -100,15 +102,22 @@ var launchCmd = &cobra.Command{
 
 		// launch instance
 		fmt.Printf("Launching %s\n", instance.Desc())
-		creds, err := ensureMojangAuth()
-		if err != nil {
-			logger.Fail(err.Error())
+
+		// we need login credentials to launch the client
+		// the server needs no creds
+		if serverMode != true {
+			creds, err := ensureMojangAuth()
+			if err != nil {
+				logger.Fail(err.Error())
+			}
+			instance.MojangCredentials = creds.Mojang
 		}
-		instance.MojangCredentials = creds.Mojang
 
 		cliLauncher := launch.CLILauncher{Instance: instance, ServerMode: serverMode}
 
-		cliLauncher.Prepare()
+		if err := cliLauncher.Prepare(); err != nil {
+			logger.Fail(err.Error())
+		}
 
 		launchManifest := cliLauncher.LaunchManifest
 
@@ -143,9 +152,11 @@ var launchCmd = &cobra.Command{
 			LaunchManifest: launchManifest,
 			SkipDownload:   true,
 			Server:         serverMode,
+			Debug:          debugMode,
 		}
-		err = instance.Launch(opts)
-		if err != nil {
+
+		// finally, start the instance
+		if err := instance.Launch(opts); err != nil {
 			logger.Fail(err.Error())
 		}
 	},
