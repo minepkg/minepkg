@@ -136,7 +136,7 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 
 	osName := runtime.GOOS
 	if osName == "darwin" {
-		osName = "macos"
+		osName = "osx"
 	}
 
 	for _, lib := range libs {
@@ -206,6 +206,11 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 		"-XX:MaxGCPauseMillis=50",
 		"-XX:G1HeapRegionSize=32M",
 		launchManifest.MainClass,
+	}
+
+	// HACK: prepend this so macos does not crash
+	if runtime.GOOS == "darwin" {
+		cmdArgs = append([]string{"-XstartOnFirstThread"}, cmdArgs...)
 	}
 
 	if opts.Server == false {

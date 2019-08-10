@@ -53,7 +53,7 @@ func existOrDownload(lib minecraft.Lib) {
 	url := lib.DownloadURL()
 	osName := runtime.GOOS
 	if osName == "darwin" {
-		osName = "macos"
+		osName = "osx"
 	}
 	if lib.Natives[osName] != "" {
 		nativeID, _ := lib.Natives[osName]
