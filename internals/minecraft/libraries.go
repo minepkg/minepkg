@@ -16,7 +16,7 @@ func (l Libraries) Required() Libraries {
 
 	osName := runtime.GOOS
 	if osName == "darwin" {
-		osName = "macos"
+		osName = "osx"
 	}
 
 	for _, lib := range l {
@@ -63,7 +63,7 @@ func (l *Lib) Filepath() string {
 
 	osName := runtime.GOOS
 	if osName == "darwin" {
-		osName = "macos"
+		osName = "osx"
 	}
 
 	if l.Natives[osName] != "" {
@@ -88,7 +88,7 @@ func (l *Lib) Filepath() string {
 func (l *Lib) DownloadURL() string {
 	osName := runtime.GOOS
 	if osName == "darwin" {
-		osName = "macos"
+		osName = "osx"
 	}
 
 	switch {
