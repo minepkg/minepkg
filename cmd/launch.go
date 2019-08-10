@@ -61,6 +61,12 @@ var launchCmd = &cobra.Command{
 
 			// TODO: check if exists
 			// TODO: check error
+			instance = &instances.Instance{
+				GlobalDir:  globalDir,
+				Manifest:   release.Manifest,
+				MinepkgAPI: apiClient,
+			}
+
 			instanceDir := filepath.Join(instance.InstancesDir(), release.Package.Name+"@"+release.Package.Platform)
 			os.MkdirAll(instanceDir, os.ModePerm)
 			wd, err := os.Getwd()
@@ -72,12 +78,7 @@ var launchCmd = &cobra.Command{
 			// back to current directory after minecraft stops
 			defer os.Chdir(wd)
 
-			instance = &instances.Instance{
-				GlobalDir:     globalDir,
-				ModsDirectory: filepath.Join(instanceDir, "mods"),
-				Manifest:      release.Manifest,
-				MinepkgAPI:    apiClient,
-			}
+			instance.ModsDirectory = filepath.Join(instanceDir, "mods")
 
 			// TODO: only show when there actually is a update. ask user?
 			logger.Headline("Updating instance")
