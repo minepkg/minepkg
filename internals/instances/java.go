@@ -40,7 +40,7 @@ func (i *Instance) javaBin() string {
 	if err == nil && len(localJava) != 0 {
 		bin := "bin/java" // linux. somehow also works with windows
 		switch runtime.GOOS {
-		case "windows": // macOS
+		case "windows":
 			bin = "bin/java.exe"
 		case "darwin": // macOS
 			bin = "Contents/Home/bin/java"
