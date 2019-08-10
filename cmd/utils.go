@@ -73,6 +73,9 @@ func ensureMojangAuth() (*api.AuthResponse, error) {
 		login()
 	}
 
+	if loginData.Mojang == nil {
+		loginData.Mojang = &api.MojangAuthResponse{}
+	}
 	loginData.Mojang.AccessToken = newCreds.AccessToken
 	loginData.Mojang.ClientToken = newCreds.ClientToken
 
