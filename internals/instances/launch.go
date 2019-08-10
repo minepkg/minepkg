@@ -18,6 +18,7 @@ import (
 
 	"github.com/fiws/minepkg/internals/minecraft"
 
+	"github.com/fiws/minepkg/pkg/api"
 	"github.com/fiws/minepkg/pkg/manifest"
 )
 
@@ -57,6 +58,7 @@ type LaunchOptions struct {
 	Java       string
 	Server     bool
 	JoinServer string
+	Debug      bool
 }
 
 // Launch starts the minecraft instance
@@ -66,16 +68,26 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 		panic(err)
 	}
 
-	creds := i.MojangCredentials
-	if creds == nil {
-		return ErrNoCredentials
-	}
+	// HACK: don't use client config for server, so we
+	// don't have to fake this here
+	var (
+		profile *api.MojangProfile
+		creds   *api.MojangAuthResponse
+	)
 
-	profile := creds.SelectedProfile
-	// do not allow non paid accounts to start minecraft
-	// (demo mode is not implemented)
-	if profile == nil || profile.Paid != true {
-		return ErrNoPaidAccount
+	// server mode does not need minecraft credentials
+	if opts.Server != true {
+		creds = i.MojangCredentials
+		if creds == nil {
+			return ErrNoCredentials
+		}
+
+		profile = creds.SelectedProfile
+		// do not allow non paid accounts to start minecraft
+		// (demo mode is not implemented)
+		if profile == nil || profile.Paid != true {
+			return ErrNoPaidAccount
+		}
 	}
 
 	// this file tells us howto construct the start command
@@ -124,7 +136,7 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 
 	osName := runtime.GOOS
 	if osName == "darwin" {
-		osName = "macos"
+		osName = "osx"
 	}
 
 	for _, lib := range libs {
@@ -155,19 +167,12 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 	}
 
 	// finally append the minecraft.jar
-	jarTarget := launchManifest.Jar
-	if jarTarget == "" {
-		jarTarget = launchManifest.InheritsFrom
-	}
-	if jarTarget == "" {
-		jarTarget = launchManifest.ID
-	}
-	mcJar := filepath.Join(i.VersionsDir(), jarTarget, jarTarget+".jar")
+	mcJar := filepath.Join(i.VersionsDir(), launchManifest.MinecraftVersion(), launchManifest.JarName())
 	cpArgs = append(cpArgs, mcJar)
 
 	replacer := strings.NewReplacer(
 		v("auth_player_name"), profile.Name,
-		v("version_name"), jarTarget,
+		v("version_name"), launchManifest.MinecraftVersion(),
 		v("game_directory"), cwd,
 		v("assets_root"), filepath.Join(i.AssetsDir()),
 		v("assets_index_name"), launchManifest.Assets, // asset index version
@@ -203,16 +208,23 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 		launchManifest.MainClass,
 	}
 
+	// HACK: prepend this so macos does not crash
+	if runtime.GOOS == "darwin" {
+		cmdArgs = append([]string{"-XstartOnFirstThread"}, cmdArgs...)
+	}
+
 	if opts.Server == false {
 		cmdArgs = append(cmdArgs, strings.Split(args, " ")...)
 	} else {
 		cmdArgs = append(cmdArgs, "nogui")
 	}
 
-	// fmt.Println("cmd: ")
-	// fmt.Println(cmdArgs)
-	// fmt.Println("tmpdir: + " + tmpDir)
-	// os.Exit(0)
+	if opts.Debug == true {
+		fmt.Println("cmd: ")
+		fmt.Println(cmdArgs)
+		fmt.Println("tmpdir: + " + tmpDir)
+		os.Exit(0)
+	}
 
 	if opts.Java == "" {
 		opts.Java = "java"

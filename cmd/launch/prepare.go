@@ -3,6 +3,7 @@ package launch
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -59,6 +60,13 @@ func (c *CLILauncher) Prepare() error {
 		return err
 	}
 	c.LaunchManifest = launchManifest
+
+	// check for JAR
+	// TODO move more logic to internals
+	mainJar := filepath.Join(c.Instance.VersionsDir(), c.LaunchManifest.MinecraftVersion(), c.LaunchManifest.JarName())
+	if _, err := os.Stat(mainJar); os.IsNotExist(err) {
+		mgr.Add(downloadmgr.NewHTTPItem(c.LaunchManifest.Downloads.Client.URL, mainJar))
+	}
 
 	if serverMode != true {
 		missingAssets, err := instance.FindMissingAssets(launchManifest)

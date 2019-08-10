@@ -38,7 +38,14 @@ func (i *Instance) javaBin() string {
 	localJava, err := ioutil.ReadDir(javaPath)
 
 	if err == nil && len(localJava) != 0 {
-		i.javaBinary = filepath.Join(javaPath, localJava[0].Name(), "bin/java")
+		bin := "bin/java" // linux. somehow also works with windows
+		switch runtime.GOOS {
+		case "windows":
+			bin = "bin/java.exe"
+		case "darwin": // macOS
+			bin = "Contents/Home/bin/java"
+		}
+		i.javaBinary = filepath.Join(javaPath, localJava[0].Name(), bin)
 		return i.javaBinary
 	}
 
@@ -90,6 +97,11 @@ func (i *Instance) downloadJava() (string, error) {
 	err = archiver.Unarchive(target.Name(), localJava)
 	if err != nil {
 		return "", err
+	}
+
+	// macos tar contains some uneeded stuff that we need to remove
+	if runtime.GOOS == "darwin" {
+		os.Remove(filepath.Join(localJava, "._jdk8u212-b03-jre"))
 	}
 
 	return i.javaBin(), nil

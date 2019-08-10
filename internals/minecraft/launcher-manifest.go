@@ -35,7 +35,7 @@ type LaunchManifest struct {
 	} `json:"assetIndex"`
 	InheritsFrom           string `json:"inheritsFrom"`
 	ID                     string `json:"id"`
-	MinimumLauncherVersion string `json:"minimumLauncherVersion"`
+	MinimumLauncherVersion int    `json:"minimumLauncherVersion"`
 }
 
 type libRule struct {
@@ -49,7 +49,7 @@ type libRule struct {
 func (r libRule) Applies() bool {
 	osName := runtime.GOOS
 	if osName == "darwin" {
-		osName = "macos"
+		osName = "osx"
 	}
 
 	// Features? Do not not know what to do with this. skip it
@@ -89,7 +89,6 @@ type mcJarDownload struct {
 // does not care for duplicates in `Libraries`
 func (l *LaunchManifest) MergeWith(merge *LaunchManifest) {
 	l.Libraries = append(l.Libraries, merge.Libraries...)
-
 	if l.MainClass == "" {
 		l.MainClass = merge.MainClass
 	}
@@ -103,6 +102,26 @@ func (l *LaunchManifest) MergeWith(merge *LaunchManifest) {
 	if len(l.Arguments.Game) == 0 {
 		l.Arguments = merge.Arguments
 	}
+
+	// hack
+	l.Downloads = merge.Downloads
+}
+
+// JarName returns this manifests jar name (for example `1.12.0.jar`)
+func (l *LaunchManifest) JarName() string {
+	return l.MinecraftVersion() + ".jar"
+}
+
+// MinecraftVersion returns the minecraft version
+func (l *LaunchManifest) MinecraftVersion() string {
+	v := l.Jar
+	if v == "" {
+		v = l.InheritsFrom
+	}
+	if v == "" {
+		v = l.ID
+	}
+	return v
 }
 
 // LaunchArgs returns the launch arguments defined in the manifest as a string
