@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/mholt/archiver"
 )
@@ -44,6 +45,13 @@ func (i *Instance) javaBin() string {
 			bin = "bin/java.exe"
 		case "darwin": // macOS
 			bin = "Contents/Home/bin/java"
+		}
+		installDir := localJava[0].Name()
+
+		// mac crap dir from java
+		if strings.HasPrefix(filepath.Dir(installDir), ".") && len(localJava) > 1 {
+			os.Remove(installDir)            // remove the random files
+			installDir = localJava[1].Name() // and use correct ones
 		}
 		i.javaBinary = filepath.Join(javaPath, localJava[0].Name(), bin)
 		return i.javaBinary
@@ -97,6 +105,11 @@ func (i *Instance) downloadJava() (string, error) {
 	err = archiver.Unarchive(target.Name(), localJava)
 	if err != nil {
 		return "", err
+	}
+
+	// macos tar contains some uneeded stuff that we need to remove
+	if runtime.GOOS == "darwin" {
+		os.Remove(filepath.Join(localJava, "._jdk8u212-b03-jre"))
 	}
 
 	return i.javaBin(), nil
