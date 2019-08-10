@@ -49,7 +49,7 @@ type libRule struct {
 func (r libRule) Applies() bool {
 	osName := runtime.GOOS
 	if osName == "darwin" {
-		osName = "macos"
+		osName = "osx"
 	}
 
 	// Features? Do not not know what to do with this. skip it
