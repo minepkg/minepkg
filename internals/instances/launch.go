@@ -71,18 +71,18 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 	// HACK: don't use client config for server, so we
 	// don't have to fake this here
 	var (
-		profile api.MojangProfile
-		creds   api.MojangAuthResponse
+		profile *api.MojangProfile
+		creds   *api.MojangAuthResponse
 	)
 
 	// server mode does not need minecraft credentials
 	if opts.Server != true {
-		creds := i.MojangCredentials
+		creds = i.MojangCredentials
 		if creds == nil {
 			return ErrNoCredentials
 		}
 
-		profile := creds.SelectedProfile
+		profile = creds.SelectedProfile
 		// do not allow non paid accounts to start minecraft
 		// (demo mode is not implemented)
 		if profile == nil || profile.Paid != true {
