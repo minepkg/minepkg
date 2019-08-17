@@ -170,17 +170,34 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 	mcJar := filepath.Join(i.VersionsDir(), launchManifest.MinecraftVersion(), launchManifest.JarName())
 	cpArgs = append(cpArgs, mcJar)
 
-	replacer := strings.NewReplacer(
-		v("auth_player_name"), profile.Name,
-		v("version_name"), launchManifest.MinecraftVersion(),
-		v("game_directory"), cwd,
-		v("assets_root"), filepath.Join(i.AssetsDir()),
-		v("assets_index_name"), launchManifest.Assets, // asset index version
-		v("auth_uuid"), profile.ID, // profile id
-		v("auth_access_token"), creds.AccessToken,
-		v("user_type"), "mojang", // unsure about this one (legacy mc login flag?)
-		v("version_type"), launchManifest.Type, // release / snapshot … etc
-	)
+	var replacer *strings.Replacer
+
+	if opts.Server {
+		// TODO: this is kind of ugly
+		replacer = strings.NewReplacer(
+			v("auth_player_name"), "server",
+			v("version_name"), launchManifest.MinecraftVersion(),
+			v("game_directory"), cwd,
+			v("assets_root"), filepath.Join(i.AssetsDir()),
+			v("assets_index_name"), launchManifest.Assets, // asset index version
+			v("auth_uuid"), "0", // profile id
+			v("auth_access_token"), "none",
+			v("user_type"), "mojang", // unsure about this one (legacy mc login flag?)
+			v("version_type"), launchManifest.Type, // release / snapshot … etc
+		)
+	} else {
+		replacer = strings.NewReplacer(
+			v("auth_player_name"), profile.Name,
+			v("version_name"), launchManifest.MinecraftVersion(),
+			v("game_directory"), cwd,
+			v("assets_root"), filepath.Join(i.AssetsDir()),
+			v("assets_index_name"), launchManifest.Assets, // asset index version
+			v("auth_uuid"), profile.ID, // profile id
+			v("auth_access_token"), creds.AccessToken,
+			v("user_type"), "mojang", // unsure about this one (legacy mc login flag?)
+			v("version_type"), launchManifest.Type, // release / snapshot … etc
+		)
+	}
 
 	args := replacer.Replace(launchManifest.LaunchArgs())
 
