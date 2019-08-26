@@ -41,6 +41,9 @@ type Project struct {
 	Type        string `json:"type"`
 	Description string `json:"description,omitempty"`
 	Readme      string `json:"readme,omitempty"`
+	Stats       struct {
+		TotalDownloads uint32 `json:"totalDownloads"`
+	} `json:"stats"`
 }
 
 // Release is a released version of a project
