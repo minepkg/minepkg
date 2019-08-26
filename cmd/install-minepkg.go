@@ -57,6 +57,12 @@ func installFromMinepkg(mods []string, instance *instances.Instance) error {
 
 		release, err := apiClient.FindRelease(context.TODO(), name, reqs)
 		if err != nil {
+
+			// do not perform searches for multi install
+			if len(mods) >= 2 {
+				return err
+			}
+
 			// TODO: check if this was a 404
 			mod := searchFallback(context.TODO(), name)
 			if mod == nil {
