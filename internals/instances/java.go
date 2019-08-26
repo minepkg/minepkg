@@ -18,6 +18,12 @@ func (i *Instance) HasJava() bool {
 	return i.javaBin() != ""
 }
 
+// UseSystemJava sets the instance to use the system java
+// instead of the internal installation
+func (i *Instance) UseSystemJava() {
+	i.javaBinary = "java"
+}
+
 // UpdateJava updates the local java installation
 func (i *Instance) UpdateJava() error {
 	java, err := i.downloadJava()
