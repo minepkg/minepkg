@@ -13,21 +13,26 @@ import (
 
 	"github.com/fiws/minepkg/cmd/launch"
 	"github.com/fiws/minepkg/internals/instances"
+	"github.com/fiws/minepkg/internals/minecraft"
 	"github.com/fiws/minepkg/pkg/api"
 	"github.com/spf13/cobra"
 )
 
 var (
 	version       string
-	useSystemJava bool
 	serverMode    bool
+	useSystemJava bool
 	debugMode     bool
+	offlineMode   bool
+	acceptEula    bool
 )
 
 func init() {
 	launchCmd.Flags().BoolVarP(&serverMode, "server", "s", false, "Start a server instead of a client")
 	launchCmd.Flags().BoolVarP(&debugMode, "debug", "", false, "Do not start, just debug")
 	launchCmd.Flags().BoolVarP(&useSystemJava, "system-java", "", false, "Use system java instead of internal installation")
+	launchCmd.Flags().BoolVarP(&offlineMode, "offline", "", false, "Start the server in offline mode (server only)")
+	launchCmd.Flags().BoolVarP(&acceptEula, "acceptEula", "", false, "Accept the mojang eula. See https://account.mojang.com/documents/minecraft_eula")
 	rootCmd.AddCommand(launchCmd)
 }
 
@@ -41,6 +46,7 @@ var launchCmd = &cobra.Command{
 	Args:    cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var instance *instances.Instance
+		var instanceDir string
 
 		if len(args) == 0 {
 			var err error
@@ -69,7 +75,7 @@ var launchCmd = &cobra.Command{
 				MinepkgAPI: apiClient,
 			}
 
-			instanceDir := filepath.Join(instance.InstancesDir(), release.Package.Name+"@"+release.Package.Platform)
+			instanceDir = filepath.Join(instance.InstancesDir(), release.Package.Name+"@"+release.Package.Platform)
 			os.MkdirAll(instanceDir, os.ModePerm)
 			wd, err := os.Getwd()
 			if err != nil {
@@ -109,6 +115,7 @@ var launchCmd = &cobra.Command{
 
 		// launch instance
 		fmt.Printf("Launching %s\n", instance.Desc())
+		fmt.Printf("Instance location: %s\n", instanceDir)
 
 		// we need login credentials to launch the client
 		// the server needs no creds
@@ -137,20 +144,42 @@ var launchCmd = &cobra.Command{
 			ioutil.WriteFile("./eula.txt", []byte(eula), os.ModePerm)
 
 			// register server if this manifest is not local without a version
-			// TODO: error handling
-			if instance.Manifest.Package.Version != "" {
+			if instance.Manifest.Package.Version != "" && offlineMode != true {
 				id := instance.Manifest.Package.Name + "@" + instance.Manifest.Package.Version
 				data, _ := json.Marshal(&MinepkgMapping{instance.Manifest.PlatformString(), id})
 
-				fmt.Printf("%+v\n", string(data))
 				req, _ := http.NewRequest("POST", "https://test-api.minepkg.io/v1/server-mappings", bytes.NewBuffer(data))
 				apiClient.DecorateRequest(req)
 				_, err := apiClient.HTTP.Do(req)
 				if err != nil {
-					logger.Fail(err.Error())
+					fmt.Println("Could not register server on minepkg.io – try again later")
+				} else {
+					// TODO: fill in ip/host
+					logger.Info("Registered server on minepkg.io. Join without setup using \"minepkg join <ip/host>\"")
 				}
-				// TODO: fill in ip/host
-				logger.Info("Registered server on minepkg.io. Join without setup using \"minepkg join <ip/host>\"")
+			}
+
+			if offlineMode == true {
+				settingsFile := filepath.Join(instanceDir, "server.properties")
+				logger.Log("Starting server in offline mode")
+				rawSettings, err := ioutil.ReadFile(settingsFile)
+
+				// workarround to get server that was started in offline mode for the first time
+				// to start in online mode next time it is launched
+				if err != nil {
+					rawSettings = []byte("online-mode=true\n")
+				}
+				// write back old config after we are done
+				// TODO: this is too unsafe – crashes or panics will prevent this!
+				defer ioutil.WriteFile(settingsFile, rawSettings, os.ModePerm)
+
+				settings := minecraft.ParseServerProps(rawSettings)
+				settings["online-mode"] = "false"
+
+				// write modified config file
+				if err := ioutil.WriteFile(settingsFile, []byte(settings.String()), os.ModePerm); err != nil {
+					panic(err)
+				}
 			}
 		}
 
@@ -164,6 +193,7 @@ var launchCmd = &cobra.Command{
 
 		// finally, start the instance
 		if err := instance.Launch(opts); err != nil {
+			// TODO: this stops any defer from running !!!
 			logger.Fail(err.Error())
 		}
 	},

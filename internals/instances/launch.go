@@ -11,9 +11,11 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/fiws/minepkg/internals/minecraft"
@@ -256,11 +258,30 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 		cmd.Stdin = os.Stdin
 	}
 
-	// TODO: detatch from process
+	// we catch ctrl-c to handle this by ourself
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		// stops the minecraft server
+		cmd.Process.Signal(syscall.SIGTERM)
+	}()
+
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
+	// TODO: detatch from process if wanted
 	err = cmd.Run()
+
+	// we wait for the output to finish (this line usually is reached after ctrl-c was pressed)
+	cmd.Wait()
+
+	// minecraft server will always return code 130 when
+	// stop was succesfull, so we ignore the error here
+	if cmd.ProcessState.ExitCode() == 130 {
+		return nil
+	}
+	// and return the error otherwise
 	return err
 }
 
