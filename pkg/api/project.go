@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 
 	"github.com/fiws/minepkg/pkg/manifest"
@@ -20,21 +19,24 @@ func (m *MinepkgAPI) Project(name string) *Project {
 type GetProjectsQuery struct {
 	Type     string `json:"type"`
 	Platform string `json:"platform"`
-	Simple   string `json:"simple"`
+	Simple   bool   `json:"simple"`
 }
 
 // GetProjects gets all projects matching a query
 func (m *MinepkgAPI) GetProjects(ctx context.Context, opts *GetProjectsQuery) ([]Project, error) {
 
-	base, err := url.Parse(baseAPI + "/projects")
+	uri, err := url.Parse(baseAPI + "/projects")
 	if err != nil {
 		return nil, err
 	}
 
-	base.Query().Set("type", opts.Type)
-	base.Query().Set("platform", opts.Platform)
-	fmt.Println(base.String())
-	res, err := m.get(ctx, base.String())
+	uri.Query().Set("type", opts.Type)
+	uri.Query().Set("platform", opts.Platform)
+	if opts.Simple == true {
+		uri.Query().Set("simple", "true")
+	}
+
+	res, err := m.get(ctx, uri.String())
 	if err != nil {
 		return nil, err
 	}

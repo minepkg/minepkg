@@ -58,7 +58,8 @@ func installFromMinepkg(mods []string, instance *instances.Instance) error {
 		release, err := apiClient.FindRelease(context.TODO(), name, reqs)
 		if err != nil {
 
-			// do not perform searches for multi install
+			// package names have to be exact for multi-package installs
+			// we skip the fallback search here
 			if len(mods) >= 2 {
 				return err
 			}
