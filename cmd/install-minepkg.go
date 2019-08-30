@@ -179,6 +179,5 @@ func searchFallback(ctx context.Context, name string) *api.Project {
 		fmt.Println("Aborting installation")
 		os.Exit(0)
 	}
-	choosen := &projects[i]
-	return choosen
+	return &projects[i]
 }
