@@ -27,7 +27,7 @@ var (
 func init() {
 	launchCmd.Flags().BoolVarP(&serverMode, "server", "s", false, "Start a server instead of a client")
 	launchCmd.Flags().BoolVarP(&debugMode, "debug", "", false, "Do not start, just debug")
-	launchCmd.Flags().BoolVarP(&useSystemJava, "system-java", "", false, "Use sytem java instead of internal installation")
+	launchCmd.Flags().BoolVarP(&useSystemJava, "system-java", "", false, "Use system java instead of internal installation")
 	rootCmd.AddCommand(launchCmd)
 }
 
