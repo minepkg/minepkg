@@ -10,7 +10,7 @@ bin="minepkg-linux-amd64"
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
   echo "installing macOS binary"
-  bin="minepkg-osx-amd64"
+  bin="minepkg-macos-amd64"
 elif [[ "$OSTYPE" == "cygwin" ]]; then
   echo "Installation with cygwin is not supported. Please install throug powershell."
   echo "You should still be able to use minepkg with cygwin after that."
