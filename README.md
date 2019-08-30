@@ -26,7 +26,7 @@
 Run this in your favourite shell. The installation will require/ask for sudo rights.
 
 ```bash
-source <(curl -s https://storage.googleapis.com/minepkg-client/linux-installer.sh)
+bash <(curl -s https://storage.googleapis.com/minepkg-client/linux-installer.sh)
 ```
 
 ### Windows
