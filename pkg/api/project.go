@@ -23,7 +23,7 @@ type GetProjectsQuery struct {
 	Simple   string `json:"simple"`
 }
 
-// GetProjects gets a single project
+// GetProjects gets all projects matching a query
 func (m *MinepkgAPI) GetProjects(ctx context.Context, opts *GetProjectsQuery) ([]Project, error) {
 
 	base, err := url.Parse(baseAPI + "/projects")
