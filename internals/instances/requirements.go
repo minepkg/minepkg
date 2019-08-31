@@ -67,8 +67,15 @@ func (i *Instance) resolveVanillaRequirement(ctx context.Context) (*MinecraftRel
 }
 
 func (i *Instance) resolveFabricRequirement(ctx context.Context) (*manifest.FabricLock, error) {
+
+	req := i.Manifest.Requirements.Fabric
+	// latest is the same as '*' for this logic (it will return the latest version)
+	if req == "latest" {
+		req = "*"
+	}
+
 	// TODO: check for invalid semver
-	MCconstraint, _ := semver.NewConstraint(i.Manifest.Requirements.Minecraft)
+	MCconstraint, _ := semver.NewConstraint(req)
 	FabricLoaderConstraint, _ := semver.NewConstraint(i.Manifest.Requirements.Fabric)
 	// mcVersions, err := GetMinecraftReleases(ctx)
 
@@ -82,6 +89,7 @@ func (i *Instance) resolveFabricRequirement(ctx context.Context) (*manifest.Fabr
 	}
 
 	var foundMapping *fabricMappingVersion
+
 	// find newest compatible version
 	for _, v := range fabricMappings {
 		// TODO: some versions contain spaces
