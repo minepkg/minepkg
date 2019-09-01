@@ -76,7 +76,7 @@ func (i *Instance) resolveFabricRequirement(ctx context.Context) (*manifest.Fabr
 
 	// TODO: check for invalid semver
 	MCconstraint, _ := semver.NewConstraint(req)
-	FabricLoaderConstraint, _ := semver.NewConstraint(i.Manifest.Requirements.Fabric)
+	FabricLoaderConstraint, _ := semver.NewConstraint(req)
 	// mcVersions, err := GetMinecraftReleases(ctx)
 
 	fabricMappings, err := getFabricMappingVersions(ctx)
