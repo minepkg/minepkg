@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"net/url"
 
 	"github.com/fiws/minepkg/pkg/manifest"
 )
@@ -12,6 +13,43 @@ func (m *MinepkgAPI) Project(name string) *Project {
 		client: m,
 		Name:   name,
 	}
+}
+
+// GetProjectsQuery are the query paramters for the GetProjects function
+type GetProjectsQuery struct {
+	Type     string `json:"type"`
+	Platform string `json:"platform"`
+	Simple   bool   `json:"simple"`
+}
+
+// GetProjects gets all projects matching a query
+func (m *MinepkgAPI) GetProjects(ctx context.Context, opts *GetProjectsQuery) ([]Project, error) {
+
+	uri, err := url.Parse(baseAPI + "/projects")
+	if err != nil {
+		return nil, err
+	}
+
+	uri.Query().Set("type", opts.Type)
+	uri.Query().Set("platform", opts.Platform)
+	if opts.Simple == true {
+		uri.Query().Set("simple", "true")
+	}
+
+	res, err := m.get(ctx, uri.String())
+	if err != nil {
+		return nil, err
+	}
+	if err := checkResponse(res); err != nil {
+		return nil, err
+	}
+
+	projects := make([]Project, 0)
+	if err := parseJSON(res, &projects); err != nil {
+		return nil, err
+	}
+
+	return projects, nil
 }
 
 // GetProject gets a single project

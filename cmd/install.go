@@ -20,10 +20,10 @@ var installCmd = &cobra.Command{
 	Aliases: []string{"isntall", "i", "add"},
 	Run: func(cmd *cobra.Command, args []string) {
 		instance, err := instances.DetectInstance()
-		instance.MinepkgAPI = apiClient
 		if err != nil {
 			logger.Fail("Instance problem: " + err.Error())
 		}
+		instance.MinepkgAPI = apiClient
 		fmt.Printf("Installing to %s\n", instance.Desc())
 		fmt.Println() // empty line
 

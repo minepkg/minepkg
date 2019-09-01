@@ -22,7 +22,7 @@ func installFromMinepkg(mods []string, instance *instances.Instance) error {
 	os.MkdirAll(cacheDir, os.ModePerm)
 
 	task := logger.NewTask(3)
-	task.Step("📚", "Searching requested package")
+	task.Step("📚", "Finding packages")
 
 	releases := make([]*api.Release, len(mods))
 
@@ -57,7 +57,22 @@ func installFromMinepkg(mods []string, instance *instances.Instance) error {
 
 		release, err := apiClient.FindRelease(context.TODO(), name, reqs)
 		if err != nil {
-			return err
+
+			// package names have to be exact for multi-package installs
+			// we skip the fallback search here
+			if len(mods) >= 2 {
+				return err
+			}
+
+			// TODO: check if this was a 404
+			mod := searchFallback(context.TODO(), name)
+			if mod == nil {
+				return err
+			}
+			release, err = apiClient.FindRelease(context.TODO(), mod.Name, reqs)
+			if err != nil {
+				return err
+			}
 		}
 		if release == nil {
 			logger.Info("Could not find package " + name + "@" + version)
@@ -116,4 +131,54 @@ func installFromMinepkg(mods []string, instance *instances.Instance) error {
 	fmt.Println("You can now launch Minecraft using \"minepkg launch\"")
 
 	return nil
+}
+
+func searchFallback(ctx context.Context, name string) *api.Project {
+	projects, _ := apiClient.GetProjects(ctx, &api.GetProjectsQuery{})
+
+	filtered := make([]api.Project, 0, 10)
+	for _, p := range projects {
+		if strings.Contains(p.Name, name) {
+			filtered = append(filtered, p)
+		}
+	}
+
+	if len(filtered) == 0 {
+		return nil
+	}
+
+	if len(filtered) == 1 {
+		prompt := promptui.Prompt{
+			Label:     fmt.Sprintf("Installing %s", filtered[0].Name),
+			IsConfirm: true,
+			Default:   "Y",
+		}
+
+		_, err := prompt.Run()
+		if err != nil {
+			logger.Info("Aborting installation")
+			os.Exit(0)
+		}
+		return &filtered[0]
+	}
+
+	fmt.Println("Found multiple packages by that name, please select one.")
+
+	selectable := make([]string, len(filtered))
+	for i, mod := range filtered {
+		selectable[i] = fmt.Sprintf("%s (%v Downloads)", mod.Name, HumanUint32(mod.Stats.TotalDownloads))
+	}
+
+	prompt := promptui.Select{
+		Label: "Select Package",
+		Items: selectable,
+		Size:  8,
+	}
+
+	i, _, err := prompt.Run()
+	if err != nil {
+		fmt.Println("Aborting installation")
+		os.Exit(0)
+	}
+	return &projects[i]
 }
