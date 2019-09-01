@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/fiws/minepkg/internals/downloadmgr"
-
 	"github.com/fiws/minepkg/pkg/manifest"
 )
 

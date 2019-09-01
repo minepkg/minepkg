@@ -17,17 +17,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/BurntSushi/toml"
 	"github.com/briandowns/spinner"
 	"github.com/fiws/minepkg/pkg/api"
+	"github.com/fiws/minepkg/pkg/manifest"
 	"github.com/manifoldco/promptui"
+	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
-
-	"github.com/BurntSushi/toml"
-	"github.com/fiws/minepkg/pkg/manifest"
-
-	"github.com/spf13/cobra"
 )
 
 // doomRegex: (\d+\.\d+\.\d-)?(\d+\.\d+\.\d)(.+)?

@@ -9,10 +9,9 @@ import (
 	"strings"
 
 	"github.com/fiws/minepkg/cmd/launch"
+	"github.com/fiws/minepkg/internals/instances"
 	"github.com/fiws/minepkg/pkg/api"
 	"github.com/fiws/minepkg/pkg/manifest"
-
-	"github.com/fiws/minepkg/internals/instances"
 	"github.com/spf13/cobra"
 )
 
@@ -100,7 +99,6 @@ It will be deleted after testing.
 			instance.Manifest.Requirements.MinepkgCompanion = overwriteCompanion
 		}
 
-		// TODO: if fabric !!!
 		if plain != true && instance.Manifest.PlatformString() == "fabric" {
 			instance.Manifest.AddDependency("fabric", "*")
 			instance.Manifest.AddDependency("roughlyenoughitems", "*")

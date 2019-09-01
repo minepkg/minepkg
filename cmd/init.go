@@ -15,12 +15,11 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/fiws/minepkg/pkg/api"
 	"github.com/fiws/minepkg/pkg/manifest"
-	"github.com/logrusorgru/aurora"
+	"github.com/gookit/color"
 	"github.com/manifoldco/promptui"
+	"github.com/spf13/cobra"
 	"github.com/stoewer/go-strcase"
 	"gopkg.in/src-d/go-git.v4"
-
-	"github.com/spf13/cobra"
 )
 
 var projectName = regexp.MustCompile(`^([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])$`)
@@ -125,9 +124,9 @@ var initCmd = &cobra.Command{
 			})
 		} else {
 			logger.Info(
-				aurora.Gray("Version:").String() +
+				color.Gray.Sprint("Version:") +
 					" [Using git tags]" +
-					aurora.Gray(" (see \"minepkg help manifest\")").String())
+					color.Gray.Sprint(" (see \"minepkg help manifest\")"))
 		}
 
 		fmt.Println("")
