@@ -8,7 +8,7 @@ stages:
 linux build:
   stage: build
   script:
-    - go build -ldflags="-s -w" -o ./out/minepkg
+    - make build
   artifacts:
     paths:
       - out/minepkg

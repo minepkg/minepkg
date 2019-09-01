@@ -10,7 +10,6 @@ import (
 
 	"github.com/fiws/minepkg/pkg/api"
 	"github.com/manifoldco/promptui"
-
 	"github.com/spf13/cobra"
 )
 

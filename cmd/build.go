@@ -10,7 +10,6 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/fiws/minepkg/pkg/manifest"
-
 	"github.com/spf13/cobra"
 )
 

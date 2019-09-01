@@ -8,7 +8,6 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/fiws/minepkg/internals/downloadmgr"
-
 	"github.com/fiws/minepkg/internals/instances"
 	"github.com/spf13/cobra"
 )

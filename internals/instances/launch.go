@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/fiws/minepkg/internals/minecraft"
-
 	"github.com/fiws/minepkg/pkg/api"
 	"github.com/fiws/minepkg/pkg/manifest"
 )

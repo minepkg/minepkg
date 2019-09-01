@@ -7,12 +7,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/gookit/color"
-
-	"github.com/fiws/minepkg/pkg/api"
-
 	"github.com/fiws/minepkg/internals/cmdlog"
-
+	"github.com/fiws/minepkg/pkg/api"
+	"github.com/gookit/color"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -54,7 +51,7 @@ var completionCmd = &cobra.Command{
 . <(minepkg completion)
 
 You can add that line to your ~/.bashrc or ~/.profile to
-keep enable completion in your shell.
+persist completion in your shell.
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		rootCmd.GenBashCompletion(os.Stdout)
@@ -90,9 +87,6 @@ func init() {
 		apiClient.JWT = token
 		fmt.Println("Using MINEPKG_API_TOKEN for authentication")
 	}
-
-	// TODO: remove this after a few releases (fixes #61)
-	os.Chmod(globalDir, 0755)
 
 	cobra.OnInitialize(initConfig)
 

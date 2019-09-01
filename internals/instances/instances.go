@@ -11,7 +11,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/fiws/minepkg/pkg/api"
 	"github.com/fiws/minepkg/pkg/manifest"
-	"github.com/logrusorgru/aurora"
+	"github.com/gookit/color"
 	homedir "github.com/mitchellh/go-homedir"
 	strcase "github.com/stoewer/go-strcase"
 )
@@ -85,8 +85,8 @@ func (i *Instance) Desc() string {
 	depCount := fmt.Sprintf(" %d deps ", len(manifest.Dependencies))
 	name := fmt.Sprintf(" 📦 %s ", manifest.Package.Name)
 	build := []string{
-		aurora.BgBlue(name).String(),
-		aurora.BgGray(depCount).Black().String(),
+		color.BgBlue.Sprint(name),
+		color.BgGray.Sprint(depCount),
 	}
 	return strings.Join(build, "")
 }
