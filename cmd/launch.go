@@ -50,7 +50,9 @@ var launchCmd = &cobra.Command{
 
 		if len(args) == 0 {
 			var err error
+			wd, _ := os.Getwd()
 			instance, err = instances.DetectInstance()
+			instanceDir = wd
 
 			if err != nil {
 				logger.Fail("Instance problem: " + err.Error())
