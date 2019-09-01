@@ -18,14 +18,16 @@ import (
 )
 
 var (
-	version    string
-	serverMode bool
-	debugMode  bool
+	version       string
+	useSystemJava bool
+	serverMode    bool
+	debugMode     bool
 )
 
 func init() {
 	launchCmd.Flags().BoolVarP(&serverMode, "server", "s", false, "Start a server instead of a client")
 	launchCmd.Flags().BoolVarP(&debugMode, "debug", "", false, "Do not start, just debug")
+	launchCmd.Flags().BoolVarP(&useSystemJava, "system-java", "", false, "Use system java instead of internal installation")
 	rootCmd.AddCommand(launchCmd)
 }
 
@@ -99,6 +101,10 @@ var launchCmd = &cobra.Command{
 			logger.Fail("Can only launch modpacks. You can use \"minepkg try\" if you want to test a mod.")
 		case instance.Manifest.PlatformString() == "forge":
 			logger.Fail("Can not launch forge modpacks for now. Sorry.")
+		}
+
+		if useSystemJava == true {
+			instance.UseSystemJava()
 		}
 
 		// launch instance
