@@ -25,6 +25,7 @@ var (
 	debugMode     bool
 	offlineMode   bool
 	acceptEula    bool
+	onlyPrepare   bool
 )
 
 func init() {
@@ -32,7 +33,8 @@ func init() {
 	launchCmd.Flags().BoolVarP(&debugMode, "debug", "", false, "Do not start, just debug")
 	launchCmd.Flags().BoolVarP(&useSystemJava, "system-java", "", false, "Use system java instead of internal installation")
 	launchCmd.Flags().BoolVarP(&offlineMode, "offline", "", false, "Start the server in offline mode (server only)")
-	launchCmd.Flags().BoolVarP(&acceptEula, "acceptEula", "", false, "Accept the mojang eula. See https://account.mojang.com/documents/minecraft_eula")
+	launchCmd.Flags().BoolVarP(&acceptEula, "accept-eula", "a", false, "Accept the mojang eula. See https://account.mojang.com/documents/minecraft_eula")
+	launchCmd.Flags().BoolVarP(&onlyPrepare, "only-prepare", "", false, "Only prepare, skip launching.")
 	rootCmd.AddCommand(launchCmd)
 }
 
@@ -183,6 +185,11 @@ var launchCmd = &cobra.Command{
 					panic(err)
 				}
 			}
+		}
+
+		if onlyPrepare == true {
+			fmt.Println("Skipping launch as requested")
+			os.Exit(0)
 		}
 
 		fmt.Println("\nLaunching Minecraft …")
