@@ -55,6 +55,14 @@ type Release struct {
 		Sha256    string `json:"sha256"`
 		Published bool   `json:"published"`
 	} `json:"meta"`
+	Tests map[string]ReleaseTest `json:"tests"`
+}
+
+// ReleaseTest is a test of the package
+type ReleaseTest struct {
+	ID        string `json:"_id"`
+	Minecraft string `json:"minecraft"`
+	Works     bool   `json:"works"`
 }
 
 // SemverVersion returns the Version as a `semver.Version` struct
