@@ -29,3 +29,5 @@ require (
 	golang.org/x/net v0.0.0-20181201002055-351d144fa1fc // indirect
 	gopkg.in/src-d/go-git.v4 v4.8.1
 )
+
+go 1.13

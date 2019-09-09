@@ -101,11 +101,12 @@ type RequirementQuery struct {
 	Plattform string
 }
 
-// FindRelease gets the latest release matching the versionRequirement (can be "latest" or a semver requirement)
+// FindRelease gets the latest release matching the passed requirements via `RequirementQuery`
 func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *RequirementQuery) (*Release, error) {
 	p := Project{client: m, Name: project}
 
-	versionRequirement := reqs.Version
+	wantedVersion := reqs.Version
+	mcConstraint, err := semver.NewConstraint(reqs.Minecraft)
 	releases, err := p.GetReleases(ctx, reqs.Plattform)
 	if err != nil {
 		return nil, err
@@ -116,19 +117,38 @@ func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *Requ
 		return nil, ErrNotMatchingRelease
 	}
 
+	testedReleases := make([]*Release, 0, len(releases))
+
+	// find all tested & working releases
+	for _, release := range releases {
+		// check all tests of this release for matching mc version that works
+		for _, test := range release.Tests {
+			mcVersion := semver.MustParse(test.Minecraft)
+			if mcConstraint.Check(mcVersion) == true && test.Works {
+				testedReleases = append(testedReleases, release)
+			}
+		}
+	}
+
+	// replace all releases with tested if there are any
+	// that match the current mc version
+	if len(testedReleases) != 0 {
+		releases = testedReleases
+	}
+
 	// TODO: handle prereleases
-	if versionRequirement == "latest" || versionRequirement == "*" {
+	if wantedVersion == "latest" || wantedVersion == "*" {
 		return releases[0], nil
 	}
 
-	semverReq, err := semver.NewConstraint(versionRequirement)
+	versionConstraint, err := semver.NewConstraint(wantedVersion)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, r := range releases {
-		if semverReq.Check(r.SemverVersion()) == true {
-			return r, nil
+	for _, release := range releases {
+		if versionConstraint.Check(release.SemverVersion()) == true {
+			return release, nil
 		}
 	}
 
