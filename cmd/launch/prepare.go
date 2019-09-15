@@ -50,6 +50,14 @@ func (c *CLILauncher) Prepare() error {
 		instance.SaveLockfile()
 	}
 
+	// resolve dependencies
+	// TODO: len check does not account for same number but different mods
+	if len(instance.Manifest.Dependencies) != len(instance.Lockfile.Dependencies) {
+		s.Suffix = " Preparing launch – Resolving Dependencies"
+		instance.UpdateLockfileDependencies(context.TODO())
+		instance.SaveLockfile()
+	}
+
 	mgr := downloadmgr.New()
 	mgr.OnProgress = func(p int) {
 		s.Suffix = fmt.Sprintf(" Preparing launch – Downloading %v", p) + "%"
