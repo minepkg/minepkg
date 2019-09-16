@@ -43,7 +43,13 @@ type Instance struct {
 	MojangCredentials *api.MojangAuthResponse
 	MinepkgAPI        *api.MinepkgAPI
 
+	launchCmd  string
 	javaBinary string
+}
+
+// LaunchCmd returns the cmd used to launch minecraft (if started)
+func (i *Instance) LaunchCmd() string {
+	return i.launchCmd
 }
 
 // VersionsDir returns the path to the versions directory

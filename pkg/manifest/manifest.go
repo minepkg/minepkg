@@ -109,6 +109,18 @@ func (m *Manifest) PlatformString() string {
 	}
 }
 
+// PlatformVersion returns the required platform version
+func (m *Manifest) PlatformVersion() string {
+	switch {
+	case m.Requirements.Fabric != "":
+		return m.Requirements.Fabric
+	case m.Requirements.Forge != "":
+		return m.Requirements.Forge
+	default:
+		return ""
+	}
+}
+
 // AddDependency adds a new dependency to the manifest
 func (m *Manifest) AddDependency(name string, version string) {
 	if m.Dependencies == nil {

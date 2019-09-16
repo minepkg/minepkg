@@ -209,7 +209,7 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 	}
 
 	cmdArgs := []string{
-		"-Xss1M",
+		"-Xss128M",
 		"-Djava.library.path=" + tmpDir,
 		"-Dminecraft.launcher.brand=minepkg",
 		// "-Dminecraft.launcher.version=" + "0.0.2", // TODO: implement!
@@ -223,6 +223,7 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 		"-XX:G1ReservePercent=20",
 		"-XX:MaxGCPauseMillis=50",
 		"-XX:G1HeapRegionSize=32M",
+		"-XX:ErrorFile=./jvm-error.log",
 		launchManifest.MainClass,
 	}
 
@@ -248,6 +249,7 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 		opts.Java = "java"
 	}
 	cmd := exec.Command(opts.Java, cmdArgs...)
+	i.launchCmd = opts.Java + " " + strings.Join(cmdArgs, " ")
 
 	if opts.JoinServer != "" {
 		cmd.Env = append(os.Environ(), "MINEPKG_COMPANION_PLAY=server://"+opts.JoinServer)

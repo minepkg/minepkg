@@ -201,7 +201,7 @@ var launchCmd = &cobra.Command{
 		}
 
 		// finally, start the instance
-		if err := instance.Launch(opts); err != nil {
+		if err := cliLauncher.Launch(opts); err != nil {
 			// TODO: this stops any defer from running !!!
 			logger.Fail(err.Error())
 		}
