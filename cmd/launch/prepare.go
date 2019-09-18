@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"time"
 
@@ -17,6 +18,8 @@ import (
 type CLILauncher struct {
 	// Instance is the minepkg instance to be launched
 	Instance *instances.Instance
+
+	Cmd *exec.Cmd
 	// ServerMode indicated if this instance should be started as a server
 	ServerMode bool
 
