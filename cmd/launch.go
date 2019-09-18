@@ -257,8 +257,13 @@ var launchCmd = &cobra.Command{
 		case err := <-crashErr:
 			// stop the minecraft server, crashtest went well or timed out
 			// TODO: probably missing a timeout here!
-			if err := syscall.Kill(cliLauncher.Cmd.Process.Pid, syscall.SIGINT); err != nil {
-				cliLauncher.Cmd.Process.Kill()
+			p, err := os.FindProcess(cliLauncher.Cmd.Process.Pid)
+			if err != nil {
+				fmt.Println("Could not stop minecraft after crashtest. Its'probably already stopped … which is not good")
+				os.Exit(1)
+			}
+			if err := p.Signal(syscall.SIGINT); err != nil {
+				p.Signal(syscall.SIGKILL)
 			}
 			if err != nil {
 				fmt.Printf("Crashtest: could not connect to server (%s)\n", err)
