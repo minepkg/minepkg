@@ -273,6 +273,19 @@ func (m *MinepkgAPI) PutRelease(project string, version string, reader io.Reader
 	return &release, nil
 }
 
+// PostCrashReport posts a new crash report
+func (m *MinepkgAPI) PostCrashReport(ctx context.Context, report *CrashReport) error {
+	res, err := m.postJSON(context.TODO(), baseAPI+"/crash-reports", report)
+	if err != nil {
+		return err
+	}
+	if err := checkResponse(res); err != nil {
+		return err
+	}
+
+	return err
+}
+
 // get is a helper that does a get request and also sets various things
 func (m *MinepkgAPI) get(ctx context.Context, url string) (*http.Response, error) {
 	req, err := http.NewRequest("GET", url, nil)

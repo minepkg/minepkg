@@ -163,3 +163,36 @@ type mojangError struct {
 func (m mojangError) Error() string {
 	return m.ErrorMessage
 }
+
+// CrashReportPackage is a package in a crash report
+type CrashReportPackage struct {
+	Name     string `json:"name"`
+	Platform string `json:"platform"`
+	Version  string `json:"version"`
+}
+
+// CrashReportFabricDetail is a the fabric part of the crash report
+type CrashReportFabricDetail struct {
+	Loader  string `json:"loader"`
+	Mapping string `json:"mapping"`
+}
+
+// CrashReportForgeDetail is a the forge part of the crash report
+type CrashReportForgeDetail struct {
+	Loader string `json:"loader"`
+}
+
+// CrashReport is a crash report
+type CrashReport struct {
+	Package          CrashReportPackage       `json:"package"`
+	Fabric           *CrashReportFabricDetail `json:"fabric,omitempty"`
+	Forge            *CrashReportForgeDetail  `json:"forge,omitempty"`
+	MinecraftVersion string                   `json:"minecraftVersion"`
+	Server           bool                     `json:"server"`
+	Mods             map[string]string        `json:"mods"`
+	Logs             string                   `json:"logs,omitempty"`
+	OS               string                   `json:"os,omitempty"`
+	Arch             string                   `json:"arch,omitempty"`
+	JavaVersion      string                   `json:"javaVersion,omitempty"`
+	ExitCode         int                      `json:"exitCode,omitempty"`
+}
