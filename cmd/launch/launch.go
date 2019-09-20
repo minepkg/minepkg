@@ -20,11 +20,33 @@ func (c *CLILauncher) Launch(opts *instances.LaunchOptions) error {
 	case opts.Server == false:
 		opts.Server = c.ServerMode
 	}
-	err := c.Instance.Launch(opts)
-	if err == nil {
+
+	cmd, err := c.Instance.BuildLaunchCmd(opts)
+	if err != nil {
+		return err
+	}
+
+	c.Cmd = cmd
+
+	err = func() error {
+		if err := cmd.Start(); err != nil {
+			return err
+		}
+		// we wait for the output to finish (the lines following this one usually are reached after ctrl-c was pressed)
+		if err := cmd.Wait(); err != nil {
+			return err
+		}
+
+		return nil
+	}()
+
+	// minecraft server will always return code 130 when
+	// stop was succesfull, so we ignore the error here
+	if cmd.ProcessState.ExitCode() == 130 {
 		return nil
 	}
 
+	// exit code was not 130, we output error info and submit a crash report
 	platform := c.Instance.Manifest.PlatformString()
 
 	fmt.Println("--------------------")

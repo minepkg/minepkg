@@ -6,10 +6,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/fiws/minepkg/cmd/launch"
 	"github.com/fiws/minepkg/internals/instances"
@@ -26,6 +29,7 @@ var (
 	offlineMode   bool
 	acceptEula    bool
 	onlyPrepare   bool
+	crashTest     bool
 )
 
 func init() {
@@ -35,6 +39,7 @@ func init() {
 	launchCmd.Flags().BoolVarP(&offlineMode, "offline", "", false, "Start the server in offline mode (server only)")
 	launchCmd.Flags().BoolVarP(&acceptEula, "accept-eula", "a", false, "Accept the mojang eula. See https://account.mojang.com/documents/minecraft_eula")
 	launchCmd.Flags().BoolVarP(&onlyPrepare, "only-prepare", "", false, "Only prepare, skip launching.")
+	launchCmd.Flags().BoolVarP(&crashTest, "crashtest", "", false, "Stop server after it's online (can be used for testing)")
 	rootCmd.AddCommand(launchCmd)
 }
 
@@ -107,6 +112,8 @@ var launchCmd = &cobra.Command{
 		}
 
 		switch {
+		case crashTest && serverMode != true:
+			logger.Fail("Can only crashtest servers. append --server to crashtest")
 		case instance.Manifest.Package.Type != "modpack":
 			logger.Fail("Can only launch modpacks. You can use \"minepkg try\" if you want to test a mod.")
 		case instance.Manifest.PlatformString() == "forge":
@@ -200,10 +207,72 @@ var launchCmd = &cobra.Command{
 			Debug:          debugMode,
 		}
 
-		// finally, start the instance
-		if err := cliLauncher.Launch(opts); err != nil {
-			// TODO: this stops any defer from running !!!
-			logger.Fail(err.Error())
+		launchErr := make(chan error)
+		crashErr := make(chan error)
+
+		if crashTest == true {
+
+			go func() {
+				tries := 0
+
+				// try to connect every 3 seconds for 10 times (30 seconds to start server)
+				for {
+					tries++
+					time.Sleep(3 * time.Second)
+					// TODO: no hardcoded port
+					conn, err := net.DialTimeout("tcp", ":25565", time.Duration(120)*time.Second)
+
+					// no error, close connection and send nil in err channel
+					if err == nil {
+						defer conn.Close()
+						crashErr <- nil
+						break
+					}
+
+					//  could not connect, can we try again? send error in channel otherwise
+					if tries >= 10 {
+						crashErr <- err
+						break
+					}
+				}
+			}()
 		}
+
+		go func() {
+			// finally, start the instance
+			if err := cliLauncher.Launch(opts); err != nil {
+				launchErr <- err
+			}
+			launchErr <- nil
+		}()
+
+		select {
+		// normal launch & minecraft was stopped
+		case err := <-launchErr:
+			if err != nil {
+				// TODO: this stops any defer from running !!!
+				logger.Fail(err.Error())
+			}
+		// crashtest and we got a response from the crash go routine
+		case err := <-crashErr:
+			// stop the minecraft server, crashtest went well or timed out
+			// TODO: probably missing a timeout here!
+			p, err := os.FindProcess(cliLauncher.Cmd.Process.Pid)
+			if err != nil {
+				fmt.Println("Could not stop minecraft after crashtest. Its'probably already stopped … which is not good")
+				os.Exit(1)
+			}
+			if err := p.Signal(syscall.SIGINT); err != nil {
+				p.Signal(syscall.SIGKILL)
+			}
+			if err != nil {
+				fmt.Printf("Crashtest: could not connect to server (%s)\n", err)
+				<-launchErr
+				os.Exit(69)
+			}
+			fmt.Println("Crashtest went fine! Waiting for server to shut down")
+			<-launchErr
+		}
+
 	},
 }

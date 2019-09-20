@@ -62,8 +62,33 @@ type LaunchOptions struct {
 	Debug      bool
 }
 
-// Launch starts the minecraft instance
+// Launch will launch the minecraft instance
+// prefer BuildLaunchCmd if you need more control over the process
 func (i *Instance) Launch(opts *LaunchOptions) error {
+	cmd, err := i.BuildLaunchCmd(opts)
+	if err != nil {
+		return err
+	}
+
+	// TODO: detatch from process if wanted
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	// we wait for the output to finish (the lines following this one usually are reached after ctrl-c was pressed)
+	cmd.Wait()
+
+	// minecraft server will always return code 130 when
+	// stop was succesfull, so we ignore the error here
+	if cmd.ProcessState.ExitCode() == 130 {
+		return nil
+	}
+	// and return the error otherwise
+	return err
+}
+
+// BuildLaunchCmd returns a go cmd ready to start minecraft
+func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		panic(err)
@@ -80,14 +105,14 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 	if opts.Server != true {
 		creds = i.MojangCredentials
 		if creds == nil {
-			return ErrNoCredentials
+			return nil, ErrNoCredentials
 		}
 
 		profile = creds.SelectedProfile
 		// do not allow non paid accounts to start minecraft
 		// (demo mode is not implemented)
 		if profile == nil || profile.Paid != true {
-			return ErrNoPaidAccount
+			return nil, ErrNoPaidAccount
 		}
 	}
 
@@ -98,7 +123,7 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 	if launchManifest == nil {
 		launchManifest, err = i.GetLaunchManifest()
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -109,7 +134,7 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 		if opts.Java == "" {
 			// download java
 			if err := i.UpdateJava(); err != nil {
-				return err
+				return nil, err
 			}
 			opts.Java = i.javaBinary
 		}
@@ -124,7 +149,7 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 	tmpName := i.Manifest.Package.Name + fmt.Sprintf("%d", time.Now().Unix())
 	tmpDir, err := ioutil.TempDir("", tmpName)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	defer os.RemoveAll(tmpDir) // cleanup dir after minecraft is closed
@@ -157,7 +182,7 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 
 			err := extractNative(p, tmpDir)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			cpArgs = append(cpArgs, filepath.Join(libDir, native.Path))
 		} else {
@@ -271,19 +296,7 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	// TODO: detatch from process if wanted
-	err = cmd.Run()
-
-	// we wait for the output to finish (this line usually is reached after ctrl-c was pressed)
-	cmd.Wait()
-
-	// minecraft server will always return code 130 when
-	// stop was succesfull, so we ignore the error here
-	if cmd.ProcessState.ExitCode() == 130 {
-		return nil
-	}
-	// and return the error otherwise
-	return err
+	return cmd, nil
 }
 
 func (i *Instance) launchManifest() (*minecraft.LaunchManifest, error) {
