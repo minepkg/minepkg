@@ -246,6 +246,27 @@ var launchCmd = &cobra.Command{
 			launchErr <- nil
 		}()
 
+		stopAfterCrashtest := func() {
+			p, err := os.FindProcess(cliLauncher.Cmd.Process.Pid)
+			if err != nil {
+				fmt.Println("Could not stop minecraft after crashtest. Its'probably already stopped … which is not good")
+				os.Exit(1)
+			}
+			if err := p.Signal(syscall.SIGTERM); err != nil {
+				p.Signal(syscall.SIGKILL)
+			}
+
+			select {
+			case <-launchErr:
+				return
+			case <-time.After(5 * time.Second):
+				fmt.Println("Timed out stopping minecraft. Killing it")
+				if err := p.Signal(syscall.SIGKILL); err != nil {
+					fmt.Println("Could not kill minecraft")
+				}
+			}
+		}
+
 		select {
 		// normal launch & minecraft was stopped
 		case err := <-launchErr:
@@ -256,22 +277,14 @@ var launchCmd = &cobra.Command{
 		// crashtest and we got a response from the crash go routine
 		case err := <-crashErr:
 			// stop the minecraft server, crashtest went well or timed out
-			// TODO: probably missing a timeout here!
-			p, err := os.FindProcess(cliLauncher.Cmd.Process.Pid)
-			if err != nil {
-				fmt.Println("Could not stop minecraft after crashtest. Its'probably already stopped … which is not good")
-				os.Exit(1)
-			}
-			if err := p.Signal(syscall.SIGINT); err != nil {
-				p.Signal(syscall.SIGKILL)
-			}
 			if err != nil {
 				fmt.Printf("Crashtest: could not connect to server (%s)\n", err)
-				<-launchErr
+				stopAfterCrashtest()
 				os.Exit(69)
 			}
 			fmt.Println("Crashtest went fine! Waiting for server to shut down")
-			<-launchErr
+			stopAfterCrashtest()
+			// normal exit
 		}
 
 	},
