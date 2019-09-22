@@ -42,11 +42,11 @@ func (c *CLILauncher) Launch(opts *instances.LaunchOptions) error {
 
 	// minecraft server will always return code 130 when
 	// stop was succesfull, so we ignore the error here
-	if cmd.ProcessState.ExitCode() == 130 {
+	if cmd.ProcessState.ExitCode() == 130 || cmd.ProcessState.ExitCode() == 0 {
 		return nil
 	}
 
-	// exit code was not 130, we output error info and submit a crash report
+	// exit code was not 130 or 0, we output error info and submit a crash report
 	platform := c.Instance.Manifest.PlatformString()
 
 	fmt.Println("--------------------")
@@ -112,7 +112,6 @@ func (c *CLILauncher) Launch(opts *instances.LaunchOptions) error {
 
 	// exit with special status code, so tools know that minecraft crashed
 	// this is a "service is unavailable" error according to https://www.freebsd.org/cgi/man.cgi?query=sysexits
-
 	os.Exit(69)
 	return err
 }

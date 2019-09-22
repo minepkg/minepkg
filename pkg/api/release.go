@@ -130,14 +130,12 @@ func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *Requ
 		}
 	}
 
-	// replace all releases with tested if there are any
-	// that match the current mc version
-	if len(testedReleases) != 0 {
-		releases = testedReleases
-	}
-
 	// TODO: handle prereleases
 	if wantedVersion == "latest" || wantedVersion == "*" {
+		// return the latest working version
+		if len(testedReleases) != 0 {
+			return testedReleases[0], nil
+		}
 		return releases[0], nil
 	}
 
@@ -146,6 +144,14 @@ func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *Requ
 		return nil, err
 	}
 
+	// seach for tested releases first
+	for _, release := range testedReleases {
+		if versionConstraint.Check(release.SemverVersion()) == true {
+			return release, nil
+		}
+	}
+
+	// fallback to search all releases
 	for _, release := range releases {
 		if versionConstraint.Check(release.SemverVersion()) == true {
 			return release, nil

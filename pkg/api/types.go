@@ -58,6 +58,22 @@ type Release struct {
 	Tests map[string]ReleaseTest `json:"tests"`
 }
 
+// WorksWithManifest returns if this release was tested to the manifest requirements
+// (currently only checks mc version)
+func (r *Release) WorksWithManifest(man *manifest.Manifest) bool {
+	mcConstraint, err := semver.NewConstraint(man.Requirements.Minecraft)
+	if err != nil {
+		return false
+	}
+	for _, test := range r.Tests {
+		mcVersion := semver.MustParse(test.Minecraft)
+		if mcConstraint.Check(mcVersion) == true && test.Works {
+			return true
+		}
+	}
+	return false
+}
+
 // ReleaseTest is a test of the package
 type ReleaseTest struct {
 	ID        string `json:"_id"`
