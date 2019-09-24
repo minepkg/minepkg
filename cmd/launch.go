@@ -215,12 +215,15 @@ var launchCmd = &cobra.Command{
 			go func() {
 				tries := 0
 
+				// server takes at least 500ms to startup
+				time.Sleep(500 * time.Millisecond)
+
 				// try to connect every 3 seconds for 10 times (30 seconds to start server)
 				for {
 					tries++
-					time.Sleep(3 * time.Second)
 					// TODO: no hardcoded port
-					conn, err := net.DialTimeout("tcp", ":25565", time.Duration(120)*time.Second)
+					// 10 seconds to connect to socket (usually does not take that long)
+					conn, err := net.DialTimeout("tcp", ":25565", time.Duration(10)*time.Second)
 
 					// no error, close connection and send nil in err channel
 					if err == nil {
@@ -234,6 +237,9 @@ var launchCmd = &cobra.Command{
 						crashErr <- err
 						break
 					}
+
+					// wait 3 seconds before retrying
+					time.Sleep(3 * time.Second)
 				}
 			}()
 		}
