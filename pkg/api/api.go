@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -286,6 +287,32 @@ func (m *MinepkgAPI) PostCrashReport(ctx context.Context, report *CrashReport) e
 	return err
 }
 
+// PostProjectMedia uploads a new image to a project
+func (m *MinepkgAPI) PostProjectMedia(ctx context.Context, project string, content io.Reader) error {
+
+	req, err := http.NewRequest("POST", baseAPI+"/projects/"+project+"/media", content)
+	// TODO: does not have to be png.. ?
+	req.Header.Add("Content-Type", "image/png")
+	req = req.WithContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	m.decorate(req)
+	res, err := m.HTTP.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	b, _ := ioutil.ReadAll(res.Body)
+	fmt.Println(string(b))
+	if err := checkResponse(res); err != nil {
+		return err
+	}
+
+	return err
+}
+
 // get is a helper that does a get request and also sets various things
 func (m *MinepkgAPI) get(ctx context.Context, url string) (*http.Response, error) {
 	req, err := http.NewRequest("GET", url, nil)
@@ -355,7 +382,9 @@ func checkResponse(res *http.Response) error {
 // decorate decorates a request with the User-Agent header and a auth header if set
 func (m *MinepkgAPI) decorate(req *http.Request) {
 	req.Header.Set("User-Agent", "minepkg (https://github.com/fiws/minepkg)")
-	req.Header.Set("Content-Type", "application/json")
+	if req.Header.Get("Content-Type") == "" {
+		req.Header.Set("Content-Type", "application/json")
+	}
 	switch {
 	case m.JWT != "":
 		req.Header.Set("Authorization", "Bearer "+m.JWT)

@@ -20,6 +20,7 @@ var (
 	overwriteFabricVersion string
 	overwriteCompanion     string
 	plain                  bool
+	photosession           bool
 )
 
 func init() {
@@ -28,6 +29,7 @@ func init() {
 	tryCmd.Flags().StringVarP(&overwriteFabricVersion, "requirements.fabric", "", "", "Overwrite the required fabric version")
 	tryCmd.Flags().StringVarP(&overwriteCompanion, "requirements.minepkgCompanion", "", "", "Overwrite the required minepkg companion version")
 	tryCmd.Flags().BoolVarP(&plain, "plain", "p", false, "Do not include default mods for testing")
+	tryCmd.Flags().BoolVarP(&photosession, "photosession", "", false, "Upload all screenshots (take with F2) to the project")
 	rootCmd.AddCommand(tryCmd)
 }
 
@@ -133,6 +135,30 @@ It will be deleted after testing.
 		err = cliLauncher.Launch(opts)
 		if err != nil {
 			logger.Fail(err.Error())
+		}
+
+		if photosession == true {
+			entries, err := ioutil.ReadDir("./screenshots")
+			if err != nil {
+				fmt.Println("No screenshots taken, skipping upload")
+				return
+			}
+			fmt.Println("uploading screenshots now")
+			for _, e := range entries {
+				if e.IsDir() != true {
+					fmt.Println("uploading " + e.Name())
+					f, err := os.Open(filepath.Join("./screenshots", e.Name()))
+					if err != nil {
+						fmt.Println("Could not open screenshot " + e.Name())
+						fmt.Println(err)
+						continue
+					}
+					err = apiClient.PostProjectMedia(context.TODO(), name, f)
+					if err != nil {
+						fmt.Println("Could not upload screenshot: " + err.Error())
+					}
+				}
+			}
 		}
 	},
 }
