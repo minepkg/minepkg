@@ -111,7 +111,9 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 		profile = creds.SelectedProfile
 		// do not allow non paid accounts to start minecraft
 		// (demo mode is not implemented)
-		if profile == nil || profile.Paid != true {
+		// unpaid accounts should not have a profile
+		// TODO: check that ↑ !
+		if profile == nil {
 			return nil, ErrNoPaidAccount
 		}
 	}

@@ -25,8 +25,8 @@ require (
 	github.com/spf13/viper v1.2.1
 	github.com/stoewer/go-strcase v1.0.2
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
-	golang.org/x/crypto v0.0.0-20180904163835-0709b304e793
-	golang.org/x/net v0.0.0-20181201002055-351d144fa1fc // indirect
+	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
+	golang.org/x/net v0.0.0-20190311183353-d8887717615a // indirect
 	gopkg.in/src-d/go-git.v4 v4.8.1
 )
 
