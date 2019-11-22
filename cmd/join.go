@@ -82,7 +82,7 @@ var joinCmd = &cobra.Command{
 			MinepkgAPI: apiClient,
 		}
 
-		instanceDir := filepath.Join(instance.InstancesDir(), "server:"+ip+":"+release.Package.Name+"@"+release.Package.Platform)
+		instanceDir := filepath.Join(instance.InstancesDir(), "server."+ip+"."+release.Package.Name+"."+release.Package.Platform)
 		os.MkdirAll(instanceDir, os.ModePerm)
 
 		instance.ModsDirectory = filepath.Join(instanceDir, "mods")
