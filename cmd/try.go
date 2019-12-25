@@ -118,6 +118,24 @@ It will be deleted after testing.
 		instance.SaveLockfile()
 		// os.Exit(0)
 
+		fmt.Println("\n[launch settings]")
+		fmt.Println("platform: " + instance.Manifest.PlatformString())
+		fmt.Println("minecraft: " + instance.Manifest.Requirements.Minecraft)
+		if instance.Manifest.PlatformString() == "fabric" {
+			fmt.Printf(
+				"fabric: %s / %s (loader / mapping)\n",
+				instance.Lockfile.Fabric.FabricLoader,
+				instance.Lockfile.Fabric.Mapping,
+			)
+		}
+		depNames := make([]string, len(instance.Lockfile.Dependencies))
+		i := 0
+		for name, lock := range instance.Lockfile.Dependencies {
+			depNames[i] = name + "@" + lock.Version
+			i++
+		}
+		fmt.Println("[dependencies] \n - " + strings.Join(depNames, "\n - "))
+
 		cliLauncher := launch.CLILauncher{Instance: &instance, ServerMode: serverMode}
 		cliLauncher.Prepare()
 		launchManifest := cliLauncher.LaunchManifest
