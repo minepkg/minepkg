@@ -70,14 +70,15 @@ func ensureMojangAuth() (*api.AuthResponse, error) {
 	if err != nil {
 		// TODO: check if expired or other problem!
 		logger.Info("Your token maybe expired. Please login again")
-		login()
+		loginData = login()
+	} else {
+		// only refresh tokens
+		if loginData.Mojang == nil {
+			loginData.Mojang = &api.MojangAuthResponse{}
+		}
+		loginData.Mojang.AccessToken = newCreds.AccessToken
+		loginData.Mojang.ClientToken = newCreds.ClientToken
 	}
-
-	if loginData.Mojang == nil {
-		loginData.Mojang = &api.MojangAuthResponse{}
-	}
-	loginData.Mojang.AccessToken = newCreds.AccessToken
-	loginData.Mojang.ClientToken = newCreds.ClientToken
 
 	apiClient.JWT = loginData.Token
 	apiClient.User = loginData.User
