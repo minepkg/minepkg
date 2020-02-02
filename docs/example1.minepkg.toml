@@ -33,7 +33,7 @@ manifestVersion = 0
   # Plain version numbers just default to the `~` semver operator here. Allowing patches but not minor or major versions.
   # So `1.12.0` and `~1.12.0` are equal
   # This field is REQUIRED
-  minecraft-version = "1.12.x"
+  minecraft = "1.12.x"
   # This is a semver version describing the required forge version
   # The forge-version can be optional and should be determined by installed mods
   # or fallback to the latest stable version for the specified Minecraft version

@@ -30,6 +30,8 @@ var (
 	ErrNoCredentials = errors.New("Can not launch without mojang credentials")
 	// ErrNoPaidAccount is returned when an instance is launched without `MojangProfile` beeing set
 	ErrNoPaidAccount = errors.New("You need to buy Minecraft to launch it")
+	// ErrorNoVersion is returned if no mc version was detected
+	ErrorNoVersion = errors.New("Could not detect minecraft version")
 )
 
 // GetLaunchManifest returns the merged manifest for the instance

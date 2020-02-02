@@ -37,6 +37,7 @@ func (c *CLILauncher) Prepare() error {
 	s := spinner.New(spinner.CharSets[9], 300*time.Millisecond) // Build our new spinner
 	s.Prefix = " "
 	s.Start()
+	defer s.Stop()
 	s.Suffix = " Preparing launch"
 
 	if instance.HasJava() == false {
@@ -49,7 +50,10 @@ func (c *CLILauncher) Prepare() error {
 	// resolve requirements
 	if instance.Lockfile == nil || instance.Lockfile.HasRequirements() == false {
 		s.Suffix = " Preparing launch – Resolving Requirements"
-		instance.UpdateLockfileRequirements(context.TODO())
+		err := instance.UpdateLockfileRequirements(context.TODO())
+		if err != nil {
+			return err
+		}
 		instance.SaveLockfile()
 	}
 
@@ -57,7 +61,10 @@ func (c *CLILauncher) Prepare() error {
 	// TODO: len check does not account for same number but different mods
 	if len(instance.Manifest.Dependencies) != len(instance.Lockfile.Dependencies) {
 		s.Suffix = " Preparing launch – Resolving Dependencies"
-		instance.UpdateLockfileDependencies(context.TODO())
+		err := instance.UpdateLockfileDependencies(context.TODO())
+		if err != nil {
+			return err
+		}
 		instance.SaveLockfile()
 	}
 
@@ -110,6 +117,5 @@ func (c *CLILauncher) Prepare() error {
 		return err
 	}
 
-	s.Stop()
 	return nil
 }

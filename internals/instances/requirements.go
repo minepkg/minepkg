@@ -2,18 +2,24 @@ package instances
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/Masterminds/semver"
+	"github.com/fiws/minepkg/internals/merrors"
 	"github.com/fiws/minepkg/pkg/manifest"
 )
 
 var (
 	// ErrNoFabricLoader is returned if the wanted fabric version was not found
-	ErrNoFabricLoader = errors.New("Could not find wanted fabric version")
+	ErrNoFabricLoader = &merrors.CliError{
+		Err:  "Could not find fabric loader for wanted minecraft version",
+		Help: "Your minecraft version might not be supported by fabric or their API currently is unavailable",
+	}
 	// ErrNoFabricMapping is returned if the wanted fabric mapping was not found
-	ErrNoFabricMapping = errors.New("Could not find fabric mapping for minecraft version")
+	ErrNoFabricMapping = &merrors.CliError{
+		Err:  "Could not find fabric mapping for wanted minecraft version",
+		Help: "Your minecraft version might not be supported by fabric or their API currently is unavailable",
+	}
 )
 
 // UpdateLockfileRequirements updates the internal lockfile manifest with `VanillaLock`, `FabricLock` or `ForgeLock`

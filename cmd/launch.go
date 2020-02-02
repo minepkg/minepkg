@@ -62,7 +62,7 @@ var launchCmd = &cobra.Command{
 			instanceDir = wd
 
 			if err != nil {
-				logger.Fail("Instance problem: " + err.Error())
+				logger.Fail(err.Error())
 			}
 			instance.MinepkgAPI = apiClient
 		} else {

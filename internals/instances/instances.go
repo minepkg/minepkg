@@ -1,12 +1,13 @@
 package instances
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/fiws/minepkg/internals/merrors"
 
 	"github.com/BurntSushi/toml"
 	"github.com/fiws/minepkg/pkg/api"
@@ -24,10 +25,16 @@ var (
 	// PlatformForge is forge minecraft instance
 	PlatformForge uint8 = 3
 
-	// ErrorNoInstance is returned if no mc instance was found
-	ErrorNoInstance = errors.New("Could not find minecraft instance in this directory")
-	// ErrorNoVersion is returned if no mc version was detected
-	ErrorNoVersion = errors.New("Could not detect minecraft version")
+	// ErrNoInstance is returned if no mc instance was found
+	ErrNoInstance = &merrors.CliError{
+		Err:  "No minepkg.toml file was found in this directory",
+		Help: "Create a new modpack with \"minepkg init\" or move into a folder containing a minepkg.toml file",
+	}
+	// ErrMissingRequirementMinecraft is returned if requirements.minecraft is not set
+	ErrMissingRequirementMinecraft = &merrors.CliError{
+		Err:  "The manifest is missing the required requirements.minecraft field",
+		Help: "Add the field as documented on https://test-www.minepkg.io/docs/manifest#requirements",
+	}
 )
 
 // Instance describes a locally installed minecraft instance
@@ -123,7 +130,7 @@ func DetectInstance() (*Instance, error) {
 	}
 
 	if isInstance == false {
-		return nil, ErrorNoInstance
+		return nil, ErrNoInstance
 	}
 
 	home, _ := homedir.Dir()
@@ -161,16 +168,10 @@ func (i *Instance) initManifest() error {
 			return err
 		}
 		name := filepath.Base(wd)
-		version := "1.14.2" // TODO: not static
-		if version == "" {
-			return ErrorNoVersion
-		}
-		// replace patch with placeholder
-		version = version[:len(version)-1] + "x"
 
 		manifest.Package.Name = strcase.KebabCase(name)
-		manifest.Requirements.Minecraft = version
 		i.Manifest = manifest
+
 		return nil
 	}
 
@@ -181,6 +182,10 @@ func (i *Instance) initManifest() error {
 	}
 
 	i.Manifest = &manifest
+
+	if i.Manifest.Requirements.Minecraft == "" {
+		return ErrMissingRequirementMinecraft
+	}
 	return nil
 }
 

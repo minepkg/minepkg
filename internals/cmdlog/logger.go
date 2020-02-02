@@ -59,7 +59,8 @@ func (l *Logger) Warn(s string) {
 // Fail will print the given message with PrintLn and then exit 1
 func (l *Logger) Fail(s string) {
 	l.pritEmoji("💣")
-	color.Style{color.FgRed, color.OpBold}.Println(s)
+	color.Style{color.FgRed, color.OpBold}.Print("Error: ")
+	color.Style{color.FgWhite, color.OpBold}.Println(s)
 	os.Exit(1)
 }
 
