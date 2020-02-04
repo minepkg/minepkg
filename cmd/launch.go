@@ -218,7 +218,7 @@ var launchCmd = &cobra.Command{
 				// server takes at least 500ms to startup
 				time.Sleep(500 * time.Millisecond)
 
-				// try to connect every 3 seconds for 10 times (30 seconds to start server)
+				// try to connect every 3 seconds for 30 times (1.5 minutes to start server)
 				for {
 					tries++
 					// TODO: no hardcoded port
@@ -227,13 +227,16 @@ var launchCmd = &cobra.Command{
 
 					// no error, close connection and send nil in err channel
 					if err == nil {
+						// sleeping to let the server finish some initial setup after port was opened
+						// TODO: do not sleep, check if server responds here
+						time.Sleep(3 * time.Second)
 						defer conn.Close()
 						crashErr <- nil
 						break
 					}
 
 					//  could not connect, can we try again? send error in channel otherwise
-					if tries >= 10 {
+					if tries >= 30 {
 						crashErr <- err
 						break
 					}
