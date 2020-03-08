@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"os/exec"
 	"runtime"
 
 	"github.com/dchest/uniuri"
+	"github.com/fiws/minepkg/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/zalando/go-keyring"
 	"golang.org/x/oauth2"
@@ -27,16 +27,8 @@ var mloginCmd = &cobra.Command{
 	Short:   "Sign in to minepkg.io",
 	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("hello. fake login")
-
-		v := url.Values{}
-		v.Set("client_id", "minepkg-cli")
-		v.Add("response_type", "code")
-		v.Add("redirect_uri", "http://localhost:27893")
-		v.Add("state", "TODO")
-		v.Add("code_challenge_method", "TODO")
-		v.Add("code_challenge", "TODO")
-		token := getToken("http://localhost:3000/cli/auth?" + v.Encode())
+		fmt.Println("Starting minepkg.ui login")
+		token := getToken()
 
 		service := "minepkg"
 		user := "access_token"
@@ -64,7 +56,7 @@ var mloginCmd = &cobra.Command{
 	},
 }
 
-func getToken(uri string) *oauth2.Token {
+func getToken() *oauth2.Token {
 
 	// ctx := context.Background()
 	conf := &oauth2.Config{
@@ -72,9 +64,10 @@ func getToken(uri string) *oauth2.Token {
 		ClientSecret: "",
 		Scopes:       []string{"offline", "full_access"},
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  "http://localhost:8080/v1/oauth2/auth",
-			TokenURL: "http://localhost:8080/v1/oauth2/token",
+			AuthURL:  api.GetAPIUrl() + "/v1/oauth2/auth",
+			TokenURL: api.GetAPIUrl() + "/v1/oauth2/token",
 		},
+		// locally started server
 		RedirectURL: "http://localhost:27893",
 	}
 
@@ -122,18 +115,6 @@ func getToken(uri string) *oauth2.Token {
 			fmt.Println("Login succesfull!")
 		}
 		go server.Shutdown(context.TODO())
-	})
-	http.HandleFunc("/auth", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `
-			<!DOCTYPE html>
-			<html lang="en">
-			<head>
-				<script>window.location = '%s';</script>
-			</head>
-			<body>
-			</body>
-			</html>
-		`, uri)
 	})
 
 	openbrowser(url)
