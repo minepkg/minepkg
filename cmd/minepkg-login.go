@@ -51,7 +51,7 @@ var mloginCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		log.Println(`Login succesfull, but not used anywhere jet ¯\_(ツ)_/¯`)
+		log.Println(`Login successful, but not used anywhere jet ¯\_(ツ)_/¯`)
 		log.Println("But here is yo token: " + secret)
 	},
 }
