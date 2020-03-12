@@ -96,7 +96,7 @@ func getToken() *oauth2.Token {
 				<script>setTimeout(() => window.close(), 1000);</script>
 			</head>
 			<body>
-				<h1>Login succesfull!</h1>
+				<h1>Login successful!</h1>
 				<div>You can close this window now</div>
 			</body>
 			</html>
