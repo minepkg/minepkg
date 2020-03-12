@@ -112,7 +112,7 @@ func getToken() *oauth2.Token {
 			maybeErr := query.Get("because")
 			fmt.Println("Login failed because: " + maybeErr)
 		} else {
-			fmt.Println("Login succesfull!")
+			fmt.Println("Login successful!")
 		}
 		go server.Shutdown(context.TODO())
 	})
