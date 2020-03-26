@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -87,6 +88,7 @@ func getToken() *oauth2.Token {
 		pkceValue,
 	)
 
+	var responseErr error
 	code := ""
 	server := &http.Server{Addr: "localhost:27893"}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -106,16 +108,14 @@ func getToken() *oauth2.Token {
 		query := r.URL.Query()
 		code = query.Get("code")
 		resState := query.Get("state")
-		if resState != state {
-			log.Fatal("Request was intercepted. Try logging in again")
-		}
-		if code == "" {
+		switch {
+		case resState != state:
+			responseErr = errors.New("Request was intercepted. Try logging in again")
+
+		case code == "":
 			// TODO: better description
 			maybeErr := query.Get("error")
-			fmt.Println("Login failed because: " + maybeErr)
-			defer os.Exit(1)
-		} else {
-			fmt.Println("Login successful!")
+			responseErr = errors.New("Web login failed with " + maybeErr)
 		}
 		go server.Shutdown(context.TODO())
 	})
@@ -123,6 +123,11 @@ func getToken() *oauth2.Token {
 	openbrowser(url)
 	// todo: error handling!
 	server.ListenAndServe()
+
+	if responseErr != nil {
+		fmt.Println("Could not login:\n  " + responseErr.Error())
+		os.Exit(1)
+	}
 
 	// we have the code
 	token, err := conf.Exchange(
