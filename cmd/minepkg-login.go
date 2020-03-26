@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"os/exec"
 	"runtime"
 
@@ -45,7 +46,7 @@ var mloginCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		// get password
+		// get token again
 		secret, err := keyring.Get(service, user)
 		if err != nil {
 			log.Fatal(err)
@@ -93,10 +94,10 @@ func getToken() *oauth2.Token {
 			<!DOCTYPE html>
 			<html lang="en">
 			<head>
-				<script>setTimeout(() => window.close(), 1000);</script>
+				<script>window.close();</script>
 			</head>
 			<body>
-				<h1>Login successful!</h1>
+				<h1>Login attempt done.</h1>
 				<div>You can close this window now</div>
 			</body>
 			</html>
@@ -109,8 +110,10 @@ func getToken() *oauth2.Token {
 			log.Fatal("Request was intercepted. Try logging in again")
 		}
 		if code == "" {
-			maybeErr := query.Get("because")
+			// TODO: better description
+			maybeErr := query.Get("error")
 			fmt.Println("Login failed because: " + maybeErr)
+			os.Exit(1)
 		} else {
 			fmt.Println("Login successful!")
 		}
