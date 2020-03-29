@@ -17,10 +17,12 @@ var (
 	ErrorNotFound = errors.New("Resource not found")
 	// ErrorBadRequest gets returned when a 400 occured
 	ErrorBadRequest = errors.New("Bad Request")
-	baseAPI         = getAPIUrl()
+	baseAPI         = GetAPIUrl()
 )
 
-func getAPIUrl() string {
+// GetAPIUrl retrurns the minepkg api url
+// can be overwritten by the env variable `MINEPKG_API`
+func GetAPIUrl() string {
 	overwrite := os.Getenv("MINEPKG_API")
 	if overwrite != "" {
 		return overwrite
