@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"github.com/fiws/minepkg/internals/minecraft"
-	"github.com/fiws/minepkg/pkg/api"
 	"github.com/fiws/minepkg/pkg/manifest"
+	"github.com/fiws/minepkg/pkg/mojang"
 )
 
 var (
@@ -99,8 +99,8 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	// HACK: don't use client config for server, so we
 	// don't have to fake this here
 	var (
-		profile *api.MojangProfile
-		creds   *api.MojangAuthResponse
+		profile *mojang.Profile
+		creds   *mojang.AuthResponse
 	)
 
 	// server mode does not need minecraft credentials

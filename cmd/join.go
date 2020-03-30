@@ -101,7 +101,7 @@ var joinCmd = &cobra.Command{
 		if err != nil {
 			logger.Fail(err.Error())
 		}
-		instance.MojangCredentials = creds.Mojang
+		instance.MojangCredentials = creds
 
 		instance.Manifest = release.Manifest
 		fmt.Println("Using modpack " + release.Identifier())

@@ -1,25 +1,16 @@
 package cmd
 
 import (
-	"context"
-	"crypto/sha256"
-	"encoding/base64"
-	"errors"
 	"fmt"
-	"log"
-	"net/http"
 	"os"
-	"os/exec"
-	"runtime"
 
-	"github.com/dchest/uniuri"
 	"github.com/fiws/minepkg/pkg/api"
+	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
-	"github.com/zalando/go-keyring"
-	"golang.org/x/oauth2"
 )
 
 func init() {
+	mloginCmd.Flags().BoolVarP(&force, "force", "", false, "Try to open browser in any case to login")
 	rootCmd.AddCommand(mloginCmd)
 }
 
@@ -29,134 +20,32 @@ var mloginCmd = &cobra.Command{
 	Short:   "Sign in to minepkg.io",
 	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Starting minepkg.ui login")
-		token := getToken()
-
-		service := "minepkg"
-		user := "access_token"
-
-		// set token in keyring
-		err := keyring.Set(service, user, token.AccessToken)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		// set refresh token
-		err = keyring.Set(service, "refresh_token", token.RefreshToken)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		// get token again
-		secret, err := keyring.Get(service, user)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		log.Println(`Login successful, but not used anywhere jet ¯\_(ツ)_/¯`)
-		log.Println("But here is yo token: " + secret)
+		minepkgLogin()
 	},
 }
 
-func getToken() *oauth2.Token {
+func minepkgLogin() {
 
-	// ctx := context.Background()
-	conf := &oauth2.Config{
-		ClientID:     "minepkg-cli",
-		ClientSecret: "",
-		Scopes:       []string{"offline", "full_access"},
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  api.GetAPIUrl() + "/v1/oauth2/auth",
-			TokenURL: api.GetAPIUrl() + "/v1/oauth2/token",
-		},
-		// locally started server
-		RedirectURL: "http://localhost:27893",
-	}
-
-	state := uniuri.New()
-	pkceVerifier := uniuri.NewLen(128)
-	pkceHash := sha256.New()
-	pkceHash.Write([]byte(pkceVerifier))
-	pkceChallenge := base64.RawURLEncoding.EncodeToString(pkceHash.Sum(nil))
-
-	pkceMethod := oauth2.SetAuthURLParam("code_challenge_method", "S256")
-	pkceValue := oauth2.SetAuthURLParam("code_challenge", pkceChallenge)
-	url := conf.AuthCodeURL(
-		state,
-		oauth2.AccessTypeOffline,
-		pkceMethod,
-		pkceValue,
-	)
-
-	var responseErr error
-	code := ""
-	server := &http.Server{Addr: "localhost:27893"}
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `
-			<!DOCTYPE html>
-			<html lang="en">
-			<head>
-				<script>window.close();</script>
-			</head>
-			<body>
-				<h1>Login attempt done.</h1>
-				<div>You can close this window now</div>
-			</body>
-			</html>
-		`)
-		r.Close = true
-		query := r.URL.Query()
-		code = query.Get("code")
-		resState := query.Get("state")
-		switch {
-		case resState != state:
-			responseErr = errors.New("Request was intercepted. Try logging in again")
-
-		case code == "":
-			// TODO: better description
-			maybeErr := query.Get("error")
-			responseErr = errors.New("Web login failed with " + maybeErr)
-		}
-		go server.Shutdown(context.TODO())
-	})
-
-	openbrowser(url)
-	// todo: error handling!
-	server.ListenAndServe()
-
-	if responseErr != nil {
-		fmt.Println("Could not login:\n  " + responseErr.Error())
+	if !force && !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
+		fmt.Println("This seems to be a server. You can not login on a server.")
+		fmt.Println("Set the environment variable MINEPKG_API_KEY to a valid API key instead to authorize.")
+		// TODO: create link
+		fmt.Println("See https://test-www.minepkg.io/docs/server-auth for more info")
+		fmt.Println("You can also add --force if you want to try to open a browser nonetheless")
 		os.Exit(1)
 	}
 
-	// we have the code
-	token, err := conf.Exchange(
-		context.TODO(),
-		code,
-		pkceMethod,
-		oauth2.SetAuthURLParam("code_verifier", pkceVerifier),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return token
-}
+	fmt.Println("Trying to sign to minepkg.io now …")
+	fmt.Println("A browser window should open. Sign in there and click allow to continue.")
 
-func openbrowser(url string) {
-	var err error
-
-	switch runtime.GOOS {
-	case "linux":
-		err = exec.Command("xdg-open", url).Start()
-	case "windows":
-		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
-	case "darwin":
-		err = exec.Command("open", url).Start()
-	default:
-		err = fmt.Errorf("unsupported platform")
-	}
-	if err != nil {
-		log.Fatal(err)
+	oAuthConfig := api.OAuthLoginConfig{
+		ClientID:     "minepkg-cli",
+		ClientSecret: "",
+		Scopes:       []string{"offline", "full_access"},
 	}
 
+	token := apiClient.OAuthLogin(&oAuthConfig)
+
+	credStore.SetMinepkgAuth(token)
+	fmt.Println(`Login to minepkg successful. You should now be able to publish packages!`)
 }

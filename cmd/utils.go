@@ -1,13 +1,10 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"path/filepath"
 	"strings"
 
-	"github.com/fiws/minepkg/pkg/api"
+	"github.com/fiws/minepkg/pkg/mojang"
 )
 
 // MinepkgMapping is a server mapping (very unfinished)
@@ -47,53 +44,36 @@ func HumanFloat32(num float32) string {
 	return fmt.Sprintf("%v", num)
 }
 
-func ensureMojangAuth() (*api.AuthResponse, error) {
-	var loginData = &api.AuthResponse{}
-	// check if user is logged in
-	if rawCreds, err := ioutil.ReadFile(filepath.Join(globalDir, "credentials.json")); err == nil {
-		if err := json.Unmarshal(rawCreds, &loginData); err == nil && loginData.Token != "" {
-			apiClient.JWT = loginData.Token
-			apiClient.User = loginData.User
-		} else {
-			logger.Info("You need to sign in with your mojang account to launch minecraft")
-			loginData = login()
-		}
-	} else {
-		logger.Info("You need to sign in with your mojang account to launch minecraft")
+func ensureMojangAuth() (*mojang.AuthResponse, error) {
+	var loginData = &mojang.AuthResponse{}
+
+	if credStore.MojangAuth == nil || credStore.MojangAuth.AccessToken == "" {
 		loginData = login()
+		if err := credStore.SetMojangAuth(loginData); err != nil {
+			return nil, err
+		}
+		return credStore.MojangAuth, nil
 	}
 
-	newCreds, err := apiClient.MojangEnsureToken(
-		loginData.Mojang.AccessToken,
-		loginData.Mojang.ClientToken,
+	loginData, err := mojangClient.MojangEnsureToken(
+		credStore.MojangAuth.AccessToken,
+		credStore.MojangAuth.ClientToken,
 	)
 	if err != nil {
 		// TODO: check if expired or other problem!
 		logger.Info("Your token maybe expired. Please login again")
+		// TODO: error handling!
 		loginData = login()
-	} else {
-		// only refresh tokens
-		if loginData.Mojang == nil {
-			loginData.Mojang = &api.MojangAuthResponse{}
-		}
-		loginData.Mojang.AccessToken = newCreds.AccessToken
-		loginData.Mojang.ClientToken = newCreds.ClientToken
 	}
 
-	apiClient.JWT = loginData.Token
-	apiClient.User = loginData.User
+	// only update access token and client token
+	// because `SelectedProfile` is omited here
+	credStore.MojangAuth.AccessToken = loginData.AccessToken
+	credStore.MojangAuth.ClientToken = loginData.ClientToken
 
-	// TODO: only do when needed
-	{
-		creds, err := json.Marshal(loginData)
-		if err != nil {
-			return nil, err
-		}
-		credFile := filepath.Join(globalDir, "credentials.json")
-		if err := ioutil.WriteFile(credFile, creds, 0700); err != nil {
-			logger.Fail("Could not write credentials file: " + err.Error())
-		}
+	// HACK: maybe not pass credstore its own field
+	if err := credStore.SetMojangAuth(credStore.MojangAuth); err != nil {
+		return nil, err
 	}
-
-	return loginData, nil
+	return credStore.MojangAuth, nil
 }

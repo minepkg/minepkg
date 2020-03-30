@@ -1,14 +1,11 @@
 package cmd
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 
-	"github.com/fiws/minepkg/pkg/api"
+	"github.com/fiws/minepkg/pkg/mojang"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 )
@@ -20,14 +17,14 @@ func init() {
 var loginCmd = &cobra.Command{
 	Use:     "login",
 	Aliases: []string{"signin"},
-	Short:   "Sign in to Mojang and minepkg.io using your Mojang account",
+	Short:   "Sign in to Mojang in order to start Minecraft",
 	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		login()
 	},
 }
 
-func login() *api.AuthResponse {
+func login() *mojang.AuthResponse {
 	fmt.Println("Please sign in with your Mojang (Minecraft) credentials")
 	fmt.Println("Your password is sent encrypted to Mojang directly and NOT saved anywhere.")
 
@@ -52,23 +49,13 @@ func login() *api.AuthResponse {
 		os.Exit(0)
 	}
 
-	client := api.New()
-
-	auth, err := client.Login(username, password)
+	auth, err := mojangClient.Login(username, password)
 	if err != nil {
 		logger.Fail("Probably invalid credentials. not sure: " + err.Error())
 	}
-	loginData = auth
-	creds, err := json.Marshal(auth)
+	credStore.SetMojangAuth(auth)
 
-	os.MkdirAll(globalDir, os.ModePerm)
-	credFile := filepath.Join(globalDir, "credentials.json")
-	if err := ioutil.WriteFile(credFile, creds, 0700); err != nil {
-		logger.Fail("Count not write credentials file: " + err.Error())
-	}
-	fmt.Println("Succesfully logged in to minepkg.io")
-
-	return loginData
+	return auth
 }
 
 func basicValidation(input string) error {

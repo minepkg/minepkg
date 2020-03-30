@@ -1,14 +1,14 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	"github.com/fiws/minepkg/internals/cmdlog"
+	"github.com/fiws/minepkg/internals/credentials"
 	"github.com/fiws/minepkg/pkg/api"
+	"github.com/fiws/minepkg/pkg/mojang"
 	"github.com/gookit/color"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
@@ -24,8 +24,9 @@ var logger *cmdlog.Logger = cmdlog.New()
 var (
 	cfgFile       string
 	globalDir     = "/tmp"
+	credStore     = credentials.New()
 	apiClient     = api.New()
-	loginData     = &api.AuthResponse{}
+	mojangClient  = mojang.New()
 	disableColors bool
 )
 
@@ -74,12 +75,8 @@ func init() {
 	}
 	globalDir = filepath.Join(home, ".minepkg")
 
-	// check if user is logged in
-	if rawCreds, err := ioutil.ReadFile(filepath.Join(globalDir, "credentials.json")); err == nil {
-		if err := json.Unmarshal(rawCreds, &loginData); err == nil && loginData.Token != "" {
-			apiClient.JWT = loginData.Token
-			apiClient.User = loginData.User
-		}
+	if credStore.MinepkgAuth != nil {
+		apiClient.JWT = credStore.MinepkgAuth.AccessToken
 	}
 
 	token := os.Getenv("MINEPKG_API_TOKEN")
@@ -97,7 +94,7 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	if disableColors == true {
+	if disableColors == true || os.Getenv("CI") != "" {
 		color.Disable()
 	}
 
