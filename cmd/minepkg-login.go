@@ -35,7 +35,7 @@ func minepkgLogin() {
 		os.Exit(1)
 	}
 
-	fmt.Println("Trying to sign to minepkg.io now …")
+	fmt.Println("Trying to sign in to minepkg.io now …")
 	fmt.Println("A browser window should open. Sign in there and click allow to continue.")
 
 	oAuthConfig := api.OAuthLoginConfig{
