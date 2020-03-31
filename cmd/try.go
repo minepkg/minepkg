@@ -63,7 +63,7 @@ It will be deleted after testing.
 		if err != nil {
 			logger.Fail(err.Error())
 		}
-		instance.MojangCredentials = creds.Mojang
+		instance.MojangCredentials = creds
 
 		comp := strings.Split(args[0], "@")
 		name := comp[0]

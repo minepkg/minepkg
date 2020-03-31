@@ -82,8 +82,8 @@ var publishCmd = &cobra.Command{
 
 		tasks.Log("Checking Authentication")
 		if apiClient.JWT == "" {
-			logger.Warn("You need to login first")
-			login()
+			logger.Warn("You need to login to minepkg.io first")
+			minepkgLogin()
 		}
 
 		logger.Log("Checking access rights")

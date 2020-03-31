@@ -18,22 +18,6 @@ type User struct {
 	Email       string `json:"email"`
 }
 
-// AuthResponse gets returned after signin with a token
-// or username/password
-type AuthResponse struct {
-	// User contains the account data like name or email
-	User *User `json:"user"`
-	// Token is a jwt token
-	Token  string `json:"token"`
-	Mojang *MojangAuthResponse
-}
-
-// LoginData combines the minepkg token + data with the mojang tokens
-type LoginData struct {
-	Minepkg *AuthResponse
-	Mojang  *MojangAuthResponse
-}
-
 // Project is a project … realy
 type Project struct {
 	client      *MinepkgAPI
@@ -135,49 +119,6 @@ type MinepkgError struct {
 
 func (m MinepkgError) Error() string {
 	return m.Status + ": " + m.Message
-}
-
-type mojangAgent struct {
-	Name    string `json:"name"`
-	Version uint8  `json:"version"`
-}
-
-type mojangLogin struct {
-	Agent       mojangAgent `json:"agent"`
-	Username    string      `json:"username"`
-	Password    string      `json:"password"`
-	RequestUser bool        `json:"requestUser"`
-}
-
-// MojangAuthResponse is the response returned by a succefully mojang login
-type MojangAuthResponse struct {
-	AccessToken     string         `json:"accessToken"`
-	ClientToken     string         `json:"clientToken"`
-	SelectedProfile *MojangProfile `json:"selectedProfile"`
-}
-
-// MojangProfile is a profile that potentially can be used to launch minecraft
-type MojangProfile struct {
-	Agent         string `json:"agent"`
-	ID            string `json:"id"`
-	Name          string `json:"name"`
-	UserID        string `json:"userId"`
-	TokenID       string `json:"tokenId"`
-	CreatedAt     int    `json:"createdAt"`
-	LegacyProfile bool   `json:"legacyProfile"`
-	Suspended     bool   `json:"suspended"`
-	Paid          bool   `json:"paid"`
-	Migrated      bool   `json:"migrated"`
-}
-
-type mojangError struct {
-	ErrorCode    string `json:"error"`
-	ErrorMessage string `json:"errorMessage"`
-	Cause        string `json:"cause"`
-}
-
-func (m mojangError) Error() string {
-	return m.ErrorMessage
 }
 
 // CrashReportPackage is a package in a crash report

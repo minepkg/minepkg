@@ -135,7 +135,7 @@ var launchCmd = &cobra.Command{
 			if err != nil {
 				logger.Fail(err.Error())
 			}
-			instance.MojangCredentials = creds.Mojang
+			instance.MojangCredentials = creds
 		}
 
 		cliLauncher := launch.CLILauncher{Instance: instance, ServerMode: serverMode}

@@ -12,6 +12,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/fiws/minepkg/pkg/api"
 	"github.com/fiws/minepkg/pkg/manifest"
+	"github.com/fiws/minepkg/pkg/mojang"
 	"github.com/gookit/color"
 	homedir "github.com/mitchellh/go-homedir"
 	strcase "github.com/stoewer/go-strcase"
@@ -47,7 +48,7 @@ type Instance struct {
 	ModsDirectory     string
 	Manifest          *manifest.Manifest
 	Lockfile          *manifest.Lockfile
-	MojangCredentials *api.MojangAuthResponse
+	MojangCredentials *mojang.AuthResponse
 	MinepkgAPI        *api.MinepkgAPI
 
 	launchCmd  string
