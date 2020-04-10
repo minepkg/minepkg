@@ -14,7 +14,6 @@ import (
 	"github.com/fiws/minepkg/pkg/manifest"
 	"github.com/fiws/minepkg/pkg/mojang"
 	"github.com/gookit/color"
-	homedir "github.com/mitchellh/go-homedir"
 	strcase "github.com/stoewer/go-strcase"
 )
 
@@ -134,7 +133,7 @@ func DetectInstance() (*Instance, error) {
 		return nil, ErrNoInstance
 	}
 
-	home, _ := homedir.Dir()
+	home, _ := os.UserHomeDir()
 	globalDir := filepath.Join(home, ".minepkg")
 
 	instance := &Instance{

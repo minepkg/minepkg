@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/fiws/minepkg/internals/minecraft"
-	homedir "github.com/mitchellh/go-homedir"
 )
 
 func extractNative(jar string, target string) error {
@@ -47,7 +46,7 @@ func v(s string) string {
 
 // TODO: remove
 func existOrDownload(lib minecraft.Lib) {
-	home, _ := homedir.Dir()
+	home, _ := os.UserHomeDir()
 	globalDir := filepath.Join(home, ".minepkg/libraries")
 	path := filepath.Join(globalDir, lib.Filepath())
 	url := lib.DownloadURL()

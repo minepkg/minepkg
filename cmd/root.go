@@ -10,7 +10,6 @@ import (
 	"github.com/fiws/minepkg/pkg/api"
 	"github.com/fiws/minepkg/pkg/mojang"
 	"github.com/gookit/color"
-	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -69,7 +68,7 @@ func Execute() {
 }
 
 func init() {
-	home, err := homedir.Dir()
+	home, err := os.UserHomeDir()
 	if err != nil {
 		panic(err)
 	}
@@ -103,7 +102,7 @@ func initConfig() {
 		viper.SetConfigFile(cfgFile)
 	} else {
 		// Find home directory.
-		home, err := homedir.Dir()
+		home, err := os.UserHomeDir()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
