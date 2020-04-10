@@ -95,6 +95,9 @@ It will be deleted after testing.
 		if overwriteMcVersion != "" {
 			fmt.Println("mc version overwritten!")
 			instance.Manifest.Requirements.Minecraft = overwriteMcVersion
+		} else if instance.Manifest.Requirements.Minecraft == "*" {
+			fmt.Println("mc * resolved to: " + release.LatestTestedMinecraftVersion())
+			instance.Manifest.Requirements.Minecraft = release.LatestTestedMinecraftVersion()
 		}
 		if overwriteCompanion != "" {
 			fmt.Println("companion overwritten!")

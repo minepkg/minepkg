@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 
 	"github.com/Masterminds/semver"
 )
@@ -34,6 +35,21 @@ func (r *Release) DownloadURL() string {
 		return ""
 	}
 	return fmt.Sprintf("%s/releases/%s/%s/download", baseAPI, r.Package.Platform, r.Identifier())
+}
+
+// LatestTestedMinecraftVersion returns the last (highest) tested Minecraft version for this release
+func (r *Release) LatestTestedMinecraftVersion() string {
+
+	workingMcVersion := semver.Collection{}
+	// check all tests of this release for matching mc version that works
+	for _, test := range r.Tests {
+		if test.Works {
+			workingMcVersion = append(workingMcVersion, semver.MustParse(test.Minecraft))
+		}
+	}
+
+	sort.Sort(workingMcVersion)
+	return workingMcVersion[len(workingMcVersion)-1].String()
 }
 
 // Upload uploads the jar or zipfile for a release
