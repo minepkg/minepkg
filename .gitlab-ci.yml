@@ -5,32 +5,14 @@ stages:
   - package
   - release
 
-linux build:
+dev snapshot build:
   stage: build
+  image: goreleaser/goreleaser
   script:
-    - make build
+    - release --snapshot --skip-publish
   artifacts:
     paths:
-      - out/minepkg
-
-windows build:
-  image: dockercore/golang-cross
-  stage: build
-  script:
-    - echo "building for windows"
-    - CC=x86_64-w64-mingw32-gcc-posix CXX=x86_64-w64-mingw32-g++-posix GOOS=windows GOARCH=amd64 CGO_ENABLED=1 go build -ldflags="-s -w" -o ./out/minepkg.exe
-  artifacts:
-    paths:
-      - out/minepkg.exe
-
-macos build:
-  stage: build
-  script:
-    - echo "building for macOS"
-    - GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o out/minepkg-macos
-  artifacts:
-    paths:
-      - out/minepkg-macos
+      - dist
 
 linux packages:
   stage: package
@@ -43,7 +25,7 @@ linux packages:
     GIT_STRATEGY: none
   script:
     - mkdir -p ./source/usr/bin
-    - cp out/minepkg ./source/usr/bin
+    - cp dist/minepkg_linux_amd64/minepkg ./source/usr/bin
     - fpm -s dir -C ./source -t deb -n minepkg -v $CI_COMMIT_REF_NAME .
     - fpm -s dir -C ./source -t rpm -n minepkg -v $CI_COMMIT_REF_NAME .
     - fpm -s dir -C ./source -t pacman -n minepkg -v $CI_COMMIT_REF_NAME .
@@ -52,18 +34,6 @@ linux packages:
       - '*.deb'
       - '*.rpm'
       - '*.pkg.tar.xz' # pacman
-
-github release:
-  stage: release
-  only:
-    - /^v\d+\.\d+\.\d+-?.*$/
-  when: manual
-  script:
-    - go get github.com/aktau/github-release
-    - github-release release --user fiws --repo minepkg --tag $CI_COMMIT_REF_NAME
-    - github-release upload --user fiws --repo minepkg --tag $CI_COMMIT_REF_NAME --name "minepkg-linux-amd64" --file out/minepkg
-    - github-release upload --user fiws --repo minepkg --tag $CI_COMMIT_REF_NAME --name "minepkg-macos-amd64" --file out/minepkg-macos
-    - github-release upload --user fiws --repo minepkg --tag $CI_COMMIT_REF_NAME --name "minepkg-windows-amd64" --file out/minepkg.exe
 
 gcs release:
   stage: release
@@ -77,9 +47,9 @@ gcs release:
     gcloud auth activate-service-account --key-file gcp-secret.json
     # upload binaries to GCS
     VERSION=`echo $CI_COMMIT_REF_NAME | cut -c 2-`
-    gsutil -m cp out/minepkg gs://minepkg-client/$VERSION/minepkg-linux-amd64
-    gsutil -m cp out/minepkg-macos gs://minepkg-client/$VERSION/minepkg-macos-amd64
-    gsutil -m cp out/minepkg.exe gs://minepkg-client/$VERSION/minepkg-windows-amd64.exe
+    gsutil -m cp dist/minepkg_linux_amd64/minepkg gs://minepkg-client/$VERSION/minepkg-linux-amd64
+    gsutil -m cp dist/minepkg_darwin_amd64/minepkg gs://minepkg-client/$VERSION/minepkg-macos-amd64
+    gsutil -m cp dist/minepkg_windows_amd64/minepkg gs://minepkg-client/$VERSION/minepkg-windows-amd64.exe
     # copy binaries to static 'latest' directory
     gsutil -m cp gs://minepkg-client/$VERSION/* gs://minepkg-client/latest
     # generate and upload latest version manifest
@@ -104,4 +74,4 @@ gcs dev release:
     - echo $GCP_DEV_SERVICEACCOUNT > ./gcp-secret.json
     - gcloud auth activate-service-account --key-file gcp-secret.json
     # upload binary to GCS
-    - gsutil -m cp out/minepkg gs://minepkg-client/minepkg-dev
+    - gsutil -m cp dist/minepkg_linux_amd64/minepkg gs://minepkg-client/minepkg-dev-snapshot

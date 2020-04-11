@@ -14,11 +14,11 @@ import (
 	"github.com/spf13/viper"
 )
 
-// MinepkgVersion is a constant of the current minepkg version
-const MinepkgVersion = "0.0.28"
-
 // TODO: this logger is not so great – also: it should not be global
 var logger *cmdlog.Logger = cmdlog.New()
+
+// Version is the cmd version. It is set by main.go from goreleaser
+var Version string
 
 var (
 	cfgFile       string
@@ -31,7 +31,7 @@ var (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Version: MinepkgVersion,
+	Version: "local-dev",
 	Use:     "minepkg",
 	Short:   "Minepkg at your service.",
 	Long:    "Manage Minecraft mods with ease",
@@ -61,13 +61,15 @@ persist completion in your shell.
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+	initRoot()
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 }
 
-func init() {
+func initRoot() {
+	rootCmd.Version = Version
 	home, err := os.UserHomeDir()
 	if err != nil {
 		panic(err)
