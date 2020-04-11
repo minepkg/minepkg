@@ -5,22 +5,26 @@ stages:
   - package
   - release
 
-dev snapshot build:
+snapshot build:
   stage: build
-  image: goreleaser/goreleaser
+  image: 
+    name: goreleaser/goreleaser:latest
+    entrypoint: [""]
   script:
-    - release --snapshot --skip-publish
+    - goreleaser release --snapshot --skip-publish
   artifacts:
     paths:
       - dist
 
 release build:
   stage: build
-  image: goreleaser/goreleaser
+  image: 
+    name: goreleaser/goreleaser:latest
+    entrypoint: [""]
   only:
     - /^v\d+\.\d+\.\d+-?.*$/
   script:
-    - release --skip-publish
+    - goreleaser release --skip-publish
   artifacts:
     paths:
       - dist
