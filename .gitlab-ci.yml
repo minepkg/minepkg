@@ -14,13 +14,24 @@ dev snapshot build:
     paths:
       - dist
 
+release build:
+  stage: build
+  image: goreleaser/goreleaser
+  only:
+    - /^v\d+\.\d+\.\d+-?.*$/
+  script:
+    - release --skip-publish
+  artifacts:
+    paths:
+      - dist
+
 linux packages:
   stage: package
   image: "tenzer/fpm:no-entrypoint"
   only:
     - /^v\d+\.\d+\.\d+-?.*$/
   dependencies:
-    - linux build
+    - release build
   variables:
     GIT_STRATEGY: none
   script:
