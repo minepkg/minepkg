@@ -92,3 +92,16 @@ gcs release:
       }
     }' > latest-version.json
     gsutil -m cp latest-version.json gs://minepkg-client
+
+gcs dev release:
+  stage: release
+  image: google/cloud-sdk:slim
+  only:
+    - master
+  script:
+    # auth
+    - gcloud config set project minepkg-io
+    - echo $GCP_DEV_SERVICEACCOUNT > ./gcp-secret.json
+    - gcloud auth activate-service-account --key-file gcp-secret.json
+    # upload binary to GCS
+    - gsutil -m cp out/minepkg gs://minepkg-client/minepkg-dev
