@@ -53,7 +53,7 @@ func (s *Store) Find() error {
 		// wo do nothing here, because mojang credentials might be there
 	default:
 		// TODO: output should be here in debug mode only
-		fmt.Println("Could not use key store, will default to file store for secrets")
+		// fmt.Println("Could not use key store, will default to file store for secrets")
 		s.NoKeyRingMode = true
 		return s.findFromFiles()
 	}
