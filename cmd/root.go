@@ -23,7 +23,7 @@ var Version string
 var (
 	cfgFile       string
 	globalDir     = "/tmp"
-	credStore     = credentials.New()
+	credStore     *credentials.Store
 	apiClient     = api.New()
 	mojangClient  = mojang.New()
 	disableColors bool
@@ -75,6 +75,10 @@ func initRoot() {
 		panic(err)
 	}
 	globalDir = filepath.Join(home, ".minepkg")
+	credStore, err = credentials.New(globalDir)
+	if err != nil {
+		logger.Fail("Could not initialize credential store: " + err.Error())
+	}
 
 	if credStore.MinepkgAuth != nil {
 		apiClient.JWT = credStore.MinepkgAuth.AccessToken
