@@ -10,6 +10,8 @@ snapshot build:
   image: 
     name: goreleaser/goreleaser:latest
     entrypoint: [""]
+  except:
+    - tags # no version tags
   script:
     - goreleaser release --snapshot --skip-publish
   artifacts:
