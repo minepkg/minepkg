@@ -66,7 +66,7 @@ gcs release:
     VERSION=`echo $CI_COMMIT_REF_NAME | cut -c 2-`
     gsutil -m cp dist/minepkg_linux_amd64/minepkg gs://minepkg-client/$VERSION/minepkg-linux-amd64
     gsutil -m cp dist/minepkg_darwin_amd64/minepkg gs://minepkg-client/$VERSION/minepkg-macos-amd64
-    gsutil -m cp dist/minepkg_windows_amd64/minepkg gs://minepkg-client/$VERSION/minepkg-windows-amd64.exe
+    gsutil -m cp dist/minepkg_windows_amd64/minepkg.exe gs://minepkg-client/$VERSION/minepkg-windows-amd64.exe
     # copy binaries to static 'latest' directory
     gsutil -m cp gs://minepkg-client/$VERSION/* gs://minepkg-client/latest
     # generate and upload latest version manifest
