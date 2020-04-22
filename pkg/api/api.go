@@ -213,17 +213,19 @@ func checkResponse(res *http.Response) error {
 	switch {
 	case res.StatusCode == http.StatusNotFound:
 		return ErrorNotFound
-	case res.StatusCode == http.StatusBadRequest:
-		return ErrorBadRequest
+	// case res.StatusCode == http.StatusBadRequest:
+	// 	return ErrorBadRequest
+	case res.StatusCode >= 200 && res.StatusCode < 400:
+		return nil
 	case res.StatusCode >= 400:
 		minepkgErr := &MinepkgError{}
 		if err := parseJSON(res, minepkgErr); err != nil {
-			return errors.New("minepkg API did respond with unexpected status " + res.Status)
+			return errors.New("minepkg API did respond with expected error format. code: " + res.Status)
 		}
 		return minepkgErr
+	default:
+		return errors.New("minepkg API did respond unexpected status code " + res.Status)
 	}
-
-	return nil
 }
 
 // decorate decorates a request with the User-Agent header and a auth header if set

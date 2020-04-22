@@ -112,7 +112,7 @@ type ForgeVersionResponse struct {
 // MinepkgError is the json response if the response
 // was not succesfull
 type MinepkgError struct {
-	StatusCode string `json:"statusCode"`
+	StatusCode uint16 `json:"statusCode"`
 	Status     string `json:"error"`
 	Message    string `json:"message"`
 }

@@ -238,7 +238,12 @@ var publishCmd = &cobra.Command{
 			logger.Info("Creating release")
 			release, err = project.CreateRelease(context.TODO(), &m)
 			if err != nil {
-				logger.Fail(err.Error())
+				if merr, ok := err.(*api.MinepkgError); ok {
+					errorMsg := fmt.Sprintf("[%d] Api error: %s", merr.StatusCode, merr.Message)
+					logger.Fail(errorMsg)
+				} else {
+					logger.Fail(err.Error() + ". Check internet connection or report bug!")
+				}
 			}
 		}
 
