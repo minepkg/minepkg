@@ -78,7 +78,7 @@ It will be deleted after testing.
 			Plattform: "fabric", // TODO!!!
 		}
 		release, err := apiClient.FindRelease(context.TODO(), name, reqs)
-		if err != nil {
+		if err != nil && err != api.ErrNotMatchingRelease {
 			logger.Fail(err.Error())
 		}
 		if release == nil {
