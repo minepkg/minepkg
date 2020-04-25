@@ -80,6 +80,58 @@ gcs release:
     }' > latest-version.json
     gsutil -m cp latest-version.json gs://minepkg-client
 
+.docker:
+  stage: release
+  image: docker:19.03.8
+  services:
+    - docker:19.03.8-dind
+  variables:
+    # Use TLS https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#tls-enabled
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_TLS_CERTDIR: "/certs"
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+
+.docker release variant:
+  stage: release
+  extends: .docker
+  only:
+    - /^v\d+\.\d+\.\d+-?.*$/
+  script:
+  - VERSION=`echo $CI_COMMIT_REF_NAME | cut -c 2-` 
+  - cd ./build/docker-$DOCKER_VARIANT
+  - docker build --tag $CI_REGISTRY_IMAGE:$VERSION-$DOCKER_VARIANT --tag $CI_REGISTRY_IMAGE:$DOCKER_VARIANT .
+  - docker push $CI_REGISTRY_IMAGE:$VERSION-$DOCKER_VARIANT
+  - docker push $CI_REGISTRY_IMAGE:$DOCKER_VARIANT
+
+
+# default variant release (no suffix) & tags latest
+docker-default release:
+  stage: release
+  extends: .docker
+  only:
+    - /^v\d+\.\d+\.\d+-?.*$/
+  script:
+  - VERSION=`echo $CI_COMMIT_REF_NAME | cut -c 2-`
+  - cd ./build/docker-default
+  - docker build --tag $CI_REGISTRY_IMAGE:$VERSION --tag $CI_REGISTRY_IMAGE:latest .
+  - docker push $CI_REGISTRY_IMAGE:$VERSION
+  - docker push $CI_REGISTRY_IMAGE:latest
+
+# gradle variant release
+docker-gradle release:
+  stage: release
+  extends: .docker release variant
+  variables:
+    DOCKER_VARIANT: gradle
+
+# slim variant release
+docker-slim release:
+  stage: release
+  extends: .docker release variant
+  variables:
+    DOCKER_VARIANT: slim
+
 gcs dev release:
   stage: release
   image: google/cloud-sdk:slim
