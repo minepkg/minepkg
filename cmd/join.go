@@ -10,7 +10,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
+	"github.com/Tnze/go-mc/bot"
 	"github.com/fiws/minepkg/cmd/launch"
 	"github.com/fiws/minepkg/internals/instances"
 	"github.com/fiws/minepkg/pkg/api"
@@ -26,52 +28,32 @@ func init() {
 var joinCmd = &cobra.Command{
 	Use:     "join <ip/hostname>",
 	Short:   "Joins a compatible server without any setup",
-	Long:    `Servers have to be started with \"minepkg launch --server\" for this to work. (For now)`,
+	Long:    `Servers have to be started with \"minepkg launch --server\" or include the minepkg-companion mod`,
 	Example: `  minepkg join demoserver.minepkg.io`,
-	Aliases: []string{"i-wanna-play-on"},
+	Aliases: []string{"i-wanna-play-on", "connect"},
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
+		var resolvedModpack *api.Release
+		ip := "127.0.0.1"
 		host := args[0]
-		rawIP, err := net.LookupHost(host)
-		if err != nil {
-			logger.Fail("Could not resolve host " + host)
+
+		if host != "localhost" {
+			rawIP, err := net.LookupHost(host)
+			if err != nil {
+				logger.Fail("Could not resolve host " + host)
+			}
+
+			ip = strings.Join(rawIP, ".")
 		}
 
-		ip := strings.Join(rawIP, ".")
-
-		var server *MinepkgMapping
-
-		req, _ := http.NewRequest("GET", "https://test-api.minepkg.io/v1/server-mappings/"+ip, nil)
-		apiClient.DecorateRequest(req)
-		res, err := apiClient.HTTP.Do(req)
-		buf, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			logger.Fail(err.Error())
-		}
-		if res.StatusCode == 404 {
-			logger.Fail("Server not in minepkg.io database (the server has to be started with minepkg")
-		}
-		if res.StatusCode != 200 {
-			logger.Fail("minepkg.io server database not reachable")
-		}
-		json.Unmarshal(buf, &server)
-
-		name, version := splitPackageName(server.Modpack)
-
-		reqs := &api.RequirementQuery{
-			Version:   version,
-			Minecraft: "*",
-			Plattform: server.Platform,
+		resolvedModpack = resolveViaSLP(ip)
+		if resolvedModpack == nil {
+			resolvedModpack = resolveFromAPI(ip)
 		}
 
-		// TODO: get release instead of find
-		release, err := apiClient.FindRelease(context.TODO(), name, reqs)
-		if err != nil {
-			logger.Fail(err.Error())
-		}
-		if release == nil {
-			logger.Info("Could not find the server modpack \"" + server.Modpack + "\"")
+		if resolvedModpack == nil {
+			logger.Info("Could not determine the server modpack")
 			os.Exit(1)
 		}
 
@@ -82,7 +64,7 @@ var joinCmd = &cobra.Command{
 			MinepkgAPI: apiClient,
 		}
 
-		instanceDir := filepath.Join(instance.InstancesDir(), "server."+ip+"."+release.Package.Name+"."+release.Package.Platform)
+		instanceDir := filepath.Join(instance.InstancesDir(), "server."+ip+"."+resolvedModpack.Package.Name+"."+resolvedModpack.Package.Platform)
 		os.MkdirAll(instanceDir, os.ModePerm)
 
 		instance.ModsDirectory = filepath.Join(instanceDir, "mods")
@@ -103,8 +85,8 @@ var joinCmd = &cobra.Command{
 		}
 		instance.MojangCredentials = creds
 
-		instance.Manifest = release.Manifest
-		fmt.Println("Using modpack " + release.Identifier())
+		instance.Manifest = resolvedModpack.Manifest
+		fmt.Println("Using modpack " + resolvedModpack.Identifier())
 
 		// force the latest requirements
 		if err := instance.UpdateLockfileRequirements(context.TODO()); err != nil {
@@ -130,4 +112,78 @@ var joinCmd = &cobra.Command{
 			logger.Fail(err.Error())
 		}
 	},
+}
+
+type modpackDescription struct {
+	Name     string `json:"name"`
+	Version  string `json:"version"`
+	Platform string `json:"platform"`
+}
+
+type slpData struct {
+	MinepkgModpack *modpackDescription `json:"minepkgModpack"`
+	Version        struct {
+		Name     string `json:"name"`
+		Protocol string `json:"protocol"`
+	} `json:"version"`
+}
+
+func resolveViaSLP(ip string) *api.Release {
+	fmt.Println("Trying to query server modpack …")
+	serverData, _, err := bot.PingAndListTimeout(ip, 25565, 10*time.Second)
+	if err != nil {
+		fmt.Println("could not reach server")
+		return nil
+	}
+
+	data := slpData{}
+	json.Unmarshal(serverData, &data)
+	if data.MinepkgModpack == nil {
+		fmt.Println("Server does not use minepkg-companion 0.2.0+ – Please upgrade the mod on the server")
+		return nil
+	}
+	fmt.Println("minepkg compatible server detected. Modpack: " + data.MinepkgModpack.Name)
+	reqs := &api.RequirementQuery{
+		Version:   version,
+		Plattform: data.MinepkgModpack.Platform,
+	}
+	release, err := apiClient.FindRelease(context.TODO(), data.MinepkgModpack.Name, reqs)
+	if err != nil {
+		return nil
+	}
+
+	return release
+}
+
+func resolveFromAPI(ip string) *api.Release {
+	var server *MinepkgMapping
+	req, _ := http.NewRequest("GET", "https://test-api.minepkg.io/v1/server-mappings/"+ip, nil)
+	apiClient.DecorateRequest(req)
+	res, err := apiClient.HTTP.Do(req)
+	buf, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		logger.Fail(err.Error())
+	}
+	if res.StatusCode == 404 {
+		logger.Fail("Server not in minepkg.io database (the server has to be started with minepkg)")
+	}
+	if res.StatusCode != 200 {
+		logger.Fail("minepkg.io server database not reachable")
+	}
+	json.Unmarshal(buf, &server)
+
+	name, version := splitPackageName(server.Modpack)
+
+	reqs := &api.RequirementQuery{
+		Version:   version,
+		Minecraft: "*",
+		Plattform: server.Platform,
+	}
+
+	// TODO: get release instead of find
+	release, err := apiClient.FindRelease(context.TODO(), name, reqs)
+	if err != nil {
+		return nil
+	}
+	return release
 }

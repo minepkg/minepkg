@@ -3,6 +3,7 @@ module github.com/fiws/minepkg
 require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/Masterminds/semver v1.5.0
+	github.com/Tnze/go-mc v1.15.2-0.20200408080201-cf150c16fa2e
 	github.com/briandowns/spinner v1.8.0
 	github.com/dchest/uniuri v0.0.0-20200228104902-7aecb25e1fe5
 	github.com/dsnet/compress v0.0.1 // indirect
