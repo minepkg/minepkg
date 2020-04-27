@@ -2,6 +2,8 @@ package downloadmgr
 
 import (
 	"context"
+	"crypto/sha256"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -62,7 +64,7 @@ type HTTPItem struct {
 	URL    string
 	Target string
 	Size   int
-	Sha1   string
+	Sha256 string
 }
 
 // Download downloads the item to the defined target using http
@@ -81,6 +83,16 @@ func (i *HTTPItem) Download(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	if err := dest.Sync(); err != nil {
+		return err
+	}
+
+	// check sha if there is one set
+	if i.Sha256 != "" {
+		if err := checkSha256(i.Sha256, dest.Name()); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -98,4 +110,40 @@ func NewHTTPItem(URL string, Target string) *HTTPItem {
 // New creates a new downloadmgr
 func New() *DownloadManager {
 	return &DownloadManager{}
+}
+
+// ErrInvalidSha is returned when the downloaded file's sha256 sum does not match the given sha1
+type ErrInvalidSha struct {
+	FileName    string
+	ExpectedSha string
+	ActualSha   string
+}
+
+func (e *ErrInvalidSha) Error() string {
+	return fmt.Sprintf(
+		"File corrupted: %s sha256 is invalid.\n\texpected to be \"%s\"\n\tbut actually is \"%s\"\n",
+		e.FileName,
+		e.ExpectedSha,
+		e.ActualSha,
+	)
+}
+
+func checkSha256(sha string, srcPath string) error {
+	src, err := os.Open(srcPath)
+	if err != nil {
+		return err
+	}
+	hasher := sha256.New()
+	_, err = io.Copy(hasher, src)
+	// probably io error during hashing
+	if err != nil {
+		return err
+	}
+	actualSha := fmt.Sprintf("%x", hasher.Sum(nil))
+	if actualSha != sha {
+		// TODO: this can fail! move file to tmp storage first
+		os.Remove(src.Name())
+		return &ErrInvalidSha{src.Name(), sha, actualSha}
+	}
+	return nil
 }
