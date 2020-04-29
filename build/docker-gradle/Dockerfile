@@ -8,6 +8,6 @@ RUN chmod +rx /usr/bin/minepkg
 
 USER gradle
 
-# TODO: set minepkg to always use system jdk!
+RUN echo 'useSystemJava=true\n' > /etc/minepkg/config.toml
 
 CMD ["/usr/bin/minepkg"]

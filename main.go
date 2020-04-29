@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/fiws/minepkg/cmd"
 )
 
@@ -10,7 +8,6 @@ import (
 var version string
 
 func main() {
-	fmt.Println(version)
 	cmd.Version = version
 	cmd.Execute()
 }

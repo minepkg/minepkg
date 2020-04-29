@@ -18,9 +18,12 @@ import (
 	"github.com/fiws/minepkg/pkg/api"
 	"github.com/fiws/minepkg/pkg/manifest"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 func init() {
+	joinCmd.Flags().BoolP("system-java", "", false, "Use system java instead of internal installation")
+	viper.BindPFlag("useSystemJava", joinCmd.Flags().Lookup("system-java"))
 	rootCmd.AddCommand(joinCmd)
 }
 
@@ -102,6 +105,10 @@ var joinCmd = &cobra.Command{
 
 		cliLauncher := launch.CLILauncher{Instance: &instance, ServerMode: serverMode}
 		cliLauncher.Prepare()
+
+		if viper.GetBool("useSystemJava") == true {
+			instance.UseSystemJava()
+		}
 
 		fmt.Println("\nLaunching Minecraft …")
 		opts := &instances.LaunchOptions{

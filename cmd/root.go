@@ -94,7 +94,9 @@ func initRoot() {
 
 	// Global flags
 	rootCmd.PersistentFlags().BoolVarP(&disableColors, "no-color", "", false, "disable color output")
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.minepkg/config.toml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.minepkg/config.toml)")
+
+	viper.BindPFlag("noColor", rootCmd.Flags().Lookup("no-color"))
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -116,7 +118,11 @@ func initConfig() {
 
 		// Search config in home directory with name ".minepkg" (without extension).
 		viper.AddConfigPath(home)
-		viper.SetConfigName(".minepkg")
+		viper.SetConfigName("config")
+		viper.SetConfigType("toml")
+		viper.AddConfigPath("/etc/minepkg/")  // path to look for the config file in
+		viper.AddConfigPath("$HOME/.minepkg") // call multiple times to add many search paths
+		viper.AddConfigPath(".")              // optionally look for config in the working directory
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
