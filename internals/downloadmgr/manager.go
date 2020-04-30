@@ -3,12 +3,16 @@ package downloadmgr
 import (
 	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 )
+
+// ErrInvalidStatusCode is returned if the status code was not 200
+var ErrInvalidStatusCode = errors.New("Status code was not 200")
 
 // DownloadManager includes a queue to download
 type DownloadManager struct {
@@ -74,7 +78,11 @@ func (i *HTTPItem) Download(ctx context.Context) error {
 		return err
 	}
 	fileRes, err := http.Get(i.URL)
-	// TODO: check status code and all the things!
+
+	if fileRes.StatusCode != 200 {
+		return ErrInvalidStatusCode
+	}
+
 	dest, err := os.Create(i.Target)
 	if err != nil {
 		return err
