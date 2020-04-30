@@ -25,8 +25,6 @@ var (
 )
 
 func init() {
-	tryCmd.Flags().BoolP("accept-eula", "a", false, "Accept Mojang's Minecraft eula. See https://account.mojang.com/documents/minecraft_eula")
-	tryCmd.Flags().BoolP("system-java", "", false, "Use system java instead of internal installation")
 	tryCmd.Flags().BoolVarP(&serverMode, "server", "s", false, "Start a server instead of a client")
 	tryCmd.Flags().StringVarP(&overwriteMcVersion, "requirements.minecraft", "", "", "Overwrite the required Minecraft version")
 	tryCmd.Flags().StringVarP(&overwriteFabricVersion, "requirements.fabric", "", "", "Overwrite the required fabric version")
@@ -34,9 +32,6 @@ func init() {
 	tryCmd.Flags().BoolVarP(&plain, "plain", "p", false, "Do not include default mods for testing")
 	tryCmd.Flags().BoolVarP(&photosession, "photosession", "", false, "Upload all screenshots (take with F2) to the project")
 	rootCmd.AddCommand(tryCmd)
-
-	viper.BindPFlag("useSystemJava", tryCmd.Flags().Lookup("system-java"))
-	viper.BindPFlag("acceptMinecraftEula", tryCmd.Flags().Lookup("accept-eula"))
 }
 
 var tryCmd = &cobra.Command{
