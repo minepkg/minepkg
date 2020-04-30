@@ -8,6 +8,6 @@ RUN chmod +rx /usr/bin/minepkg
 
 USER gradle
 
-RUN echo 'useSystemJava=true\n' > /etc/minepkg/config.toml
+RUN mkdir /etc/minepkg && echo 'useSystemJava=true\n' > /etc/minepkg/config.toml
 
 CMD ["/usr/bin/minepkg"]
