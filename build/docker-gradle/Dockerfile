@@ -6,8 +6,7 @@ USER root
 ADD https://storage.googleapis.com/minepkg-client/latest/minepkg-linux-amd64 /usr/bin/minepkg
 RUN chmod +rx /usr/bin/minepkg
 
-USER gradle
-
 RUN mkdir /etc/minepkg && echo 'useSystemJava=true\n' > /etc/minepkg/config.toml
 
+USER gradle
 CMD ["/usr/bin/minepkg"]
