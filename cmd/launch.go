@@ -241,7 +241,7 @@ Alternativly: Can be used in directories containing a minepkg.toml manifest to l
 						break
 					}
 
-					//  could not connect, can we try again? send error in channel otherwise
+					// could not connect, can we try again? send error in channel otherwise
 					if tries >= 30 {
 						crashErr <- err
 						break
