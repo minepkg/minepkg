@@ -91,6 +91,8 @@ gcs release:
     DOCKER_TLS_CERTDIR: "/certs"
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    # also login to docker hub
+    - docker login -u fiws -p $DOCKER_HUB_TOKEN
 
 .docker release variant:
   stage: release
@@ -103,6 +105,11 @@ gcs release:
   - docker build --tag $CI_REGISTRY_IMAGE:$VERSION-$DOCKER_VARIANT --tag $CI_REGISTRY_IMAGE:$DOCKER_VARIANT .
   - docker push $CI_REGISTRY_IMAGE:$VERSION-$DOCKER_VARIANT
   - docker push $CI_REGISTRY_IMAGE:$DOCKER_VARIANT
+  # docker hub
+  - docker tag $CI_REGISTRY_IMAGE:$VERSION-$DOCKER_VARIANT minepkg/minepkg:$VERSION-$DOCKER_VARIANT 
+  - docker tag $CI_REGISTRY_IMAGE:$DOCKER_VARIANT minepkg/minepkg:$DOCKER_VARIANT
+  - docker push minepkg/minepkg:$VERSION-$DOCKER_VARIANT 
+  - docker push minepkg/minepkg:$DOCKER_VARIANT
 
 
 # default variant release (no suffix) & tags latest
@@ -117,6 +124,11 @@ docker-default release:
   - docker build --tag $CI_REGISTRY_IMAGE:$VERSION --tag $CI_REGISTRY_IMAGE:latest .
   - docker push $CI_REGISTRY_IMAGE:$VERSION
   - docker push $CI_REGISTRY_IMAGE:latest
+  # docker hub
+  - docker tag $CI_REGISTRY_IMAGE:$VERSION minepkg/minepkg:$VERSION
+  - docker tag $CI_REGISTRY_IMAGE:latest minepkg/minepkg:latest
+  - docker push minepkg/minepkg:$VERSION
+  - docker push minepkg/minepkg:latest
 
 # gradle variant release
 docker-gradle release:
