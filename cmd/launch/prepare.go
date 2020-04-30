@@ -6,9 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"time"
 
-	"github.com/briandowns/spinner"
 	"github.com/fiws/minepkg/internals/downloadmgr"
 	"github.com/fiws/minepkg/internals/instances"
 	"github.com/fiws/minepkg/internals/minecraft"
@@ -26,6 +24,9 @@ type CLILauncher struct {
 	// LaunchManifest is a minecraft launcher manifest. it should be set after
 	// calling `Prepare`
 	LaunchManifest *minecraft.LaunchManifest
+
+	// NonInteractive determines if fancy spinners or prompts should be displayed
+	NonInteractive bool
 }
 
 // Prepare ensures all requirements are met to launch the
@@ -34,14 +35,13 @@ func (c *CLILauncher) Prepare() error {
 	instance := c.Instance
 	serverMode := c.ServerMode
 	// Prepare launch
-	s := spinner.New(spinner.CharSets[9], 300*time.Millisecond) // Build our new spinner
-	s.Prefix = " "
+	s := NewMaybeSpinner(!c.NonInteractive) // Build our new spinner
 	s.Start()
 	defer s.Stop()
-	s.Suffix = " Preparing launch"
+	s.Update("Preparing launch")
 
 	if instance.HasJava() == false {
-		s.Suffix = " Preparing launch – Downloading java"
+		s.Update("Preparing launch – Downloading java")
 		if err := instance.UpdateJava(); err != nil {
 			return err
 		}
@@ -49,7 +49,7 @@ func (c *CLILauncher) Prepare() error {
 
 	// resolve requirements
 	if instance.Lockfile == nil || instance.Lockfile.HasRequirements() == false {
-		s.Suffix = " Preparing launch – Resolving Requirements"
+		s.Update("Preparing launch – Resolving Requirements")
 		err := instance.UpdateLockfileRequirements(context.TODO())
 		if err != nil {
 			return err
@@ -60,7 +60,7 @@ func (c *CLILauncher) Prepare() error {
 	// resolve dependencies
 	// TODO: len check does not account for same number but different mods
 	if len(instance.Manifest.Dependencies) != len(instance.Lockfile.Dependencies) {
-		s.Suffix = " Preparing launch – Resolving Dependencies"
+		s.Update("Preparing launch – Resolving Dependencies")
 		err := instance.UpdateLockfileDependencies(context.TODO())
 		if err != nil {
 			return err
@@ -70,7 +70,7 @@ func (c *CLILauncher) Prepare() error {
 
 	mgr := downloadmgr.New()
 	mgr.OnProgress = func(p int) {
-		s.Suffix = fmt.Sprintf(" Preparing launch – Downloading %v", p) + "%"
+		s.Update(fmt.Sprintf("Preparing launch – Downloading %v", p) + "%")
 	}
 
 	launchManifest, err := instance.GetLaunchManifest()
@@ -112,7 +112,7 @@ func (c *CLILauncher) Prepare() error {
 		return err
 	}
 
-	s.Suffix = " Downloading dependencies"
+	s.Update("Downloading dependencies")
 	if err := instance.EnsureDependencies(context.TODO()); err != nil {
 		return err
 	}

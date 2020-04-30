@@ -109,7 +109,7 @@ func initRoot() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	if disableColors == true || os.Getenv("CI") != "" {
+	if viper.GetBool("noColor") || os.Getenv("CI") != "" {
 		color.Disable()
 	}
 

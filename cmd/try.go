@@ -143,7 +143,7 @@ It will be deleted after testing.
 		}
 		fmt.Println("[dependencies] \n - " + strings.Join(depNames, "\n - "))
 
-		cliLauncher := launch.CLILauncher{Instance: &instance, ServerMode: serverMode}
+		cliLauncher := launch.CLILauncher{Instance: &instance, ServerMode: serverMode, NonInteractive: viper.GetBool("noColor")}
 		cliLauncher.Prepare()
 		launchManifest := cliLauncher.LaunchManifest
 
@@ -158,7 +158,7 @@ It will be deleted after testing.
 			}
 		}
 
-		fmt.Println("\nLaunching Minecraft …")
+		fmt.Println("\n== Launching Minecraft ==")
 		opts := &instances.LaunchOptions{
 			LaunchManifest: launchManifest,
 			Server:         serverMode,
