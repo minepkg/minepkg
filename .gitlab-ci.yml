@@ -4,6 +4,7 @@ stages:
   - build
   - package
   - release
+  - docker_release
 
 snapshot build:
   stage: build
@@ -81,8 +82,9 @@ gcs release:
     gsutil -m cp latest-version.json gs://minepkg-client
 
 .docker:
-  stage: release
+  stage: docker_release
   image: docker:19.03.8
+  needs: ["gcs release"]
   services:
     - docker:19.03.8-dind
   variables:
@@ -95,7 +97,7 @@ gcs release:
     - docker login -u fiws -p $DOCKER_HUB_TOKEN
 
 .docker release variant:
-  stage: release
+  stage: docker_release
   extends: .docker
   only:
     - /^v\d+\.\d+\.\d+-?.*$/
@@ -114,7 +116,7 @@ gcs release:
 
 # default variant release (no suffix) & tags latest
 docker-default release:
-  stage: release
+  stage: docker_release
   extends: .docker
   only:
     - /^v\d+\.\d+\.\d+-?.*$/
@@ -132,14 +134,14 @@ docker-default release:
 
 # gradle variant release
 docker-gradle release:
-  stage: release
+  stage: docker_release
   extends: .docker release variant
   variables:
     DOCKER_VARIANT: gradle
 
 # slim variant release
 docker-slim release:
-  stage: release
+  stage: docker_release
   extends: .docker release variant
   variables:
     DOCKER_VARIANT: slim
