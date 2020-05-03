@@ -39,6 +39,11 @@ func init() {
 	launchCmd.Flags().BoolVarP(&offlineMode, "offline", "", false, "Start the server in offline mode (server only)")
 	launchCmd.Flags().BoolVarP(&onlyPrepare, "only-prepare", "", false, "Only prepare, skip launching.")
 	launchCmd.Flags().BoolVarP(&crashTest, "crashtest", "", false, "Stop server after it's online (can be used for testing)")
+
+	launchCmd.Flags().StringVarP(&overwriteMcVersion, "requirements.minecraft", "", "", "Overwrite the required Minecraft version")
+	launchCmd.Flags().StringVarP(&overwriteFabricVersion, "requirements.fabric", "", "", "Overwrite the required fabric version")
+	launchCmd.Flags().StringVarP(&overwriteCompanion, "requirements.minepkgCompanion", "", "", "Overwrite the required minepkg companion version")
+
 	rootCmd.AddCommand(launchCmd)
 }
 
@@ -64,6 +69,7 @@ Alternativly: Can be used in directories containing a minepkg.toml manifest to l
 				logger.Fail(err.Error())
 			}
 			instance.MinepkgAPI = apiClient
+			instanceReqOverwrites(instance)
 		} else {
 			reqs := &api.RequirementQuery{
 				Plattform: "fabric", // TODO: not static!
@@ -95,6 +101,8 @@ Alternativly: Can be used in directories containing a minepkg.toml manifest to l
 			defer os.Chdir(wd)
 
 			instance.ModsDirectory = filepath.Join(instanceDir, "mods")
+
+			instanceReqOverwrites(instance)
 
 			// TODO: only show when there actually is a update. ask user?
 			logger.Headline("Updating instance")

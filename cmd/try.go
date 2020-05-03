@@ -90,19 +90,11 @@ It will be deleted after testing.
 		instance.Manifest = release.Manifest
 		fmt.Println("Creating temporary modpack with " + release.Identifier())
 
-		if overwriteFabricVersion != "" {
-			instance.Manifest.Requirements.Fabric = overwriteFabricVersion
-		}
-		if overwriteMcVersion != "" {
-			fmt.Println("mc version overwritten!")
-			instance.Manifest.Requirements.Minecraft = overwriteMcVersion
-		} else if instance.Manifest.Requirements.Minecraft == "*" {
+		instanceReqOverwrites(&instance)
+
+		if instance.Manifest.Requirements.Minecraft == "*" {
 			fmt.Println("mc * resolved to: " + release.LatestTestedMinecraftVersion())
 			instance.Manifest.Requirements.Minecraft = release.LatestTestedMinecraftVersion()
-		}
-		if overwriteCompanion != "" {
-			fmt.Println("companion overwritten!")
-			instance.Manifest.Requirements.MinepkgCompanion = overwriteCompanion
 		}
 
 		if plain != true && instance.Manifest.PlatformString() == "fabric" {
