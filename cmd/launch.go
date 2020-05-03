@@ -145,7 +145,7 @@ Alternativly: Can be used in directories containing a minepkg.toml manifest to l
 			instance.MojangCredentials = creds
 		}
 
-		cliLauncher := launch.CLILauncher{Instance: instance, ServerMode: serverMode, NonInteractive: viper.GetBool("noColor")}
+		cliLauncher := launch.CLILauncher{Instance: instance, ServerMode: serverMode, NonInteractive: viper.GetBool("nonInteractive")}
 
 		if err := cliLauncher.Prepare(); err != nil {
 			logger.Fail(err.Error())

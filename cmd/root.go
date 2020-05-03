@@ -111,6 +111,7 @@ func initRoot() {
 func initConfig() {
 	if viper.GetBool("noColor") || os.Getenv("CI") != "" {
 		color.Disable()
+		viper.Set("nonInteractive", true)
 	}
 
 	if cfgFile != "" {

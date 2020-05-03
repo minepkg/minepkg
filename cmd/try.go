@@ -135,7 +135,7 @@ It will be deleted after testing.
 		}
 		fmt.Println("[dependencies] \n - " + strings.Join(depNames, "\n - "))
 
-		cliLauncher := launch.CLILauncher{Instance: &instance, ServerMode: serverMode, NonInteractive: viper.GetBool("noColor")}
+		cliLauncher := launch.CLILauncher{Instance: &instance, ServerMode: serverMode, NonInteractive: viper.GetBool("nonInteractive")}
 		cliLauncher.Prepare()
 		launchManifest := cliLauncher.LaunchManifest
 
