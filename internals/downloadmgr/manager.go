@@ -78,6 +78,9 @@ func (i *HTTPItem) Download(ctx context.Context) error {
 		return err
 	}
 	fileRes, err := http.Get(i.URL)
+	if err != nil {
+		return err
+	}
 
 	if fileRes.StatusCode != 200 {
 		return ErrInvalidStatusCode
