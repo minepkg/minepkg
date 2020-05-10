@@ -105,6 +105,10 @@ func initRoot() {
 	viper.BindPFlag("noColor", rootCmd.PersistentFlags().Lookup("no-color"))
 	viper.BindPFlag("useSystemJava", rootCmd.PersistentFlags().Lookup("system-java"))
 	viper.BindPFlag("acceptMinecraftEula", rootCmd.PersistentFlags().Lookup("accept-minecraft-eula"))
+
+	if viper.GetString("apiUrl") != "" {
+		apiClient.APIUrl = viper.GetString("apiUrl")
+	}
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -134,6 +138,7 @@ func initConfig() {
 		viper.AddConfigPath(".")              // optionally look for config in the working directory
 	}
 
+	viper.SetEnvPrefix("minepkg")
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.

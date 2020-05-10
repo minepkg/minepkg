@@ -9,33 +9,23 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"os"
 )
 
 var (
 	// ErrorNotFound gets returned when a 404 occured
 	ErrorNotFound = errors.New("Resource not found")
 	// ErrorBadRequest gets returned when a 400 occured
-	ErrorBadRequest = errors.New("Bad Request")
-	baseAPI         = GetAPIUrl()
+	ErrorBadRequest      = errors.New("Bad Request")
+	DefaultMinepkgApiUrl = "https://test-api.minepkg.io/v1"
 )
-
-// GetAPIUrl retrurns the minepkg api url
-// can be overwritten by the env variable `MINEPKG_API`
-func GetAPIUrl() string {
-	overwrite := os.Getenv("MINEPKG_API")
-	if overwrite != "" {
-		return overwrite
-	}
-
-	return "https://test-api.minepkg.io/v1"
-}
 
 // MinepkgAPI contains credentials and methods to talk
 // to the minepkg api
 type MinepkgAPI struct {
 	// HTTP is the internal http client
-	HTTP   *http.Client
+	HTTP *http.Client
+	// BaseAPI is the API url used. defaults to `https://test-api.minepkg.io/v1`
+	APIUrl string
 	APIKey string
 	JWT    string
 	User   *User
@@ -44,7 +34,8 @@ type MinepkgAPI struct {
 // New returns a new MinepkgAPI instance
 func New() *MinepkgAPI {
 	return &MinepkgAPI{
-		HTTP: http.DefaultClient,
+		HTTP:   http.DefaultClient,
+		APIUrl: DefaultMinepkgApiUrl,
 	}
 }
 
@@ -52,13 +43,14 @@ func New() *MinepkgAPI {
 // supplied as a first paramter
 func NewWithClient(client *http.Client) *MinepkgAPI {
 	return &MinepkgAPI{
-		HTTP: client,
+		HTTP:   client,
+		APIUrl: DefaultMinepkgApiUrl,
 	}
 }
 
 // GetAccount gets the account information
 func (m *MinepkgAPI) GetAccount(ctx context.Context) (*User, error) {
-	res, err := m.get(ctx, baseAPI+"/account")
+	res, err := m.get(ctx, m.APIUrl+"/account")
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +69,7 @@ func (m *MinepkgAPI) GetAccount(ctx context.Context) (*User, error) {
 // GetForgeVersions gets all available forge versions
 // This currently does not work!
 func (m *MinepkgAPI) GetForgeVersions(ctx context.Context) (*ForgeVersionResponse, error) {
-	res, err := m.get(ctx, baseAPI+"/meta/forge-versions")
+	res, err := m.get(ctx, m.APIUrl+"/meta/forge-versions")
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +88,7 @@ func (m *MinepkgAPI) GetForgeVersions(ctx context.Context) (*ForgeVersionRespons
 // PutRelease uploads a new release
 func (m *MinepkgAPI) PutRelease(project string, version string, reader io.Reader) (*Release, error) {
 	// prepare request
-	req, err := http.NewRequest("PUT", baseAPI+"/projects/"+project+"@"+version, reader)
+	req, err := http.NewRequest("PUT", m.APIUrl+"/projects/"+project+"@"+version, reader)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +115,7 @@ func (m *MinepkgAPI) PutRelease(project string, version string, reader io.Reader
 
 // PostCrashReport posts a new crash report
 func (m *MinepkgAPI) PostCrashReport(ctx context.Context, report *CrashReport) error {
-	res, err := m.postJSON(context.TODO(), baseAPI+"/crash-reports", report)
+	res, err := m.postJSON(context.TODO(), m.APIUrl+"/crash-reports", report)
 	if err != nil {
 		return err
 	}
@@ -137,7 +129,7 @@ func (m *MinepkgAPI) PostCrashReport(ctx context.Context, report *CrashReport) e
 // PostProjectMedia uploads a new image to a project
 func (m *MinepkgAPI) PostProjectMedia(ctx context.Context, project string, content io.Reader) error {
 
-	req, err := http.NewRequest("POST", baseAPI+"/projects/"+project+"/media", content)
+	req, err := http.NewRequest("POST", m.APIUrl+"/projects/"+project+"/media", content)
 	// TODO: does not have to be png.. ?
 	req.Header.Add("Content-Type", "image/png")
 	req = req.WithContext(ctx)
