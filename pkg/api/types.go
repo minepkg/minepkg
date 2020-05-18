@@ -30,16 +30,38 @@ type Project struct {
 	} `json:"stats"`
 }
 
+// ReleaseMeta is metadata for a release. found in the `meta` field
+type ReleaseMeta struct {
+	IPFSHash  string `json:"ipfsHash,omitempty"`
+	Sha256    string `json:"sha256,omitempty"`
+	Published bool   `json:"published"`
+}
+
 // Release is a released version of a project
 type Release struct {
 	*manifest.Manifest
 	client *MinepkgAPI
-	Meta   struct {
-		IPFSHash  string `json:"ipfsHash"`
-		Sha256    string `json:"sha256"`
-		Published bool   `json:"published"`
-	} `json:"meta"`
-	Tests map[string]ReleaseTest `json:"tests"`
+	Meta   *ReleaseMeta           `json:"meta,omitempty"`
+	Tests  map[string]ReleaseTest `json:"tests,omitempty"`
+}
+
+// NewRelease returns a `Release` object. Only exists locally. Can be used to POST a new release to the API
+func (a *MinepkgAPI) NewRelease(m *manifest.Manifest) *Release {
+	return &Release{
+		Manifest: m,
+		client:   a,
+	}
+}
+
+// NewUnpublishedRelease returns a `Release` object that has `Meta.published` set to false.
+// should be used if you want to upload an artifact after publishing this release
+// Only exists locally. Can be used to POST a new release to the API
+func (a *MinepkgAPI) NewUnpublishedRelease(m *manifest.Manifest) *Release {
+	return &Release{
+		Manifest: m,
+		client:   a,
+		Meta:     &ReleaseMeta{Published: false},
+	}
 }
 
 // WorksWithManifest returns if this release was tested to the manifest requirements

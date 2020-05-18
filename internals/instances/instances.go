@@ -43,15 +43,17 @@ type Instance struct {
 	// GlobalDir is the directory containing everything required to run minecraft.
 	// this includes the libraries, assets, versions & mod cache folder
 	// it defaults to $HOME/.minepkg
-	GlobalDir         string
-	ModsDirectory     string
+	GlobalDir string
+	// Directory is the path of the instance. defaults to current working directory
+	Directory         string
 	Manifest          *manifest.Manifest
 	Lockfile          *manifest.Lockfile
 	MojangCredentials *mojang.AuthResponse
 	MinepkgAPI        *api.MinepkgAPI
 
-	launchCmd  string
-	javaBinary string
+	ModsDirectory string
+	launchCmd     string
+	javaBinary    string
 }
 
 // LaunchCmd returns the cmd used to launch minecraft (if started)
@@ -77,6 +79,31 @@ func (i *Instance) LibrariesDir() string {
 // InstancesDir returns the path to the instances directory
 func (i *Instance) InstancesDir() string {
 	return filepath.Join(i.GlobalDir, "instances")
+}
+
+// CacheDir returns the path to the cache directory. contains downloaded packages (mods & modpacks)
+func (i *Instance) CacheDir() string {
+	return filepath.Join(i.GlobalDir, "cache")
+}
+
+// McDir is the path where the actual minecraft instance is living. This is the `minecraft` subfolder
+func (i *Instance) McDir() string {
+	return filepath.Join(i.Directory, "minecraft")
+}
+
+// ModsDir is the path where the mods get linked to. This is the `minecraft/mods` subfolder
+func (i *Instance) ModsDir() string {
+	return filepath.Join(i.Directory, "minecraft/mods")
+}
+
+// ManifestPath is the path to the `minepkg.toml`. The file does not necessarily exist
+func (i *Instance) ManifestPath() string {
+	return filepath.Join(i.Directory, "minepkg.toml")
+}
+
+// LockfilePath is the path to the `minepkg-lock.toml`. The file does not necessarily exist
+func (i *Instance) LockfilePath() string {
+	return filepath.Join(i.Directory, "minepkg-lock.toml")
 }
 
 // Platform returns the type of loader required to start this instance
@@ -107,29 +134,31 @@ func (i *Instance) Desc() string {
 // DetectInstance tries to detect a minecraft instance
 // returning it, if succesfull
 func DetectInstance() (*Instance, error) {
-	entries, _ := ioutil.ReadDir("./")
-
 	dir, err := os.Getwd()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	modsDir := filepath.Join(dir, "mods")
 
-	isServer := false
-	isInstance := false
-	for _, entry := range entries {
-		switch entry.Name() {
-		case "server.properties":
-			isServer = true
-			isInstance = true
-			break
-		case "minepkg.toml":
-			isInstance = true
-			break
+	hasManifest := func() bool {
+		info, err := os.Stat("./minepkg.toml")
+		if err != nil {
+			return false
 		}
-	}
+		return info.IsDir() != true
+	}()
 
-	if isInstance == false {
+	// TODO: maybe add this to the minepkg toml.
+	// detection is not very meaningful as this file is here even if the server was only started once
+	// property should reflect if LAST launch was server
+	isServer := func() bool {
+		info, err := os.Stat("./minecraft/server.properties")
+		if err != nil {
+			return false
+		}
+		return info.IsDir() != true
+	}()
+
+	if hasManifest == false {
 		return nil, ErrNoInstance
 	}
 
@@ -137,9 +166,9 @@ func DetectInstance() (*Instance, error) {
 	globalDir := filepath.Join(home, ".minepkg")
 
 	instance := &Instance{
-		IsServer:      isServer,
-		ModsDirectory: modsDir,
-		GlobalDir:     globalDir,
+		IsServer:  isServer,
+		Directory: dir,
+		GlobalDir: globalDir,
 	}
 
 	// initialize manifest
@@ -157,7 +186,7 @@ func DetectInstance() (*Instance, error) {
 
 // initManifest sets the manifest file or creates one
 func (i *Instance) initManifest() error {
-	minepkg, err := ioutil.ReadFile("./minepkg.toml")
+	minepkg, err := ioutil.ReadFile(i.ManifestPath())
 	if err != nil {
 		if os.IsNotExist(err) != true {
 			return err
@@ -191,7 +220,7 @@ func (i *Instance) initManifest() error {
 
 // initLockfile sets the lockfile or creates one
 func (i *Instance) initLockfile() error {
-	rawLockfile, err := ioutil.ReadFile("./minepkg-lock.toml")
+	rawLockfile, err := ioutil.ReadFile(i.LockfilePath())
 	if err != nil {
 		// non existing lockfile is not bad
 		if os.IsNotExist(err) {
@@ -217,11 +246,11 @@ func (i *Instance) initLockfile() error {
 // SaveManifest saves the manifest to the current directory
 func (i *Instance) SaveManifest() error {
 	manifest := i.Manifest.Buffer()
-	return ioutil.WriteFile("minepkg.toml", manifest.Bytes(), os.ModePerm)
+	return ioutil.WriteFile(i.ManifestPath(), manifest.Bytes(), os.ModePerm)
 }
 
 // SaveLockfile saves the lockfile to the current directory
 func (i *Instance) SaveLockfile() error {
 	lockfile := i.Lockfile.Buffer()
-	return ioutil.WriteFile("minepkg-lock.toml", lockfile.Bytes(), os.ModePerm)
+	return ioutil.WriteFile(i.LockfilePath(), lockfile.Bytes(), os.ModePerm)
 }

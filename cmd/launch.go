@@ -81,27 +81,24 @@ Alternativly: Can be used in directories containing a minepkg.toml manifest to l
 				logger.Fail(err.Error())
 			}
 
+			instanceDir = filepath.Join(instance.InstancesDir(), release.Package.Name+"@"+release.Package.Platform)
+			os.MkdirAll(instanceDir, os.ModePerm)
+
 			// TODO: check if exists
 			// TODO: check error
 			instance = &instances.Instance{
 				GlobalDir:  globalDir,
 				Manifest:   release.Manifest,
 				MinepkgAPI: apiClient,
+				Directory:  instanceDir,
 			}
 
-			instanceDir = filepath.Join(instance.InstancesDir(), release.Package.Name+"@"+release.Package.Platform)
-			os.MkdirAll(instanceDir, os.ModePerm)
-			wd, err := os.Getwd()
+			// wd, err := os.Getwd()
 			if err != nil {
 				logger.Fail(err.Error())
 			}
-			// change dir to the instance
-			os.Chdir(instanceDir)
-			// back to current directory after minecraft stops
-			defer os.Chdir(wd)
 
-			instance.ModsDirectory = filepath.Join(instanceDir, "mods")
-
+			// overwrite some instance launch options with flags
 			instanceReqOverwrites(instance)
 
 			// TODO: only show when there actually is a update. ask user?
@@ -180,7 +177,7 @@ Alternativly: Can be used in directories containing a minepkg.toml manifest to l
 			}
 
 			if offlineMode == true {
-				settingsFile := filepath.Join(instanceDir, "server.properties")
+				settingsFile := filepath.Join(instance.McDir(), "server.properties")
 				logger.Log("Starting server in offline mode")
 				rawSettings, err := ioutil.ReadFile(settingsFile)
 

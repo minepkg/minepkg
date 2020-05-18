@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"runtime"
 
 	"github.com/fiws/minepkg/internals/instances"
@@ -94,7 +95,8 @@ func (c *CLILauncher) Launch(opts *instances.LaunchOptions) error {
 		ExitCode: 1,
 	}
 
-	if log, err := ioutil.ReadFile("./logs/latest.log"); err == nil {
+	logPath := filepath.Join(c.Instance.McDir(), "logs/latest.log")
+	if log, err := ioutil.ReadFile(logPath); err == nil {
 		report.Logs = string(log)
 	}
 

@@ -72,6 +72,9 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 		return err
 	}
 
+	// Set the process directory to our minecraft dir
+	cmd.Dir = i.McDir()
+
 	// TODO: detatch from process if wanted
 	if err := cmd.Run(); err != nil {
 		return err
@@ -93,7 +96,7 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	// HACK: don't use client config for server, so we
@@ -114,7 +117,6 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 		// do not allow non paid accounts to start minecraft
 		// (demo mode is not implemented)
 		// unpaid accounts should not have a profile
-		// TODO: check that ↑ !
 		if profile == nil {
 			return nil, ErrNoPaidAccount
 		}
@@ -283,6 +285,10 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	if opts.JoinServer != "" {
 		cmd.Env = append(os.Environ(), "MINEPKG_COMPANION_PLAY=server://"+opts.JoinServer)
 	}
+
+	// if opts.LaunchSave != "" {
+	// 	cmd.Env = append(os.Environ(), "MINEPKG_COMPANION_PLAY=local://"+opts.LaunchSave)
+	// }
 
 	if opts.Server == true {
 		cmd.Stdin = os.Stdin

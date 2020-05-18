@@ -3,8 +3,6 @@ package api
 import (
 	"context"
 	"net/url"
-
-	"github.com/fiws/minepkg/pkg/manifest"
 )
 
 // Project returns a Project object without fetching it from the API
@@ -89,8 +87,8 @@ func (m *MinepkgAPI) CreateProject(p *Project) (*Project, error) {
 }
 
 // CreateRelease will create a new release
-func (p *Project) CreateRelease(ctx context.Context, man *manifest.Manifest) (*Release, error) {
-	res, err := p.client.postJSON(ctx, p.client.APIUrl+"/releases", man)
+func (p *Project) CreateRelease(ctx context.Context, r *Release) (*Release, error) {
+	res, err := p.client.postJSON(ctx, p.client.APIUrl+"/releases", r)
 	if err != nil {
 		return nil, err
 	}

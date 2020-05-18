@@ -90,6 +90,7 @@ It will be deleted after testing.
 		instance.Manifest = release.Manifest
 		fmt.Println("Creating temporary modpack with " + release.Identifier())
 
+		// overwrite some instance launch options with flags
 		instanceReqOverwrites(&instance)
 
 		if instance.Manifest.Requirements.Minecraft == "*" {
