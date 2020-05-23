@@ -18,6 +18,7 @@ import (
 	"github.com/fiws/minepkg/internals/instances"
 	"github.com/fiws/minepkg/internals/minecraft"
 	"github.com/fiws/minepkg/pkg/api"
+	"github.com/fiws/minepkg/pkg/manifest"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -85,11 +86,22 @@ Alternativly: Can be used in directories containing a minepkg.toml manifest to l
 				logger.Fail("No release found")
 			}
 
-			instanceDir = filepath.Join(instance.InstancesDir(), release.Package.Name+"@"+release.Package.Platform)
+			instanceDir = filepath.Join(instance.InstancesDir(), release.Package.Name+"_"+release.Package.Platform)
 			os.MkdirAll(instanceDir, os.ModePerm)
 
 			// set instance details
-			instance.Manifest = release.Manifest
+			instance.Manifest = manifest.New()
+			// TODO: this feels like a hack
+			instance.Manifest.Package.Name = "_user-" + release.Package.Name
+			instance.Manifest.Package.Description = release.Package.Description
+			instance.Manifest.Package.Type = release.Package.Type
+			instance.Manifest.Package.Platform = release.Package.Platform
+
+			instance.Manifest.Requirements = release.Requirements
+
+			// set this instance as first dependency
+			instance.Manifest.Dependencies[release.Package.Name] = release.Package.Version
+
 			instance.MinepkgAPI = apiClient
 			instance.Directory = instanceDir
 
