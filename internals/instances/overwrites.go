@@ -10,9 +10,9 @@ import (
 // CopyOverwrites copies everything from the instance dir (with a few exceptions) to the minecraft dir
 // exceptions are: the minecraft folder itself and minepkg related files (manifest & lockfile)
 func (i *Instance) CopyOverwrites() error {
-	err := filepath.Walk(i.Directory, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(i.Directory, func(fullPath string, info os.FileInfo, err error) error {
 		// get a relative path
-		path, err = filepath.Rel(i.Directory, path)
+		path, err := filepath.Rel(i.Directory, fullPath)
 		if err != nil {
 			return err
 		}
@@ -48,7 +48,7 @@ func (i *Instance) CopyOverwrites() error {
 		}
 
 		// not a directory – copy file
-		src, err := os.Open(path)
+		src, err := os.Open(fullPath)
 		if err != nil {
 			return err
 		}

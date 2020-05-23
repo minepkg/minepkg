@@ -17,7 +17,7 @@ var removeCmd = &cobra.Command{
 	Short:   "removes specified package from the manifest",
 	Aliases: []string{"delete", "un", "uninstall", "rm"},
 	Run: func(cmd *cobra.Command, args []string) {
-		instance, err := instances.DetectInstance()
+		instance, err := instances.NewInstanceFromWd()
 		instance.MinepkgAPI = apiClient
 		if err != nil {
 			logger.Fail("Instance problem: " + err.Error())

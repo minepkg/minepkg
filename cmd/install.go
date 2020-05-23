@@ -18,7 +18,7 @@ var installCmd = &cobra.Command{
 	Long:    `Adds package(s) to your local modpack or mod. Launch the modpack with minepkg launch`,
 	Aliases: []string{"isntall", "i", "add"},
 	Run: func(cmd *cobra.Command, args []string) {
-		instance, err := instances.DetectInstance()
+		instance, err := instances.NewInstanceFromWd()
 		if err != nil {
 			logger.Fail("Instance problem: " + err.Error())
 		}

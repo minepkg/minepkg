@@ -131,9 +131,23 @@ func (i *Instance) Desc() string {
 	return strings.Join(build, "")
 }
 
-// DetectInstance tries to detect a minecraft instance
+// NewEmptyInstance returns a new instance with the default settings
+// panics if user homedir can not be determined
+func NewEmptyInstance() *Instance {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+	globalDir := filepath.Join(home, ".minepkg")
+
+	return &Instance{
+		GlobalDir: globalDir,
+	}
+}
+
+// NewInstanceFromWd tries to detect a minecraft instance in the current working directory
 // returning it, if succesfull
-func DetectInstance() (*Instance, error) {
+func NewInstanceFromWd() (*Instance, error) {
 	dir, err := os.Getwd()
 	if err != nil {
 		return nil, err

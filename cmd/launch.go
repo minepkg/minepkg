@@ -62,7 +62,7 @@ Alternativly: Can be used in directories containing a minepkg.toml manifest to l
 		if len(args) == 0 {
 			var err error
 			wd, _ := os.Getwd()
-			instance, err = instances.DetectInstance()
+			instance, err = instances.NewInstanceFromWd()
 			instanceDir = wd
 
 			if err != nil {
@@ -71,6 +71,7 @@ Alternativly: Can be used in directories containing a minepkg.toml manifest to l
 			instance.MinepkgAPI = apiClient
 			instanceReqOverwrites(instance)
 		} else {
+			instance = instances.NewEmptyInstance()
 			reqs := &api.RequirementQuery{
 				Plattform: "fabric", // TODO: not static!
 				Minecraft: "*",
@@ -80,23 +81,17 @@ Alternativly: Can be used in directories containing a minepkg.toml manifest to l
 			if err != nil {
 				logger.Fail(err.Error())
 			}
+			if release == nil {
+				logger.Fail("No release found")
+			}
 
 			instanceDir = filepath.Join(instance.InstancesDir(), release.Package.Name+"@"+release.Package.Platform)
 			os.MkdirAll(instanceDir, os.ModePerm)
 
-			// TODO: check if exists
-			// TODO: check error
-			instance = &instances.Instance{
-				GlobalDir:  globalDir,
-				Manifest:   release.Manifest,
-				MinepkgAPI: apiClient,
-				Directory:  instanceDir,
-			}
-
-			// wd, err := os.Getwd()
-			if err != nil {
-				logger.Fail(err.Error())
-			}
+			// set instance details
+			instance.Manifest = release.Manifest
+			instance.MinepkgAPI = apiClient
+			instance.Directory = instanceDir
 
 			// overwrite some instance launch options with flags
 			instanceReqOverwrites(instance)
@@ -142,7 +137,11 @@ Alternativly: Can be used in directories containing a minepkg.toml manifest to l
 			instance.MojangCredentials = creds
 		}
 
-		cliLauncher := launch.CLILauncher{Instance: instance, ServerMode: serverMode, NonInteractive: viper.GetBool("nonInteractive")}
+		cliLauncher := launch.CLILauncher{
+			Instance:       instance,
+			ServerMode:     serverMode,
+			NonInteractive: viper.GetBool("nonInteractive"),
+		}
 
 		if err := cliLauncher.Prepare(); err != nil {
 			logger.Fail(err.Error())
