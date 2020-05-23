@@ -246,6 +246,9 @@ var publishCmd = &cobra.Command{
 		if release == nil {
 			logger.Info("Creating release")
 			r := apiClient.NewUnpublishedRelease(&m)
+			if artifact == "" {
+				r = apiClient.NewRelease(&m)
+			}
 			release, err = project.CreateRelease(context.TODO(), r)
 			if err != nil {
 				if merr, ok := err.(*api.MinepkgError); ok {
@@ -258,9 +261,12 @@ var publishCmd = &cobra.Command{
 		}
 
 		// upload tha file
-		file, err := os.Open(artifact)
-		if release, err = release.Upload(file); err != nil {
-			logger.Fail(err.Error())
+		if artifact != "" {
+			logger.Info("Uploading artifact")
+			file, err := os.Open(artifact)
+			if release, err = release.Upload(file); err != nil {
+				logger.Fail(err.Error())
+			}
 		}
 
 		logger.Info(" ✓ Released " + release.Package.Version)
@@ -398,7 +404,8 @@ func buildModpackZIP() string {
 	archive := zip.NewWriter(tmpZip)
 	fileCount := 0
 
-	c, err := addToZip(archive, "./config")
+	// TODO: custom ignore list
+	c, err := addToZip(archive, "./", defaultFilter)
 	if err != nil {
 		log.Println(err)
 	}
@@ -469,6 +476,18 @@ func savesFilter(path string) bool {
 			if strings.HasPrefix(parts[2], disallowed) {
 				return false
 			}
+		}
+	}
+
+	return true
+}
+
+func defaultFilter(path string) bool {
+	no := []string{"minecraft", ".git", "minepkg.toml", "minepkg-lock.toml", "."}
+
+	for _, disallowed := range no {
+		if strings.HasPrefix(path, disallowed) {
+			return false
 		}
 	}
 
