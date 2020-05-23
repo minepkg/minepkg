@@ -70,7 +70,7 @@ func (m *MinepkgAPI) GetProject(ctx context.Context, name string) (*Project, err
 
 // CreateProject creates a new project
 func (m *MinepkgAPI) CreateProject(p *Project) (*Project, error) {
-	res, err := m.postJSON(context.TODO(), p.client.APIUrl+"/projects", p)
+	res, err := m.postJSON(context.TODO(), m.APIUrl+"/projects", p)
 	if err != nil {
 		return nil, err
 	}

@@ -21,13 +21,16 @@ type User struct {
 // Project is a project … realy
 type Project struct {
 	client      *MinepkgAPI
-	Name        string `json:"name"`
-	Type        string `json:"type"`
-	Description string `json:"description,omitempty"`
-	Readme      string `json:"readme,omitempty"`
-	Stats       struct {
-		TotalDownloads uint32 `json:"totalDownloads"`
-	} `json:"stats"`
+	Name        string        `json:"name"`
+	Type        string        `json:"type"`
+	Description string        `json:"description,omitempty"`
+	Readme      string        `json:"readme,omitempty"`
+	Stats       *ProjectStats `json:"stats,omitempty"`
+}
+
+// ProjectStats contains statistics for a project
+type ProjectStats struct {
+	TotalDownloads uint32 `json:"totalDownloads"`
 }
 
 // ReleaseMeta is metadata for a release. found in the `meta` field

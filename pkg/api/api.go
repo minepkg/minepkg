@@ -15,8 +15,9 @@ var (
 	// ErrorNotFound gets returned when a 404 occured
 	ErrorNotFound = errors.New("Resource not found")
 	// ErrorBadRequest gets returned when a 400 occured
-	ErrorBadRequest      = errors.New("Bad Request")
-	DefaultMinepkgApiUrl = "https://test-api.minepkg.io/v1"
+	ErrorBadRequest = errors.New("Bad Request")
+	// DefaultURL is "https://test-api.minepkg.io/v1"
+	DefaultURL = "https://test-api.minepkg.io/v1"
 )
 
 // MinepkgAPI contains credentials and methods to talk
@@ -35,7 +36,7 @@ type MinepkgAPI struct {
 func New() *MinepkgAPI {
 	return &MinepkgAPI{
 		HTTP:   http.DefaultClient,
-		APIUrl: DefaultMinepkgApiUrl,
+		APIUrl: DefaultURL,
 	}
 }
 
@@ -44,7 +45,7 @@ func New() *MinepkgAPI {
 func NewWithClient(client *http.Client) *MinepkgAPI {
 	return &MinepkgAPI{
 		HTTP:   client,
-		APIUrl: DefaultMinepkgApiUrl,
+		APIUrl: DefaultURL,
 	}
 }
 
