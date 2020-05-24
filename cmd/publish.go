@@ -235,7 +235,6 @@ var publishCmd = &cobra.Command{
 			artifact = buildModpackZIP()
 		}
 
-		logger.Info("Using " + artifact)
 		tasks.Step("☁", "Uploading package")
 
 		if dry == true {
@@ -262,11 +261,13 @@ var publishCmd = &cobra.Command{
 
 		// upload tha file
 		if artifact != "" {
-			logger.Info("Uploading artifact")
+			logger.Info("Uploading artifact (" + artifact + ")")
 			file, err := os.Open(artifact)
 			if release, err = release.Upload(file); err != nil {
 				logger.Fail(err.Error())
 			}
+		} else if release.Meta.Published == false {
+			logger.Fail("This release expects an artifact to upload but we have nothing to upload.\n Contact support to cleanup this package")
 		}
 
 		logger.Info(" ✓ Released " + release.Package.Version)
