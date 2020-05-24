@@ -105,7 +105,9 @@ func (i *Instance) LinkDependencies() error {
 
 		// extract modpack content and stuff, don't symlink them into the mods folder
 		if dep.Type == manifest.DependencyLockTypeModpack {
-			i.handleModpackDependencyCopy(dep)
+			if err := i.handleModpackDependencyCopy(dep); err != nil {
+				return err
+			}
 			continue
 		}
 

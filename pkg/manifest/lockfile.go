@@ -86,9 +86,9 @@ type DependencyLock struct {
 
 // FileExt returns ".jar" for mods and ".zip" for modpacks
 func (d *DependencyLock) FileExt() string {
-	ending := "jar"
+	ending := ".jar"
 	if d.Type == DependencyLockTypeModpack {
-		ending = "zip"
+		ending = ".zip"
 	}
 	return ending
 }
