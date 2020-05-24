@@ -51,9 +51,8 @@ type Instance struct {
 	MojangCredentials *mojang.AuthResponse
 	MinepkgAPI        *api.MinepkgAPI
 
-	ModsDirectory string
-	launchCmd     string
-	javaBinary    string
+	launchCmd  string
+	javaBinary string
 }
 
 // LaunchCmd returns the cmd used to launch minecraft (if started)

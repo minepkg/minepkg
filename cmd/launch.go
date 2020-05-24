@@ -90,17 +90,7 @@ Alternativly: Can be used in directories containing a minepkg.toml manifest to l
 			os.MkdirAll(instanceDir, os.ModePerm)
 
 			// set instance details
-			instance.Manifest = manifest.New()
-			// TODO: this feels like a hack
-			instance.Manifest.Package.Name = "_user-" + release.Package.Name
-			instance.Manifest.Package.Description = release.Package.Description
-			instance.Manifest.Package.Type = release.Package.Type
-			instance.Manifest.Package.Platform = release.Package.Platform
-
-			instance.Manifest.Requirements = release.Requirements
-
-			// set this instance as first dependency
-			instance.Manifest.Dependencies[release.Package.Name] = release.Package.Version
+			instance.Manifest = manifest.NewInstanceLike(release.Manifest)
 
 			instance.MinepkgAPI = apiClient
 			instance.Directory = instanceDir

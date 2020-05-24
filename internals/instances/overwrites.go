@@ -29,7 +29,7 @@ func (i *Instance) CopyOverwrites() error {
 			// skip any hidden dirs or files like ".git"
 			return filepath.SkipDir
 
-		case path == "minepkg.toml" || path == "minepkg-lockfile.toml":
+		case path == "minepkg.toml" || path == "minepkg-lock.toml":
 			// do not skip the root directory, but skip those files
 			return nil
 		}

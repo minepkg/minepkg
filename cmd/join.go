@@ -70,7 +70,7 @@ var joinCmd = &cobra.Command{
 		instanceDir := filepath.Join(instance.InstancesDir(), "server."+ip+"."+resolvedModpack.Package.Name+"."+resolvedModpack.Package.Platform)
 		os.MkdirAll(instanceDir, os.ModePerm)
 
-		instance.ModsDirectory = filepath.Join(instanceDir, "mods")
+		instance.Directory = instanceDir
 		wd, err := os.Getwd()
 		if err != nil {
 			logger.Fail(err.Error())
