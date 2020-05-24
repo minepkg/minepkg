@@ -134,10 +134,16 @@ func initConfig() {
 		viper.AddConfigPath(".")              // optionally look for config in the working directory
 	}
 
+	viper.SetEnvPrefix("MINEPKG")
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	}
+
+	if viper.GetString("apiUrl") != "" {
+		logger.Warn("NOT using default minepkg API URL: " + viper.GetString("apiUrl"))
+		apiClient.APIUrl = viper.GetString("apiUrl")
 	}
 }

@@ -34,7 +34,7 @@ func (r *Release) DownloadURL() string {
 	if r.Meta.Sha256 == "" {
 		return ""
 	}
-	return fmt.Sprintf("%s/releases/%s/%s/download", baseAPI, r.Package.Platform, r.Identifier())
+	return fmt.Sprintf("%s/releases/%s/%s/download", r.client.APIUrl, r.Package.Platform, r.Identifier())
 }
 
 // LatestTestedMinecraftVersion returns the last (highest) tested Minecraft version for this release
@@ -57,7 +57,7 @@ func (r *Release) Upload(reader io.Reader) (*Release, error) {
 	// prepare request
 	client := r.client
 
-	url := fmt.Sprintf("%s/releases/%s/%s/upload", baseAPI, r.Package.Platform, r.Identifier())
+	url := fmt.Sprintf("%s/releases/%s/%s/upload", r.client.APIUrl, r.Package.Platform, r.Identifier())
 	req, err := http.NewRequest("POST", url, reader)
 	if err != nil {
 		return nil, err
@@ -87,7 +87,7 @@ func (r *Release) Upload(reader io.Reader) (*Release, error) {
 // GetRelease gets a single release from a project
 // `identifier` is a project@version string
 func (m *MinepkgAPI) GetRelease(ctx context.Context, platform string, identifier string) (*Release, error) {
-	res, err := m.get(ctx, baseAPI+"/releases/"+platform+"/"+identifier)
+	res, err := m.get(ctx, m.APIUrl+"/releases/"+platform+"/"+identifier)
 	if err != nil {
 		return nil, err
 	}

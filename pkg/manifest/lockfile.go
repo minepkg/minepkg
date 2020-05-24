@@ -14,6 +14,11 @@ const LockfileVersion = 1
 var (
 	// ErrDependencyConflicts is returned when trying to add a dependency that is already present
 	ErrDependencyConflicts = errors.New("A dependency with that name is already present")
+
+	// DependencyLockTypeMod describes a mod dependency
+	DependencyLockTypeMod = "mod"
+	// DependencyLockTypeModpack describes a modpack dependency
+	DependencyLockTypeModpack = "modpack"
 )
 
 // PlatformLock describes a quierable platform (fabric, forge)
@@ -73,14 +78,24 @@ func (f *ForgeLock) MinecraftVersion() string { return f.Minecraft }
 type DependencyLock struct {
 	Project  string `toml:"project" json:"project"`
 	Version  string `toml:"version" json:"version"`
+	Type     string `toml:"type" json:"type"`
 	IPFSHash string `toml:"ipfsHash" json:"ipfsHash"`
 	Sha256   string `toml:"Sha256" json:"Sha256"`
 	URL      string `toml:"url" json:"url"`
 }
 
+// FileExt returns ".jar" for mods and ".zip" for modpacks
+func (d *DependencyLock) FileExt() string {
+	ending := ".jar"
+	if d.Type == DependencyLockTypeModpack {
+		ending = ".zip"
+	}
+	return ending
+}
+
 // Filename returns the dependency in the "project@version.jar" format
 func (d *DependencyLock) Filename() string {
-	return d.Project + "@" + d.Version + ".jar"
+	return d.Sha256 + "." + d.FileExt()
 }
 
 // MinecraftVersion returns the Minecraft version

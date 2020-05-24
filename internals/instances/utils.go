@@ -2,6 +2,7 @@ package instances
 
 import (
 	"archive/zip"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -22,6 +23,10 @@ func extractNative(jar string, target string) error {
 		// skip META-INF dir
 		if strings.HasPrefix(f.Name, "META-INF") {
 			continue
+		}
+
+		if err := sanitizeExtractPath(f.Name, target); err != nil {
+			return err
 		}
 
 		rc, err := f.Open()
@@ -105,5 +110,17 @@ func (i *Instance) ensureAssets(man *minecraft.LaunchManifest) error {
 		}
 	}
 
+	return nil
+}
+
+// stolen from https://github.com/mholt/archiver/blob/e4ef56d48eb029648b0e895bb0b6a393ef0829c3/archiver.go#L110-L119
+func sanitizeExtractPath(filePath string, destination string) error {
+	// to avoid zip slip (writing outside of the destination), we resolve
+	// the target path, and make sure it's nested in the intended
+	// destination, or bail otherwise.
+	destpath := filepath.Join(destination, filePath)
+	if !strings.HasPrefix(destpath, destination) {
+		return fmt.Errorf("%s: illegal file path", filePath)
+	}
 	return nil
 }

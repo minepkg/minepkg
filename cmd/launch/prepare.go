@@ -112,8 +112,18 @@ func (c *CLILauncher) Prepare() error {
 		return err
 	}
 
+	s.Update("Copying local saves (if any)")
+	if err := instance.CopyLocalSaves(); err != nil {
+		return err
+	}
+
 	s.Update("Downloading dependencies")
 	if err := instance.EnsureDependencies(context.TODO()); err != nil {
+		return err
+	}
+
+	s.Update("Copying overwrites")
+	if err := instance.CopyOverwrites(); err != nil {
 		return err
 	}
 

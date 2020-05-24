@@ -18,6 +18,7 @@ import (
 	"github.com/fiws/minepkg/internals/instances"
 	"github.com/fiws/minepkg/internals/minecraft"
 	"github.com/fiws/minepkg/pkg/api"
+	"github.com/fiws/minepkg/pkg/manifest"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -62,7 +63,7 @@ Alternativly: Can be used in directories containing a minepkg.toml manifest to l
 		if len(args) == 0 {
 			var err error
 			wd, _ := os.Getwd()
-			instance, err = instances.DetectInstance()
+			instance, err = instances.NewInstanceFromWd()
 			instanceDir = wd
 
 			if err != nil {
@@ -71,6 +72,7 @@ Alternativly: Can be used in directories containing a minepkg.toml manifest to l
 			instance.MinepkgAPI = apiClient
 			instanceReqOverwrites(instance)
 		} else {
+			instance = instances.NewEmptyInstance()
 			reqs := &api.RequirementQuery{
 				Plattform: "fabric", // TODO: not static!
 				Minecraft: "*",
@@ -80,28 +82,20 @@ Alternativly: Can be used in directories containing a minepkg.toml manifest to l
 			if err != nil {
 				logger.Fail(err.Error())
 			}
-
-			// TODO: check if exists
-			// TODO: check error
-			instance = &instances.Instance{
-				GlobalDir:  globalDir,
-				Manifest:   release.Manifest,
-				MinepkgAPI: apiClient,
+			if release == nil {
+				logger.Fail("No release found")
 			}
 
-			instanceDir = filepath.Join(instance.InstancesDir(), release.Package.Name+"@"+release.Package.Platform)
+			instanceDir = filepath.Join(instance.InstancesDir(), release.Package.Name+"_"+release.Package.Platform)
 			os.MkdirAll(instanceDir, os.ModePerm)
-			wd, err := os.Getwd()
-			if err != nil {
-				logger.Fail(err.Error())
-			}
-			// change dir to the instance
-			os.Chdir(instanceDir)
-			// back to current directory after minecraft stops
-			defer os.Chdir(wd)
 
-			instance.ModsDirectory = filepath.Join(instanceDir, "mods")
+			// set instance details
+			instance.Manifest = manifest.NewInstanceLike(release.Manifest)
 
+			instance.MinepkgAPI = apiClient
+			instance.Directory = instanceDir
+
+			// overwrite some instance launch options with flags
 			instanceReqOverwrites(instance)
 
 			// TODO: only show when there actually is a update. ask user?
@@ -145,7 +139,11 @@ Alternativly: Can be used in directories containing a minepkg.toml manifest to l
 			instance.MojangCredentials = creds
 		}
 
-		cliLauncher := launch.CLILauncher{Instance: instance, ServerMode: serverMode, NonInteractive: viper.GetBool("nonInteractive")}
+		cliLauncher := launch.CLILauncher{
+			Instance:       instance,
+			ServerMode:     serverMode,
+			NonInteractive: viper.GetBool("nonInteractive"),
+		}
 
 		if err := cliLauncher.Prepare(); err != nil {
 			logger.Fail(err.Error())
@@ -180,7 +178,7 @@ Alternativly: Can be used in directories containing a minepkg.toml manifest to l
 			}
 
 			if offlineMode == true {
-				settingsFile := filepath.Join(instanceDir, "server.properties")
+				settingsFile := filepath.Join(instance.McDir(), "server.properties")
 				logger.Log("Starting server in offline mode")
 				rawSettings, err := ioutil.ReadFile(settingsFile)
 

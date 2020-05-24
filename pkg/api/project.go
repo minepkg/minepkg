@@ -3,8 +3,6 @@ package api
 import (
 	"context"
 	"net/url"
-
-	"github.com/fiws/minepkg/pkg/manifest"
 )
 
 // Project returns a Project object without fetching it from the API
@@ -25,7 +23,7 @@ type GetProjectsQuery struct {
 // GetProjects gets all projects matching a query
 func (m *MinepkgAPI) GetProjects(ctx context.Context, opts *GetProjectsQuery) ([]Project, error) {
 
-	uri, err := url.Parse(baseAPI + "/projects")
+	uri, err := url.Parse(m.APIUrl + "/projects")
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +52,7 @@ func (m *MinepkgAPI) GetProjects(ctx context.Context, opts *GetProjectsQuery) ([
 
 // GetProject gets a single project
 func (m *MinepkgAPI) GetProject(ctx context.Context, name string) (*Project, error) {
-	res, err := m.get(ctx, baseAPI+"/projects/"+name)
+	res, err := m.get(ctx, m.APIUrl+"/projects/"+name)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +70,7 @@ func (m *MinepkgAPI) GetProject(ctx context.Context, name string) (*Project, err
 
 // CreateProject creates a new project
 func (m *MinepkgAPI) CreateProject(p *Project) (*Project, error) {
-	res, err := m.postJSON(context.TODO(), baseAPI+"/projects", p)
+	res, err := m.postJSON(context.TODO(), m.APIUrl+"/projects", p)
 	if err != nil {
 		return nil, err
 	}
@@ -89,8 +87,8 @@ func (m *MinepkgAPI) CreateProject(p *Project) (*Project, error) {
 }
 
 // CreateRelease will create a new release
-func (p *Project) CreateRelease(ctx context.Context, man *manifest.Manifest) (*Release, error) {
-	res, err := p.client.postJSON(ctx, baseAPI+"/releases", man)
+func (p *Project) CreateRelease(ctx context.Context, r *Release) (*Release, error) {
+	res, err := p.client.postJSON(ctx, p.client.APIUrl+"/releases", r)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +109,7 @@ func (p *Project) GetReleases(ctx context.Context, platform string) ([]*Release,
 	if platform != "" {
 		platformParam = "?platform=" + platform
 	}
-	res, err := p.client.get(ctx, baseAPI+"/projects/"+p.Name+"/releases"+platformParam)
+	res, err := p.client.get(ctx, p.client.APIUrl+"/projects/"+p.Name+"/releases"+platformParam)
 	if err != nil {
 		return nil, err
 	}

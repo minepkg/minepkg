@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/fiws/minepkg/internals/instances"
 	"github.com/fiws/minepkg/pkg/api"
@@ -47,7 +49,8 @@ func (c *CLILauncher) Launch(opts *instances.LaunchOptions) error {
 	}
 
 	// exit code was not 130 or 0, we output error info and submit a crash report
-	platform := c.Instance.Manifest.PlatformString()
+	man := c.Instance.Manifest
+	platform := man.PlatformString()
 
 	fmt.Println("--------------------")
 	fmt.Println("Minecraft crashed :(")
@@ -56,11 +59,11 @@ func (c *CLILauncher) Launch(opts *instances.LaunchOptions) error {
 	fmt.Println("  OS: " + runtime.GOOS)
 	fmt.Printf("  CPUs: %d\n", runtime.NumCPU())
 	fmt.Println("[instance]")
-	fmt.Printf("  package: %s@%s\n", c.Instance.Manifest.Package.Name, c.Instance.Manifest.Package.Version)
-	fmt.Println("  platform: " + c.Instance.Manifest.PlatformString())
-	fmt.Println("  minecraft: " + c.Instance.Manifest.Requirements.Minecraft)
+	fmt.Printf("  package: %s@%s\n", man.Package.Name, man.Package.Version)
+	fmt.Println("  platform: " + man.PlatformString())
+	fmt.Println("  minecraft: " + man.Requirements.Minecraft)
 	fmt.Println("[launch]")
-	fmt.Println("  Java Path: " + opts.Java)
+	fmt.Println("  java path: " + opts.Java)
 	fmt.Println("  minecraft version: " + c.Instance.Lockfile.MinecraftVersion())
 	fmt.Println("  launch manifest: " + c.Instance.Lockfile.McManifestName())
 	if platform == "fabric" {
@@ -70,8 +73,25 @@ func (c *CLILauncher) Launch(opts *instances.LaunchOptions) error {
 			c.Instance.Lockfile.Fabric.Mapping,
 		)
 	}
+	fmt.Printf("  exit code: %d\n", cmd.ProcessState.ExitCode())
 
 	fmt.Println("\nSubmitting crash report to minepkg.io …")
+
+	packageName := man.Package.Name
+	if strings.HasPrefix(packageName, "_instance") {
+		// looks like an unmodified modpack instance. use that as name
+		// TODO: check is not too percise
+		if len(man.Dependencies) == 1 {
+			// this basically is man.Depdendencies.GetFirstKey()
+			// because Dependencies only has one key at this point
+			for key := range man.Dependencies {
+				packageName = key
+			}
+		} else {
+			fmt.Println("Customized modpacks do not support crash reports for now. Skipping")
+			return err
+		}
+	}
 
 	mods := make(map[string]string)
 
@@ -79,22 +99,28 @@ func (c *CLILauncher) Launch(opts *instances.LaunchOptions) error {
 		mods[dep.Project] = dep.Version
 	}
 
+	// map darwin to macos
+	osName := runtime.GOOS
+	if osName == "darwin" {
+		osName = "macos"
+	}
+
 	report := api.CrashReport{
 		Package: api.CrashReportPackage{
-			Platform: c.Instance.Manifest.Package.Platform,
-			Name:     c.Instance.Manifest.Package.Name,
-			Version:  c.Instance.Manifest.Package.Version,
+			Platform: man.Package.Platform,
+			Name:     packageName,
+			Version:  man.Package.Version,
 		},
 		Server:           c.ServerMode,
 		MinecraftVersion: c.Instance.Lockfile.MinecraftVersion(),
 		Mods:             mods,
-		OS:               runtime.GOOS,
+		OS:               osName,
 		Arch:             runtime.GOARCH,
-		// TODO: this could be a lie
-		ExitCode: 1,
+		ExitCode:         cmd.ProcessState.ExitCode(),
 	}
 
-	if log, err := ioutil.ReadFile("./logs/latest.log"); err == nil {
+	logPath := filepath.Join(c.Instance.McDir(), "logs/latest.log")
+	if log, err := ioutil.ReadFile(logPath); err == nil {
 		report.Logs = string(log)
 	}
 

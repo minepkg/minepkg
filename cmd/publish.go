@@ -53,11 +53,6 @@ var publishCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 
-		// overwrite api
-		// TODO: don't do that here
-		if customAPI := os.Getenv("MINEPKG_API"); customAPI != "" {
-			apiURL = customAPI
-		}
 		tasks := logger.NewTask(3)
 		tasks.Step("📚", "Preparing Publish")
 
@@ -169,17 +164,22 @@ var publishCmd = &cobra.Command{
 		}
 
 		// just publish the manifest for modpacks
-		if m.Package.Type == manifest.TypeModpack {
-			logger.Info("Creating release")
-			release, err = project.CreateRelease(context.TODO(), &m)
-			if err != nil {
-				logger.Fail(err.Error())
-			}
-			logger.Info(" ✓ Released " + release.Package.Version)
-			return
-		}
+		// TODO: check if anything needs publishing
+		// if m.Package.Type == manifest.TypeModpack {
+		// 	logger.Info("Creating release")
+		// 	release, err = project.CreateRelease(context.TODO(), &m)
+		// 	if err != nil {
+		// 		logger.Fail(err.Error())
+		// 	}
+		// 	logger.Info(" ✓ Released " + release.Package.Version)
+		// 	return
+		// }
 
 		tasks.Step("🏗", "Building")
+
+		if m.Hooks.Build == "" && m.Package.Type == manifest.TypeModpack {
+			skipBuild = true
+		}
 
 		if skipBuild != true {
 			buildScript := "gradle --build-cache build"
@@ -222,11 +222,19 @@ var publishCmd = &cobra.Command{
 			logger.Info("Skipped build")
 		}
 
-		// find se jar
-		tasks.Log("Finding jar file")
-		jar := findJar()
+		var artifact string
 
-		logger.Info("Using " + jar)
+		if m.Package.Type == manifest.TypeMod {
+			// find se jar
+			tasks.Log("Finding jar file")
+			artifact = findJar()
+		} else {
+			// find all modpack related files
+			tasks.Log("Archiving modpack file")
+			// TODO: can fail, better logging, allow modpacks without any files
+			artifact = buildModpackZIP()
+		}
+
 		tasks.Step("☁", "Uploading package")
 
 		if dry == true {
@@ -236,7 +244,11 @@ var publishCmd = &cobra.Command{
 
 		if release == nil {
 			logger.Info("Creating release")
-			release, err = project.CreateRelease(context.TODO(), &m)
+			r := apiClient.NewUnpublishedRelease(&m)
+			if artifact == "" {
+				r = apiClient.NewRelease(&m)
+			}
+			release, err = project.CreateRelease(context.TODO(), r)
 			if err != nil {
 				if merr, ok := err.(*api.MinepkgError); ok {
 					errorMsg := fmt.Sprintf("[%d] Api error: %s", merr.StatusCode, merr.Message)
@@ -248,9 +260,14 @@ var publishCmd = &cobra.Command{
 		}
 
 		// upload tha file
-		file, err := os.Open(jar)
-		if release, err = release.Upload(file); err != nil {
-			logger.Fail(err.Error())
+		if artifact != "" {
+			logger.Info("Uploading artifact (" + artifact + ")")
+			file, err := os.Open(artifact)
+			if release, err = release.Upload(file); err != nil {
+				logger.Fail(err.Error())
+			}
+		} else if release.Meta.Published == false {
+			logger.Fail("This release expects an artifact to upload but we have nothing to upload.\n Contact support to cleanup this package")
 		}
 
 		logger.Info(" ✓ Released " + release.Package.Version)
@@ -378,6 +395,104 @@ func getReadme() (string, error) {
 	}
 	return string(file), nil
 
+}
+
+func buildModpackZIP() string {
+	tmpZip, err := ioutil.TempFile("", "modpack-*.zip")
+	if err != nil {
+		panic(err)
+	}
+	archive := zip.NewWriter(tmpZip)
+	fileCount := 0
+
+	// TODO: custom ignore list
+	c, err := addToZip(archive, "./", defaultFilter)
+	if err != nil {
+		log.Println(err)
+	}
+	fileCount += c
+
+	c, err = addToZip(archive, "./saves", savesFilter)
+	if err != nil {
+		log.Println(err)
+	}
+	fileCount += c
+
+	if fileCount == 0 {
+		os.Remove(tmpZip.Name())
+		return ""
+	}
+
+	archive.Close()
+
+	return tmpZip.Name()
+}
+
+type filter func(string) bool
+
+func addToZip(archive *zip.Writer, path string, filter ...filter) (int, error) {
+	addCount := 0
+	filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		source, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		// skip filtered paths
+		for _, f := range filter {
+			if f(path) == false {
+				return nil
+			}
+		}
+
+		target, err := archive.Create(path)
+		if err != nil {
+			return err
+		}
+		_, err = io.Copy(target, source)
+		if err != nil {
+			return err
+		}
+		addCount++
+		return nil
+	})
+	return addCount, nil
+}
+
+func savesFilter(path string) bool {
+	no := []string{"advancements", "playerdata", "stats", "session.lock"}
+	parts := strings.Split(path, string(filepath.Separator))
+
+	if len(parts) > 1 {
+		for _, disallowed := range no {
+			// check the third part for filtered paths (eg. find stats in `saves/save-name/stats`)
+			if strings.HasPrefix(parts[2], disallowed) {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+func defaultFilter(path string) bool {
+	no := []string{"minecraft", ".git", "minepkg.toml", "minepkg-lock.toml", "."}
+
+	for _, disallowed := range no {
+		if strings.HasPrefix(path, disallowed) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func findJar() string {

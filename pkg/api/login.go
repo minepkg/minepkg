@@ -33,8 +33,8 @@ func (m *MinepkgAPI) OAuthLogin(c *OAuthLoginConfig) *oauth2.Token {
 		ClientSecret: "",
 		Scopes:       []string{"offline", "full_access"},
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  GetAPIUrl() + "/oauth2/auth",
-			TokenURL: GetAPIUrl() + "/oauth2/token",
+			AuthURL:  m.APIUrl + "/oauth2/auth",
+			TokenURL: m.APIUrl + "/oauth2/token",
 		},
 		// locally started server
 		RedirectURL: "http://localhost:27893",

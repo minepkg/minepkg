@@ -54,10 +54,10 @@ It will be deleted after testing.
 			logger.Fail(err.Error())
 		}
 		instance := instances.Instance{
-			GlobalDir:     globalDir,
-			ModsDirectory: filepath.Join(tempDir, "mods"),
-			Lockfile:      manifest.NewLockfile(),
-			MinepkgAPI:    apiClient,
+			GlobalDir:  globalDir,
+			Directory:  tempDir,
+			Lockfile:   manifest.NewLockfile(),
+			MinepkgAPI: apiClient,
 		}
 
 		creds, err := ensureMojangAuth()
@@ -87,9 +87,11 @@ It will be deleted after testing.
 			os.Exit(1)
 		}
 
-		instance.Manifest = release.Manifest
+		// set instance details
+		instance.Manifest = manifest.NewInstanceLike(release.Manifest)
 		fmt.Println("Creating temporary modpack with " + release.Identifier())
 
+		// overwrite some instance launch options with flags
 		instanceReqOverwrites(&instance)
 
 		if instance.Manifest.Requirements.Minecraft == "*" {
@@ -97,12 +99,11 @@ It will be deleted after testing.
 			instance.Manifest.Requirements.Minecraft = release.LatestTestedMinecraftVersion()
 		}
 
-		if plain != true && instance.Manifest.PlatformString() == "fabric" {
+		if plain != true && instance.Manifest.Package.Type != manifest.TypeModpack && instance.Manifest.PlatformString() == "fabric" {
 			instance.Manifest.AddDependency("fabric", "*")
 			instance.Manifest.AddDependency("roughlyenoughitems", "*")
 			instance.Manifest.AddDependency("modmenu", "*")
 		}
-		instance.Manifest.AddDependency(release.Package.Name, release.Package.Version)
 
 		if err := instance.UpdateLockfileRequirements(context.TODO()); err != nil {
 			logger.Fail(err.Error())
@@ -111,6 +112,7 @@ It will be deleted after testing.
 			logger.Fail(err.Error())
 		}
 
+		instance.SaveManifest()
 		instance.SaveLockfile()
 
 		if viper.GetBool("useSystemJava") == true {
@@ -118,6 +120,8 @@ It will be deleted after testing.
 		}
 
 		fmt.Println("\n[launch settings]")
+		fmt.Println("directory: " + instance.Directory)
+		fmt.Println("mc directory: " + instance.McDir())
 		fmt.Println("platform: " + instance.Manifest.PlatformString())
 		fmt.Println("minecraft: " + instance.Manifest.Requirements.Minecraft)
 		if instance.Manifest.PlatformString() == "fabric" {

@@ -91,11 +91,6 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 
 // BuildLaunchCmd returns a go cmd ready to start minecraft
 func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
-	cwd, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-
 	// HACK: don't use client config for server, so we
 	// don't have to fake this here
 	var (
@@ -114,7 +109,6 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 		// do not allow non paid accounts to start minecraft
 		// (demo mode is not implemented)
 		// unpaid accounts should not have a profile
-		// TODO: check that ↑ !
 		if profile == nil {
 			return nil, ErrNoPaidAccount
 		}
@@ -122,6 +116,7 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 
 	// this file tells us howto construct the start command
 	launchManifest := opts.LaunchManifest
+	var err error
 
 	// get manifest if not passed as option
 	if launchManifest == nil {
@@ -207,7 +202,7 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 		replacer = strings.NewReplacer(
 			v("auth_player_name"), "server",
 			v("version_name"), launchManifest.MinecraftVersion(),
-			v("game_directory"), cwd,
+			v("game_directory"), i.McDir(),
 			v("assets_root"), filepath.Join(i.AssetsDir()),
 			v("assets_index_name"), launchManifest.Assets, // asset index version
 			v("auth_uuid"), "0", // profile id
@@ -219,7 +214,7 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 		replacer = strings.NewReplacer(
 			v("auth_player_name"), profile.Name,
 			v("version_name"), launchManifest.MinecraftVersion(),
-			v("game_directory"), cwd,
+			v("game_directory"), i.McDir(),
 			v("assets_root"), filepath.Join(i.AssetsDir()),
 			v("assets_index_name"), launchManifest.Assets, // asset index version
 			v("auth_uuid"), profile.ID, // profile id
@@ -270,7 +265,7 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	if opts.Debug == true {
 		fmt.Println("cmd: ")
 		fmt.Println(cmdArgs)
-		fmt.Println("tmpdir: + " + tmpDir)
+		fmt.Println("tmpdir: " + tmpDir)
 		os.Exit(0)
 	}
 
@@ -280,9 +275,14 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	cmd := exec.Command(opts.Java, cmdArgs...)
 	i.launchCmd = opts.Java + " " + strings.Join(cmdArgs, " ")
 
+	cmd.Env = os.Environ()
 	if opts.JoinServer != "" {
-		cmd.Env = append(os.Environ(), "MINEPKG_COMPANION_PLAY=server://"+opts.JoinServer)
+		cmd.Env = append(cmd.Env, "MINEPKG_COMPANION_PLAY=server://"+opts.JoinServer)
 	}
+
+	// if opts.LaunchSave != "" {
+	// 	cmd.Env = append(cmd.Env, "MINEPKG_COMPANION_PLAY=local://"+opts.LaunchSave)
+	// }
 
 	if opts.Server == true {
 		cmd.Stdin = os.Stdin
@@ -299,6 +299,11 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+
+	// Set the process directory to our minecraft dir
+	cmd.Dir = i.McDir()
+	// some things may rely on PWD
+	cmd.Env = append(cmd.Env, "PWD="+i.McDir())
 
 	return cmd, nil
 }

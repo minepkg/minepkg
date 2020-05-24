@@ -156,3 +156,20 @@ func New() *Manifest {
 	toml.Decode(newPackageTemplate, &manifest)
 	return &manifest
 }
+
+// NewInstanceLike takes an existing manifest and copies most package
+func NewInstanceLike(from *Manifest) *Manifest {
+	manifest := New()
+	// TODO: this feels like a hack
+	// maybe introduce a Package.Type instance ?
+	manifest.Package.Name = "_instance-" + from.Package.Name
+	manifest.Package.Description = from.Package.Description
+	manifest.Package.Type = from.Package.Type
+	manifest.Package.Platform = from.Package.Platform
+
+	manifest.Requirements = from.Requirements
+
+	// set this instance as first dependency
+	manifest.Dependencies[from.Package.Name] = from.Package.Version
+	return manifest
+}
