@@ -89,6 +89,7 @@ func (c *CLILauncher) Launch(opts *instances.LaunchOptions) error {
 			}
 		} else {
 			fmt.Println("Customized modpacks do not support crash reports for now. Skipping")
+			return err
 		}
 	}
 
@@ -96,6 +97,12 @@ func (c *CLILauncher) Launch(opts *instances.LaunchOptions) error {
 
 	for _, dep := range c.Instance.Lockfile.Dependencies {
 		mods[dep.Project] = dep.Version
+	}
+
+	// map darwin to macos
+	osName := runtime.GOOS
+	if osName == "darwin" {
+		osName = "macos"
 	}
 
 	report := api.CrashReport{
@@ -107,7 +114,7 @@ func (c *CLILauncher) Launch(opts *instances.LaunchOptions) error {
 		Server:           c.ServerMode,
 		MinecraftVersion: c.Instance.Lockfile.MinecraftVersion(),
 		Mods:             mods,
-		OS:               runtime.GOOS,
+		OS:               osName,
 		Arch:             runtime.GOARCH,
 		ExitCode:         cmd.ProcessState.ExitCode(),
 	}
