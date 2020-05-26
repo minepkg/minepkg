@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"sort"
+	"strconv"
 
 	"github.com/Masterminds/semver"
 )
@@ -121,8 +122,12 @@ type RequirementQuery struct {
 func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *RequirementQuery) (*Release, error) {
 	p := Project{client: m, Name: project}
 
-	wantedVersion := reqs.Version
+	// tildify maybe kinda unexpected here …
+	wantedVersion := tildifySemverString(reqs.Version)
 	mcConstraint, err := semver.NewConstraint(reqs.Minecraft)
+	if err != nil {
+		return nil, err
+	}
 	releases, err := p.GetReleases(ctx, reqs.Plattform)
 	if err != nil {
 		return nil, err
@@ -142,6 +147,7 @@ func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *Requ
 			mcVersion := semver.MustParse(test.Minecraft)
 			if mcConstraint.Check(mcVersion) == true && test.Works {
 				testedReleases = append(testedReleases, release)
+			} else {
 			}
 		}
 	}
@@ -176,4 +182,19 @@ func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *Requ
 
 	// found nothing
 	return nil, ErrNotMatchingRelease
+}
+
+func tildifySemverString(semverReq string) string {
+	// empty string
+	if len(semverReq) == 0 {
+		return semverReq
+	}
+
+	// first char is not a number. so this probably is a semver char → skip
+	if _, err := strconv.Atoi(semverReq[:1]); err != nil {
+		return semverReq
+	}
+
+	// apply the default to everything else
+	return "~" + semverReq
 }
