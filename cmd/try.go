@@ -99,11 +99,14 @@ It will be deleted after testing.
 			instance.Manifest.Requirements.Minecraft = release.LatestTestedMinecraftVersion()
 		}
 
+		startSave := ""
 		if plain != true && instance.Manifest.Package.Type != manifest.TypeModpack && instance.Manifest.PlatformString() == "fabric" {
-			instance.Manifest.AddDependency("fabric", "*")
-			instance.Manifest.AddDependency("roughlyenoughitems", "*")
-			instance.Manifest.AddDependency("modmenu", "*")
+			instance.Manifest.AddDependency("test-mansion", "*")
+			startSave = "test-mansion"
 		}
+
+		// add/overwrite the wanted mod or modpack
+		instance.Manifest.AddDependency(name, version)
 
 		if err := instance.UpdateLockfileRequirements(context.TODO()); err != nil {
 			logger.Fail(err.Error())
@@ -158,6 +161,7 @@ It will be deleted after testing.
 		opts := &instances.LaunchOptions{
 			LaunchManifest: launchManifest,
 			Server:         serverMode,
+			StartSave:      startSave,
 		}
 		err = cliLauncher.Launch(opts)
 		if err != nil {

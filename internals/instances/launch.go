@@ -57,11 +57,14 @@ type LaunchOptions struct {
 	// SkipDownload will NOT download missing assets & libraries
 	SkipDownload bool
 	// Offline is not implemented
-	Offline    bool
-	Java       string
-	Server     bool
+	Offline bool
+	Java    string
+	Server  bool
+	// JoinServer can be a server adress to join after startup
 	JoinServer string
-	Debug      bool
+	// StartSave can be a savegame name to start after startup
+	StartSave string
+	Debug     bool
 }
 
 // Launch will launch the minecraft instance
@@ -280,9 +283,9 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 		cmd.Env = append(cmd.Env, "MINEPKG_COMPANION_PLAY=server://"+opts.JoinServer)
 	}
 
-	// if opts.LaunchSave != "" {
-	// 	cmd.Env = append(cmd.Env, "MINEPKG_COMPANION_PLAY=local://"+opts.LaunchSave)
-	// }
+	if opts.StartSave != "" {
+		cmd.Env = append(cmd.Env, "MINEPKG_COMPANION_PLAY=local://"+opts.StartSave)
+	}
 
 	if opts.Server == true {
 		cmd.Stdin = os.Stdin
