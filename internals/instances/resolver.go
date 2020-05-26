@@ -132,7 +132,7 @@ func (r *Resolver) ResolveSingle(release *api.Release) error {
 			}
 			return err
 		}
-		return r.ResolveSingle(release)
+		r.ResolveSingle(release)
 	}
 
 	return nil
