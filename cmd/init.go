@@ -27,10 +27,12 @@ var projectName = regexp.MustCompile(`^([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])$`)
 var (
 	force  bool
 	loader string
+	yes    bool
 )
 
 func init() {
 	initCmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite the minepkg.toml if one exists")
+	initCmd.Flags().BoolVarP(&yes, "yes", "y", false, "Choose defaults for all questions. (non-interactive mode)")
 	rootCmd.AddCommand(initCmd)
 }
 
@@ -61,6 +63,22 @@ var initCmd = &cobra.Command{
 
 		wd, _ := os.Getwd()
 
+		defaultName := strcase.KebabCase(filepath.Base(wd))
+
+		if yes == true {
+			man.Package.Name = defaultName
+			man.Package.Type = "modpack"
+			man.Package.Platform = "fabric"
+			man.Package.Version = "0.1.0"
+
+			man.Requirements.Fabric = "*"
+			man.Requirements.Minecraft = "1.15"
+			// generate toml
+			writeManifest(&man)
+			logger.Info(" ✓ Created minepkg.toml")
+			return
+		}
+
 		logger.Info("[package]")
 		man.Package.Type = selectPrompt(&promptui.Select{
 			Label: "Type",
@@ -74,7 +92,7 @@ var initCmd = &cobra.Command{
 
 		man.Package.Name = stringPrompt(&promptui.Prompt{
 			Label:   "Name",
-			Default: strcase.KebabCase(filepath.Base(wd)),
+			Default: defaultName,
 			Validate: func(s string) error {
 				switch {
 				case strings.ToLower(s) != s:
@@ -142,7 +160,7 @@ var initCmd = &cobra.Command{
 			})
 			man.Requirements.Minecraft = stringPrompt(&promptui.Prompt{
 				Label:   "Supported Minecraft version",
-				Default: "1.14",
+				Default: "1.15",
 				// TODO: validation
 			})
 		case "forge":
@@ -189,15 +207,20 @@ var initCmd = &cobra.Command{
 		}
 
 		// generate toml
-		buf := bytes.Buffer{}
-		if err := toml.NewEncoder(&buf).Encode(man); err != nil {
-			logger.Fail(err.Error())
-		}
-		if err := ioutil.WriteFile("minepkg.toml", buf.Bytes(), 0755); err != nil {
-			logger.Fail(err.Error())
-		}
+		writeManifest(&man)
 		logger.Info(" ✓ Created minepkg.toml")
 	},
+}
+
+func writeManifest(man *manifest.Manifest) {
+	// generate toml
+	buf := bytes.Buffer{}
+	if err := toml.NewEncoder(&buf).Encode(man); err != nil {
+		logger.Fail(err.Error())
+	}
+	if err := ioutil.WriteFile("minepkg.toml", buf.Bytes(), 0755); err != nil {
+		logger.Fail(err.Error())
+	}
 }
 
 func selectPrompt(prompt *promptui.Select) string {

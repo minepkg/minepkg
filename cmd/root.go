@@ -101,10 +101,12 @@ func initRoot() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.minepkg/config.toml)")
 	rootCmd.PersistentFlags().BoolP("accept-minecraft-eula", "a", false, "Accept Mojang's Minecraft eula. See https://account.mojang.com/documents/minecraft_eula. Needed to start the Minecraft server")
 	rootCmd.PersistentFlags().BoolP("system-java", "", false, "Use system java instead of internal installation for launching Minecraft server or client")
+	rootCmd.PersistentFlags().BoolP("verbose", "", false, "More verbose logging. Not realy implented yet")
 
 	viper.BindPFlag("noColor", rootCmd.PersistentFlags().Lookup("no-color"))
 	viper.BindPFlag("useSystemJava", rootCmd.PersistentFlags().Lookup("system-java"))
 	viper.BindPFlag("acceptMinecraftEula", rootCmd.PersistentFlags().Lookup("accept-minecraft-eula"))
+	viper.BindPFlag("verboseLogging", rootCmd.PersistentFlags().Lookup("verbose"))
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -138,7 +140,7 @@ func initConfig() {
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
+	if err := viper.ReadInConfig(); err == nil && viper.GetBool("verboseLogging") {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
 
