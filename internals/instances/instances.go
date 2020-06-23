@@ -95,6 +95,11 @@ func (i *Instance) ModsDir() string {
 	return filepath.Join(i.Directory, "minecraft/mods")
 }
 
+// OverwritesDir is the path where overwrite files reside in. They get copied to `McDir` on launch. This is the `overwrites` subfolder
+func (i *Instance) OverwritesDir() string {
+	return filepath.Join(i.Directory, "overwrites")
+}
+
 // ManifestPath is the path to the `minepkg.toml`. The file does not necessarily exist
 func (i *Instance) ManifestPath() string {
 	return filepath.Join(i.Directory, "minepkg.toml")

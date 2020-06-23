@@ -19,6 +19,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/briandowns/spinner"
+	"github.com/fiws/minepkg/internals/cmdlog"
 	"github.com/fiws/minepkg/pkg/api"
 	"github.com/fiws/minepkg/pkg/manifest"
 	"github.com/manifoldco/promptui"
@@ -239,6 +240,9 @@ var publishCmd = &cobra.Command{
 
 		if dry == true {
 			logger.Info("Skipping upload because this is a dry run")
+			if artifact != "" {
+				logger.Info("Build package can be found here: " + artifact)
+			}
 			os.Exit(0)
 		}
 
@@ -406,13 +410,13 @@ func buildModpackZIP() string {
 	fileCount := 0
 
 	// TODO: custom ignore list
-	c, err := addToZip(archive, "./", defaultFilter)
+	c, err := addToZip(archive, "./overwrites", defaultFilter)
 	if err != nil {
 		log.Println(err)
 	}
 	fileCount += c
 
-	c, err = addToZip(archive, "./saves", savesFilter)
+	c, err = addToZip(archive, "./overwrites/saves", savesFilter)
 	if err != nil {
 		log.Println(err)
 	}
@@ -432,12 +436,18 @@ type filter func(string) bool
 
 func addToZip(archive *zip.Writer, path string, filter ...filter) (int, error) {
 	addCount := 0
-	filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+	filepath.Walk(path, func(origPath string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		source, err := os.Open(path)
+		// get paths as if "overwites" is the root
+		path, err = filepath.Rel("overwrites", origPath)
+		if err != nil {
+			return err
+		}
+		fmt.Println(path)
+		source, err := os.Open(origPath)
 		if err != nil {
 			return err
 		}
@@ -484,7 +494,7 @@ func savesFilter(path string) bool {
 }
 
 func defaultFilter(path string) bool {
-	no := []string{"minecraft", ".git", "minepkg.toml", "minepkg-lock.toml", "."}
+	no := []string{"minecraft", ".git", "minepkg.toml", "minepkg-lock.toml", ".", "saves"}
 
 	for _, disallowed := range no {
 		if strings.HasPrefix(path, disallowed) {
@@ -530,4 +540,43 @@ search:
 	}
 
 	return filepath.Join("./build/libs", chosen.Name())
+}
+
+func buildMod(m *manifest.Manifest, tasks *cmdlog.Task) {
+	buildScript := "gradle --build-cache build"
+	if m.Hooks.Build != "" {
+		tasks.Log("Using custom build hook")
+		tasks.Log(" running " + m.Hooks.Build)
+		buildScript = m.Hooks.Build
+	} else {
+		tasks.Log("Using default build step (gradle --build-cache build)")
+	}
+
+	// TODO: I don't think this is multi platform
+	build := exec.Command("sh", []string{"-c", buildScript}...)
+	build.Env = os.Environ()
+
+	if nonInteractive == true {
+		terminalOutput(build)
+	}
+
+	var spinner func()
+	if nonInteractive != true {
+		spinner = spinnerOutput(build)
+	}
+
+	startTime := time.Now()
+	build.Start()
+	if nonInteractive != true {
+		spinner()
+	}
+
+	err := build.Wait()
+	if err != nil {
+		// TODO: output logs or something
+		fmt.Println(err)
+		logger.Fail("Build step failed. Aborting")
+	}
+
+	logger.Info(" ✓ Finished build in " + time.Now().Sub(startTime).String())
 }
