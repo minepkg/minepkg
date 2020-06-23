@@ -446,7 +446,7 @@ func addToZip(archive *zip.Writer, path string, filter ...filter) (int, error) {
 		if err != nil {
 			return err
 		}
-		fmt.Println(path)
+
 		source, err := os.Open(origPath)
 		if err != nil {
 			return err
