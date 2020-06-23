@@ -50,6 +50,11 @@ func (r *Release) LatestTestedMinecraftVersion() string {
 	}
 
 	sort.Sort(workingMcVersion)
+	// oh well ...
+	// TODO: maybe not static
+	if len(workingMcVersion) == 0 {
+		return "1.15.2"
+	}
 	return workingMcVersion[len(workingMcVersion)-1].String()
 }
 
