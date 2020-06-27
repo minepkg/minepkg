@@ -56,14 +56,6 @@ func (i *Instance) javaBin() string {
 	}
 
 	return ""
-	// TODO: check if local java is installed
-	// cmd := exec.Command("java", cmdArgs...)
-
-	// // TODO: detatch from process
-	// cmd.Stdout = os.Stdout
-	// cmd.Stderr = os.Stderr
-
-	// err = cmd.Run()
 }
 
 // downloadJava downloads the internal java binary

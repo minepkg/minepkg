@@ -115,8 +115,6 @@ Alternativly: Can be used in directories containing a minepkg.toml manifest to l
 		switch {
 		case crashTest && serverMode != true:
 			logger.Fail("Can only crashtest servers. append --server to crashtest")
-		case instance.Manifest.Package.Type != "modpack":
-			logger.Fail("Can only launch modpacks. You can use \"minepkg try\" if you want to test a mod.")
 		case instance.Manifest.PlatformString() == "forge":
 			logger.Fail("Can not launch forge modpacks for now. Sorry.")
 		}
@@ -147,6 +145,21 @@ Alternativly: Can be used in directories containing a minepkg.toml manifest to l
 
 		if err := cliLauncher.Prepare(); err != nil {
 			logger.Fail(err.Error())
+		}
+
+		// build and add the local jar
+		if instance.Manifest.Package.Type == manifest.TypeMod {
+			tasks := logger.NewTask(1)
+			buildMod(instance.Manifest, tasks)
+			// copy jar
+			jar := findJar()
+			_, targetName := filepath.Split(jar)
+			fmt.Printf("adding %s to temporary modpack\n", jar)
+			// TODO: mod could already be there if it has a circular dependency
+			err := CopyFile(jar, filepath.Join(instance.ModsDir(), targetName))
+			if err != nil {
+				logger.Fail(err.Error())
+			}
 		}
 
 		launchManifest := cliLauncher.LaunchManifest
