@@ -76,12 +76,14 @@ func (f *ForgeLock) MinecraftVersion() string { return f.Minecraft }
 
 // DependencyLock is a single resolved dependency
 type DependencyLock struct {
-	Project  string `toml:"project" json:"project"`
+	Name     string `toml:"name" json:"name"`
 	Version  string `toml:"version" json:"version"`
 	Type     string `toml:"type" json:"type"`
 	IPFSHash string `toml:"ipfsHash" json:"ipfsHash"`
 	Sha256   string `toml:"Sha256" json:"Sha256"`
 	URL      string `toml:"url" json:"url"`
+	// Provider usually is minepkg but can also be https
+	Provider string `toml:"provider" json:"provider"`
 }
 
 // FileExt returns ".jar" for mods and ".zip" for modpacks
@@ -165,7 +167,7 @@ func (l *Lockfile) String() string {
 
 // AddDependency adds a new dependency to the lockfile
 func (l *Lockfile) AddDependency(dep *DependencyLock) {
-	l.Dependencies[dep.Project] = dep
+	l.Dependencies[dep.Name] = dep
 }
 
 // ClearDependencies removes all dependencies

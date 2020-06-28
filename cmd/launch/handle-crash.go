@@ -64,7 +64,7 @@ func (c *CLILauncher) HandleCrash() error {
 	mods := make(map[string]string)
 
 	for _, dep := range c.Instance.Lockfile.Dependencies {
-		mods[dep.Project] = dep.Version
+		mods[dep.Name] = dep.Version
 	}
 
 	// map darwin to macos

@@ -32,7 +32,7 @@ func installManifest(instance *instances.Instance) {
 		logger.Fail(err.Error())
 	}
 	for _, dep := range instance.Lockfile.Dependencies {
-		fmt.Printf(" - %s@%s\n", dep.Project, dep.Version)
+		fmt.Printf(" - %s@%s\n", dep.Name, dep.Version)
 	}
 	missingFiles, err := instance.FindMissingDependencies()
 	if err != nil {
@@ -41,8 +41,8 @@ func installManifest(instance *instances.Instance) {
 
 	task.Step("🚚", fmt.Sprintf("Downloading %d Packages", len(missingFiles)))
 	for _, m := range missingFiles {
-		fmt.Printf(" - %s@%s\n", m.Project, m.Version)
-		p := filepath.Join(cacheDir, m.Project, m.Version+".jar")
+		fmt.Printf(" - %s@%s\n", m.Name, m.Version)
+		p := filepath.Join(cacheDir, m.Name, m.Version+".jar")
 		mgr.Add(downloadmgr.NewHTTPItem(m.URL, p))
 	}
 

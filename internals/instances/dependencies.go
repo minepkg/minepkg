@@ -43,7 +43,7 @@ func (i *Instance) UpdateLockfileDependencies(ctx context.Context) error {
 	}
 	for _, release := range res.Resolved {
 		i.Lockfile.AddDependency(&manifest.DependencyLock{
-			Project:  release.Package.Name,
+			Name:     release.Package.Name,
 			Version:  release.Package.Version,
 			Type:     release.Package.Type,
 			IPFSHash: release.Meta.IPFSHash,
@@ -69,7 +69,7 @@ func (i *Instance) FindMissingDependencies() ([]*manifest.DependencyLock, error)
 		if dep.URL == "" {
 			continue // skip dependencies without download url
 		}
-		p := filepath.Join(dep.Project, dep.Version+dep.FileExt())
+		p := filepath.Join(dep.Name, dep.Version+dep.FileExt())
 		if _, err := os.Stat(filepath.Join(i.CacheDir(), p)); os.IsNotExist(err) {
 			missing = append(missing, dep)
 		}
@@ -100,7 +100,7 @@ func (i *Instance) LinkDependencies() error {
 		if dep.URL == "" {
 			continue
 		}
-		from := filepath.Join(i.CacheDir(), dep.Project, dep.Version+dep.FileExt())
+		from := filepath.Join(i.CacheDir(), dep.Name, dep.Version+dep.FileExt())
 		to := filepath.Join(i.ModsDir(), dep.Filename())
 
 		// extract modpack content and stuff, don't symlink them into the mods folder
@@ -220,7 +220,7 @@ func (i *Instance) EnsureDependencies(ctx context.Context) error {
 
 	mgr := downloadmgr.New()
 	for _, m := range missingFiles {
-		p := filepath.Join(i.CacheDir(), m.Project, m.Version+m.FileExt())
+		p := filepath.Join(i.CacheDir(), m.Name, m.Version+m.FileExt())
 		mgr.Add(downloadmgr.NewHTTPItem(m.URL, p))
 	}
 

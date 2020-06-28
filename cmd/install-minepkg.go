@@ -103,7 +103,7 @@ func installFromMinepkg(mods []string, instance *instances.Instance) error {
 	}
 	instance.UpdateLockfileDependencies(context.TODO())
 	for _, dep := range instance.Lockfile.Dependencies {
-		fmt.Printf(" - %s@%s\n", dep.Project, dep.Version)
+		fmt.Printf(" - %s@%s\n", dep.Name, dep.Version)
 	}
 	missingFiles, err := instance.FindMissingDependencies()
 	if err != nil {
@@ -112,7 +112,7 @@ func installFromMinepkg(mods []string, instance *instances.Instance) error {
 
 	task.Step("🚚", fmt.Sprintf("Downloading %d Packages", len(missingFiles)))
 	for _, m := range missingFiles {
-		p := filepath.Join(cacheDir, m.Project, m.Version+".jar")
+		p := filepath.Join(cacheDir, m.Name, m.Version+".jar")
 		item := downloadmgr.HTTPItem{URL: m.URL, Target: p, Sha256: m.Sha256}
 		mgr.Add(&item)
 	}
