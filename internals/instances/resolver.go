@@ -95,7 +95,7 @@ func (r *Resolver) ResolveManifest(man *manifest.Manifest) error {
 }
 
 // Resolve find all dependencies from the given `id`
-// and adds it to the `resolved` map. Nothing is returned
+// and adds it to the `resolved` map
 func (r *Resolver) Resolve(releases []*api.Release) error {
 	for _, release := range releases {
 		r.ResolveSingle(release)

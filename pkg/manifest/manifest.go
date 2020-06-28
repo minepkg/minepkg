@@ -157,7 +157,7 @@ func New() *Manifest {
 	return &manifest
 }
 
-// NewInstanceLike takes an existing manifest and copies most package
+// NewInstanceLike takes an existing manifest and copies most fields
 func NewInstanceLike(from *Manifest) *Manifest {
 	manifest := New()
 	// TODO: this feels like a hack

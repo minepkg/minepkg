@@ -1,16 +1,14 @@
 package instances
 
 import (
-	"archive/zip"
 	"context"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 
 	"github.com/fiws/minepkg/internals/downloadmgr"
+	"github.com/fiws/minepkg/internals/pack"
 	"github.com/fiws/minepkg/pkg/manifest"
 )
 
@@ -128,87 +126,13 @@ func (i *Instance) LinkDependencies() error {
 
 func (i *Instance) handleModpackDependencyCopy(dep *manifest.DependencyLock) error {
 
-	modpackPath := filepath.Join(i.CacheDir(), dep.Project, dep.Version+".zip")
-	zipReader, err := zip.OpenReader(modpackPath)
+	modpackPath := filepath.Join(i.CacheDir(), dep.Name, dep.Version+".zip")
+	pkg, err := pack.Open(modpackPath)
 	if err != nil {
 		return err
 	}
-	defer zipReader.Close()
-
-	skipPrefixes := []string{}
-	createdDirs := make(map[string]interface{})
-
-outer:
-	for _, f := range zipReader.File {
-
-		// make sure zip only contains valid paths
-		if err := sanitizeExtractPath(f.Name, i.McDir()); err != nil {
-			return err
-		}
-
-		// get a relative path – used for name matching and stuff
-		relative, err := filepath.Rel(i.McDir(), filepath.Join(i.McDir(), f.Name))
-		if err != nil {
-			return err
-		}
-
-		// skipping already created save directories
-		for _, skip := range skipPrefixes {
-			if strings.HasPrefix(relative, skip) {
-				continue outer
-			}
-		}
-
-		// not sure if this is optimal...
-		if f.FileInfo().IsDir() {
-			continue outer
-		}
-
-		relativeDir := filepath.Dir(relative)
-		// TODO: is this also / on windows?
-		dirs := strings.Split(relativeDir, "/")
-
-		for n := range dirs {
-			// this gets us `saves`, `saves/test-world`, `saves/test-world/DIM1` etc.
-			dir := strings.Join(dirs[0:n+1], "/")
-
-			// see if we already created that dir. skip creating in that case
-			if _, ok := createdDirs[dir]; ok == true {
-				continue
-			}
-
-			err := os.Mkdir(filepath.Join(i.McDir(), dir), os.ModePerm)
-			createdDirs[dir] = nil
-
-			switch {
-			case err != nil && !os.IsExist(err):
-				// unknown error, return it
-				return err
-			case err != nil && strings.HasPrefix(dir, "saves") && dir != "saves":
-				// we tried to create a save dir (eg, `saves/test-world`) and it already exists, exclude it
-				skipPrefixes = append(skipPrefixes, dir)
-				continue outer
-			}
-		}
-
-		// all directories for this file are here, we can finally copy the file
-		rc, err := f.Open()
-		if err != nil {
-			return err
-		}
-		target, err := os.Create(filepath.Join(i.McDir(), f.Name))
-		if err != nil {
-			return err
-		}
-
-		_, err = io.Copy(target, rc)
-		if err != nil {
-			return err
-		}
-
-		rc.Close()
-	}
-	return nil
+	defer pkg.Close()
+	return pkg.ExtractModpack(i.McDir())
 }
 
 // EnsureDependencies downloads missing dependencies
