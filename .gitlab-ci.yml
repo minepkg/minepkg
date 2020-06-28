@@ -14,6 +14,7 @@ snapshot build:
   except:
     - tags # no version tags
   script:
+    - go test ./...
     - goreleaser release --snapshot --skip-publish
   artifacts:
     paths:
@@ -27,6 +28,7 @@ release build:
   only:
     - /^v\d+\.\d+\.\d+-?.*$/
   script:
+    - go test ./...
     - goreleaser release --skip-publish
   artifacts:
     paths:

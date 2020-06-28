@@ -1,6 +1,9 @@
 package logparser
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestParseLine(t *testing.T) {
 	tests := []struct {
@@ -20,7 +23,8 @@ func TestParseLine(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			line := ParseLine(tt.arg)
 			if line.String() != tt.arg {
-				t.Fatalf("Input \"%s\" did not produce same output: %s → %s", tt.name, tt.arg, line.String())
+				fmt.Printf("%d vs %d", len(line.String()), len(tt.arg))
+				t.Fatalf("Input \"%s\" did not produce same output: \nexpected %s\ngot      %s\n", tt.name, tt.arg, line.String())
 			}
 		})
 	}
