@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -39,7 +40,13 @@ var joinCmd = &cobra.Command{
 
 		var resolvedModpack *api.Release
 		ip := "127.0.0.1"
-		host := args[0]
+		connectionString := strings.Split(args[0], ":")
+		host := connectionString[0]
+		port := "25565"
+
+		if len(connectionString) == 2 {
+			port = connectionString[1]
+		}
 
 		if host != "localhost" {
 			rawIP, err := net.LookupHost(host)
@@ -50,7 +57,7 @@ var joinCmd = &cobra.Command{
 			ip = strings.Join(rawIP, ".")
 		}
 
-		resolvedModpack = resolveViaSLP(ip)
+		resolvedModpack = resolveViaSLP(ip, port)
 		if resolvedModpack == nil {
 			resolvedModpack = resolveFromAPI(ip)
 		}
@@ -112,7 +119,7 @@ var joinCmd = &cobra.Command{
 
 		fmt.Println("\nLaunching Minecraft …")
 		opts := &instances.LaunchOptions{
-			JoinServer: ip,
+			JoinServer: ip + ":" + port,
 		}
 		err = cliLauncher.Launch(opts)
 		if err != nil {
@@ -135,9 +142,10 @@ type slpData struct {
 	} `json:"version"`
 }
 
-func resolveViaSLP(ip string) *api.Release {
+func resolveViaSLP(ip string, port string) *api.Release {
 	fmt.Println("Trying to query server modpack …")
-	serverData, _, err := bot.PingAndListTimeout(ip, 25565, 10*time.Second)
+	intPort, _ := strconv.Atoi(port)
+	serverData, _, err := bot.PingAndListTimeout(ip, intPort, 10*time.Second)
 	if err != nil {
 		fmt.Println("could not reach server")
 		return nil
