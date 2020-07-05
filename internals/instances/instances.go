@@ -264,11 +264,11 @@ func (i *Instance) initLockfile() error {
 // SaveManifest saves the manifest to the current directory
 func (i *Instance) SaveManifest() error {
 	manifest := i.Manifest.Buffer()
-	return ioutil.WriteFile(i.ManifestPath(), manifest.Bytes(), os.ModePerm)
+	return ioutil.WriteFile(i.ManifestPath(), manifest.Bytes(), 0644)
 }
 
 // SaveLockfile saves the lockfile to the current directory
 func (i *Instance) SaveLockfile() error {
 	lockfile := i.Lockfile.Buffer()
-	return ioutil.WriteFile(i.LockfilePath(), lockfile.Bytes(), os.ModePerm)
+	return ioutil.WriteFile(i.LockfilePath(), lockfile.Bytes(), 0644)
 }
