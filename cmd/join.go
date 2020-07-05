@@ -146,17 +146,29 @@ func resolveViaSLP(ip string) *api.Release {
 	data := slpData{}
 	json.Unmarshal(serverData, &data)
 	if data.MinepkgModpack == nil {
-		fmt.Println("Server does not use minepkg-companion 0.2.0+ – Please upgrade the mod on the server")
+		fmt.Println("Server does not use minepkg-companion 0.2.0+ or has no valid modpack")
 		return nil
+
 	}
+
+	if data.Version.Name == "" {
+		logger.Fail("Server has no Minecraft version set. This usually means that the server is still starting up. Try again in a few seconds.")
+	}
+
 	fmt.Println("minepkg compatible server detected. Modpack: " + data.MinepkgModpack.Name)
+
 	reqs := &api.RequirementQuery{
-		Version:   version,
+		Version:   data.MinepkgModpack.Version,
 		Plattform: data.MinepkgModpack.Platform,
+		// raw version from minecraft slp.. might need to check that
+		Minecraft: data.Version.Name,
 	}
 	release, err := apiClient.FindRelease(context.TODO(), data.MinepkgModpack.Name, reqs)
 	if err != nil {
-		return nil
+		logger.Fail("Could not fetch release: " + err.Error())
+	}
+	if release == nil {
+		logger.Fail("Server modpack is not published on minepkg.io")
 	}
 
 	return release

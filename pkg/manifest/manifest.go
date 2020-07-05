@@ -63,6 +63,9 @@ type Manifest struct {
 		Platform string   `toml:"platform,omitempty" json:"platform,omitempty"`
 		License  string   `toml:"license,omitempty" json:"license,omitempty"`
 		Provides []string `toml:"provides,omitempty" json:"provides,omitempty"`
+		// BasedOn can be a another package that this one is based on.
+		// Most notabily, this field is used for instances to determine what modpack is running
+		BasedOn string `toml:"basedOn,omitempty" json:"basedOn,omitempty"`
 	} `toml:"package" json:"package"`
 	Requirements struct {
 		// Minecraft is a semver version string describing the required Minecraft version
@@ -166,6 +169,9 @@ func NewInstanceLike(from *Manifest) *Manifest {
 	manifest.Package.Description = from.Package.Description
 	manifest.Package.Type = from.Package.Type
 	manifest.Package.Platform = from.Package.Platform
+
+	// this is a reference to the original manifest
+	manifest.Package.BasedOn = from.Package.Name
 
 	manifest.Requirements = from.Requirements
 
