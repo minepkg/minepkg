@@ -169,6 +169,7 @@ func NewInstanceLike(from *Manifest) *Manifest {
 	manifest.Package.Description = from.Package.Description
 	manifest.Package.Type = from.Package.Type
 	manifest.Package.Platform = from.Package.Platform
+	manifest.Package.Version = from.Package.Version
 
 	// this is a reference to the original manifest
 	manifest.Package.BasedOn = from.Package.Name
