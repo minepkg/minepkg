@@ -13,7 +13,7 @@ import (
 	"github.com/fiws/minepkg/pkg/manifest"
 )
 
-// Package is a zip (or jar) file that may contain a minepkg.toml
+// Reader for a zip (or jar) file that may contain a minepkg.toml
 type Reader struct {
 	zipReader *zip.Reader
 }
@@ -82,11 +82,11 @@ outer:
 
 		relativeDir := filepath.Dir(relative)
 		// TODO: is this also / on windows?
-		dirs := strings.Split(relativeDir, "/")
+		dirs := strings.Split(relativeDir, string(filepath.Separator))
 
 		for n := range dirs {
 			// this gets us `saves`, `saves/test-world`, `saves/test-world/DIM1` etc.
-			dir := strings.Join(dirs[0:n+1], "/")
+			dir := strings.Join(dirs[0:n+1], string(filepath.Separator))
 
 			// see if we already created that dir. skip creating in that case
 			if _, ok := createdDirs[dir]; ok == true {
