@@ -83,8 +83,18 @@ It will be deleted after testing.
 			logger.Fail(err.Error())
 		}
 		if release == nil {
-			logger.Info("Could not find package " + name + "@" + version)
-			os.Exit(1)
+			// TODO: check if this was a 404
+			project := searchFallback(context.TODO(), name)
+			if project == nil {
+				logger.Info("Could not find package " + name + "@" + version)
+				os.Exit(1)
+			}
+
+			release, err = apiClient.FindRelease(context.TODO(), project.Name, reqs)
+			if err != nil || release == nil {
+				logger.Info("Could not find package " + name + "@" + version)
+				os.Exit(1)
+			}
 		}
 
 		// set instance details
@@ -106,7 +116,7 @@ It will be deleted after testing.
 		}
 
 		// add/overwrite the wanted mod or modpack
-		instance.Manifest.AddDependency(name, version)
+		instance.Manifest.AddDependency(release.Package.Name, release.Package.Version)
 
 		if err := instance.UpdateLockfileRequirements(context.TODO()); err != nil {
 			logger.Fail(err.Error())
@@ -185,7 +195,7 @@ It will be deleted after testing.
 						fmt.Println(err)
 						continue
 					}
-					err = apiClient.PostProjectMedia(context.TODO(), name, f)
+					err = apiClient.PostProjectMedia(context.TODO(), release.Package.Name, f)
 					if err != nil {
 						fmt.Println("Could not upload screenshot: " + err.Error())
 					}

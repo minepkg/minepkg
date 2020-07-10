@@ -149,7 +149,7 @@ func searchFallback(ctx context.Context, name string) *api.Project {
 
 	if len(filtered) == 1 {
 		prompt := promptui.Prompt{
-			Label:     fmt.Sprintf("Install %s", filtered[0].Name),
+			Label:     fmt.Sprintf("Autocomplete to %s", filtered[0].Name),
 			IsConfirm: true,
 			Default:   "Y",
 		}
@@ -180,5 +180,5 @@ func searchFallback(ctx context.Context, name string) *api.Project {
 		fmt.Println("Aborting installation")
 		os.Exit(0)
 	}
-	return &projects[i]
+	return &filtered[i]
 }
