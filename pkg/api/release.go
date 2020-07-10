@@ -146,13 +146,24 @@ func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *Requ
 	testedReleases := make([]*Release, 0, len(releases))
 
 	// find all tested & working releases
+releaseLoop:
 	for _, release := range releases {
+		modMcConstraint, err := semver.NewConstraint(release.Requirements.Minecraft)
+		if err != nil {
+			fmt.Printf(
+				"%s has invalid minecraft requirement: %s\n",
+				release.Identifier(),
+				release.Requirements.Minecraft,
+			)
+			continue
+		}
+
 		// check all tests of this release for matching mc version that works
 		for _, test := range release.Tests {
 			mcVersion := semver.MustParse(test.Minecraft)
-			if mcConstraint.Check(mcVersion) == true && test.Works {
+			if modMcConstraint.Check(mcVersion) && mcConstraint.Check(mcVersion) == true && test.Works {
 				testedReleases = append(testedReleases, release)
-			} else {
+				continue releaseLoop
 			}
 		}
 	}
