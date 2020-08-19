@@ -1,3 +1,4 @@
+// Package mojang allows to login to a mojang account in order to start Minecraft
 package mojang
 
 import (

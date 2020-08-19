@@ -1,3 +1,62 @@
+/*
+Package manifest defines the file format that describes a mod or modpack.
+The `minepkg.toml` manifest is the way minepkg defines packages. Packages can be mods or modpacks.
+
+Structure
+
+Example manifest.toml:
+
+  manifestVersion = 0
+  [package]
+    type = "modpack"
+    name = "examplepack"
+    version = "0.1.0"
+    authors = ["John Doe <example@example.com>"]
+
+  [requirements]
+    minecraft = "1.14.x"
+    # Only fabric OR forge can be set. never both
+    fabric = "0.1.0"
+    # forge = "0.1.0"
+
+  [dependencies]
+    # semver version range
+    rftools = "~1.4.2"
+
+    # exactly this version
+    ender-io = "=1.0.2"
+
+    # any version (you usually define the version instead)
+    # * is equal to "latest" for minepkg. So it will try to fetch the latest
+    # version that works
+    some-modpack = "*"
+
+  [hooks]
+    build = "gradle build"
+
+Dependencies
+
+The dependencies map (map[string]string) contains all dependencies of a package.
+
+The "key" always is the package name. For example `test-utils`
+
+The "value" usually is a semver version number, like this: `~1.4.2`
+This reads install 1.4.x (so any patch release is allowed) from minepkg (the default source)
+
+The following semver formats are allowed:
+
+  test-utils = "^1.0.0" # caret operator (default)
+  test-utils = "~1.0.0" # tilde operator
+  test-utils = "2.0.1-beta.2" # prerelease
+  test-utils = "1.0.0 - 3.0.0" # range
+  test-utils = "1.x.x" # range
+https://github.com/npm/node-semver#ranges provides a good explanation of the operators mentioned above
+
+Other sources may be specified by using the `source:` syntax in the "value" like this: `raw:https://example.com/package.zip`.
+The "key" will still be the package name when using the source syntax.
+
+For more details visit https://minepkg.io/docs/manifest
+*/
 package manifest
 
 import (
@@ -19,7 +78,7 @@ type = "modpack"
 
 # This is the name of your modpack (in case you want to publish it)
 # Please choose a unique name without spaces or special characters (- and _ are allowed)
-name = "examplepack"
+name = "example-pack"
 description = ""
 version = "0.0.1"
 
@@ -66,6 +125,10 @@ type Manifest struct {
 		// BasedOn can be a another package that this one is based on.
 		// Most notabily, this field is used for instances to determine what modpack is running
 		BasedOn string `toml:"basedOn,omitempty" json:"basedOn,omitempty"`
+		// Savegame can be the name of the primary savegame on this modpack. Not applicable for other package types.
+		// This savegame will be used when launching this package via `minepkg try`.
+		// This should be the folder name of the savegame
+		Savegame string `toml:"build,omitempty" json:"build,omitempty"`
 	} `toml:"package" json:"package"`
 	Requirements struct {
 		// Minecraft is a semver version string describing the required Minecraft version
@@ -91,13 +154,13 @@ type Manifest struct {
 	// Dependencies lists runtime dependencies of this package
 	// this list can contain mods and modpacks
 	Dependencies `toml:"dependencies" json:"dependencies,omitempty"`
-	// Hooks should help mod developers to ease publishing
+	// Hooks currently only contains the (optional) build command to use before publishing
 	Hooks struct {
 		Build string `toml:"build,omitempty" json:"build,omitempty"`
 	} `toml:"hooks" json:"hooks"`
 }
 
-// Dependencies are the dependencies of a mod or modpack
+// Dependencies are the dependencies of a mod or modpack as a map
 type Dependencies map[string]string
 
 // PlatformString returns the required platform as a string (vanilla, fabric or forge)

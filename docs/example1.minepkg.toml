@@ -22,7 +22,6 @@ manifestVersion = 0
   # Idea: do not icrement / include the version by hand. Use GitHub releases
   version = "0.1.0"
   authors = ["John Doe <example@example.com>"]
-  main = "./build/libs/target.jar"
 
 # These are global requirements that apply to all dependencies and the pack itself
 [requirements]
@@ -45,19 +44,15 @@ manifestVersion = 0
 # This also makes it possible to use other modpacks as dependency
 [dependencies]
 
-  # Borrowed some npm syntax here. `curse:` specifies to use CurseForge to download this mod
-  # Implementers should force the user to include the source for now.
-  # The more verbose syntax is intentional. CurseForge should not be default (for now)
-  # because it lacks certain features like installing mods by actual version and because of the
-  # closed proprietary nature of it.
-  rftools = "curse:224641"
+  # Borrowed some npm syntax here. `minepkg:` specifies to use minepkg to download this mod
+  # this syntax should allow other sources than minepkg to be used
+  rftools = "minepkg:rftools"
 
-  # In the Future:
-  # The default install source should allow version lookups like this:
+  # The default install source (minepkg) allows version lookups like this:
   # rftools = "~1.4.2"
   # This reads install 1.4.x (so any patch release is allowed)
 
-  # Version 1 of this format should include support for the following semver features:
+  # The following semver formats are allowed:
   # rftools = "^1.0.0" – caret operator (default)
   # rftools = "~1.0.0" – tilde operator
   # rftools = "2.0.1-beta.2" – prerelease

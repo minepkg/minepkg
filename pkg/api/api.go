@@ -1,3 +1,4 @@
+// Package api is a client for the minepkg API https://api.minepkg/docs
 package api
 
 import (
