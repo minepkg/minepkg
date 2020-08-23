@@ -17,6 +17,7 @@ import (
 )
 
 var (
+	tryBase                string
 	overwriteMcVersion     string
 	overwriteFabricVersion string
 	overwriteCompanion     string
@@ -25,6 +26,7 @@ var (
 )
 
 func init() {
+	tryCmd.Flags().StringVarP(&tryBase, "base", "b", "test-mansion", "Base modpack to use for testing")
 	tryCmd.Flags().BoolVarP(&serverMode, "server", "s", false, "Start a server instead of a client")
 	tryCmd.Flags().StringVarP(&overwriteMcVersion, "requirements.minecraft", "", "", "Overwrite the required Minecraft version")
 	tryCmd.Flags().StringVarP(&overwriteFabricVersion, "requirements.fabric", "", "", "Overwrite the required fabric version")
@@ -111,8 +113,11 @@ It will be deleted after testing.
 
 		startSave := ""
 		if plain != true && instance.Manifest.Package.Type != manifest.TypeModpack && instance.Manifest.PlatformString() == "fabric" {
-			instance.Manifest.AddDependency("test-mansion", "*")
-			startSave = "test-mansion"
+			instance.Manifest.AddDependency(tryBase, "*")
+			// TODO: make this generic
+			if tryBase == "test-mansion" {
+				startSave = "test-mansion"
+			}
 		}
 
 		// add/overwrite the wanted mod or modpack
