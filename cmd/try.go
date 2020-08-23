@@ -123,19 +123,15 @@ It will be deleted after testing.
 		// add/overwrite the wanted mod or modpack
 		instance.Manifest.AddDependency(release.Package.Name, release.Package.Version)
 
-		if err := instance.UpdateLockfileRequirements(context.TODO()); err != nil {
-			logger.Fail(err.Error())
-		}
-		if err := instance.UpdateLockfileDependencies(context.TODO()); err != nil {
-			logger.Fail(err.Error())
-		}
-
-		instance.SaveManifest()
-		instance.SaveLockfile()
-
 		if viper.GetBool("useSystemJava") == true {
 			instance.UseSystemJava()
 		}
+
+		cliLauncher := launch.CLILauncher{Instance: &instance, ServerMode: serverMode, NonInteractive: viper.GetBool("nonInteractive")}
+		if err := cliLauncher.Prepare(); err != nil {
+			logger.Fail(err.Error())
+		}
+		launchManifest := cliLauncher.LaunchManifest
 
 		fmt.Println("\n[launch settings]")
 		fmt.Println("directory: " + instance.Directory)
@@ -149,6 +145,7 @@ It will be deleted after testing.
 				instance.Lockfile.Fabric.Mapping,
 			)
 		}
+
 		depNames := make([]string, len(instance.Lockfile.Dependencies))
 		i := 0
 		for name, lock := range instance.Lockfile.Dependencies {
@@ -156,10 +153,6 @@ It will be deleted after testing.
 			i++
 		}
 		fmt.Println("[dependencies] \n - " + strings.Join(depNames, "\n - "))
-
-		cliLauncher := launch.CLILauncher{Instance: &instance, ServerMode: serverMode, NonInteractive: viper.GetBool("nonInteractive")}
-		cliLauncher.Prepare()
-		launchManifest := cliLauncher.LaunchManifest
 
 		// TODO: This is just a hack
 		if serverMode == true {
