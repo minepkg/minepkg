@@ -67,22 +67,6 @@ func (a *MinepkgAPI) NewUnpublishedRelease(m *manifest.Manifest) *Release {
 	}
 }
 
-// WorksWithManifest returns if this release was tested to the manifest requirements
-// (currently only checks mc version)
-func (r *Release) WorksWithManifest(man *manifest.Manifest) bool {
-	mcConstraint, err := semver.NewConstraint(man.Requirements.Minecraft)
-	if err != nil {
-		return false
-	}
-	for _, test := range r.Tests {
-		mcVersion := semver.MustParse(test.Minecraft)
-		if mcConstraint.Check(mcVersion) == true && test.Works {
-			return true
-		}
-	}
-	return false
-}
-
 // ReleaseTest is a test of the package
 type ReleaseTest struct {
 	ID        string `json:"_id"`
@@ -90,9 +74,8 @@ type ReleaseTest struct {
 	Works     bool   `json:"works"`
 }
 
-// SemverVersion returns the Version as a `semver.Version` struct
-func (r *Release) SemverVersion() *semver.Version {
-	return semver.MustParse(r.Package.Version)
+func (rt *ReleaseTest) worksWithMCVersion(mcVersion *semver.Version) bool {
+	return rt.Works && (mcVersion == nil || mcVersion.Equal(mcVersion) == true)
 }
 
 // Requirements contains the wanted Minecraft version

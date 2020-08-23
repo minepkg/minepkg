@@ -7,9 +7,9 @@ import (
 	"io"
 	"net/http"
 	"sort"
-	"strconv"
 
 	"github.com/Masterminds/semver"
+	"github.com/fiws/minepkg/pkg/manifest"
 )
 
 // ErrNotMatchingRelease gets returned if no matching release was found
@@ -38,6 +38,11 @@ func (r *Release) DownloadURL() string {
 	return fmt.Sprintf("%s/releases/%s/%s/download", r.client.APIUrl, r.Package.Platform, r.Identifier())
 }
 
+// SemverVersion returns the Version as a `semver.Version` struct
+func (r *Release) SemverVersion() *semver.Version {
+	return semver.MustParse(r.Package.Version)
+}
+
 // LatestTestedMinecraftVersion returns the last (highest) tested Minecraft version for this release
 func (r *Release) LatestTestedMinecraftVersion() string {
 
@@ -56,6 +61,22 @@ func (r *Release) LatestTestedMinecraftVersion() string {
 		return "1.15.2"
 	}
 	return workingMcVersion[len(workingMcVersion)-1].String()
+}
+
+// WorksWithManifest returns if this release was tested to the manifest requirements
+// (currently only checks mc version)
+func (r *Release) WorksWithManifest(man *manifest.Manifest) bool {
+	mcConstraint, err := semver.NewConstraint(man.Requirements.Minecraft)
+	if err != nil {
+		return false
+	}
+	for _, test := range r.Tests {
+		mcVersion := semver.MustParse(test.Minecraft)
+		if mcConstraint.Check(mcVersion) == true && test.Works {
+			return true
+		}
+	}
+	return false
 }
 
 // Upload uploads the jar or zipfile for a release
@@ -114,103 +135,4 @@ func (m *MinepkgAPI) GetRelease(ctx context.Context, platform string, identifier
 func (m *MinepkgAPI) GetReleaseList(ctx context.Context, project string) ([]*Release, error) {
 	p := Project{client: m, Name: project}
 	return p.GetReleases(ctx, "")
-}
-
-// RequirementQuery is a query for a release describing contained requirements
-type RequirementQuery struct {
-	Version   string
-	Minecraft string
-	Plattform string
-}
-
-// FindRelease gets the latest release matching the passed requirements via `RequirementQuery`
-func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *RequirementQuery) (*Release, error) {
-	p := Project{client: m, Name: project}
-
-	// tildify maybe kinda unexpected here …
-	wantedVersion := tildifySemverString(reqs.Version)
-	mcConstraint, err := semver.NewConstraint(reqs.Minecraft)
-	if err != nil {
-		return nil, err
-	}
-	releases, err := p.GetReleases(ctx, reqs.Plattform)
-	if err != nil {
-		return nil, err
-	}
-
-	// found nothing
-	if len(releases) == 0 {
-		return nil, ErrNotMatchingRelease
-	}
-
-	testedReleases := make([]*Release, 0, len(releases))
-
-	// find all tested & working releases
-releaseLoop:
-	for _, release := range releases {
-		modMcConstraint, err := semver.NewConstraint(release.Requirements.Minecraft)
-		if err != nil {
-			fmt.Printf(
-				"%s has invalid minecraft requirement: %s\n",
-				release.Identifier(),
-				release.Requirements.Minecraft,
-			)
-			continue
-		}
-
-		// check all tests of this release for matching mc version that works
-		for _, test := range release.Tests {
-			mcVersion := semver.MustParse(test.Minecraft)
-			if modMcConstraint.Check(mcVersion) && mcConstraint.Check(mcVersion) == true && test.Works {
-				testedReleases = append(testedReleases, release)
-				continue releaseLoop
-			}
-		}
-	}
-
-	// TODO: handle prereleases
-	if wantedVersion == "latest" || wantedVersion == "*" {
-		// return the latest working version
-		if len(testedReleases) != 0 {
-			return testedReleases[0], nil
-		}
-		return releases[0], nil
-	}
-
-	versionConstraint, err := semver.NewConstraint(wantedVersion)
-	if err != nil {
-		return nil, err
-	}
-
-	// seach for tested releases first
-	for _, release := range testedReleases {
-		if versionConstraint.Check(release.SemverVersion()) == true {
-			return release, nil
-		}
-	}
-
-	// fallback to search all releases
-	for _, release := range releases {
-		if versionConstraint.Check(release.SemverVersion()) == true {
-			return release, nil
-		}
-	}
-
-	// found nothing
-	return nil, ErrNotMatchingRelease
-}
-
-func tildifySemverString(semverReq string) string {
-	// empty string
-	if len(semverReq) == 0 {
-		return semverReq
-	}
-
-	// first char is not a number. so this probably is a semver char → skip
-	if _, err := strconv.Atoi(semverReq[:1]); err != nil {
-		return semverReq
-	}
-
-	// apply the default to everything else
-	return "~" + semverReq
 }

@@ -104,7 +104,7 @@ func (p *Project) CreateRelease(ctx context.Context, r *Release) (*Release, erro
 }
 
 // GetReleases gets a all available releases for this project
-func (p *Project) GetReleases(ctx context.Context, platform string) ([]*Release, error) {
+func (p *Project) GetReleases(ctx context.Context, platform string) (ReleaseList, error) {
 	platformParam := "?platform=fabric"
 	if platform != "" {
 		platformParam = "?platform=" + platform
@@ -125,5 +125,5 @@ func (p *Project) GetReleases(ctx context.Context, platform string) ([]*Release,
 		r.decorate(p.client) // sets the private client field
 	}
 
-	return releases, nil
+	return ReleaseList(releases), nil
 }
