@@ -48,6 +48,7 @@ var infoCmd = &cobra.Command{
 			logger.Fail(err.Error())
 		}
 
+		fmt.Println("\nFound package manifest:")
 		fmt.Println(r)
 
 		fmt.Println("tested working with:")
