@@ -122,10 +122,10 @@ var publishCmd = &cobra.Command{
 		tasks.Log("Determening version to publish")
 		switch {
 		case release != "":
-			tasks.Log("Using supplied release version number")
+			tasks.Log("Using supplied release version number: " + release)
 			m.Package.Version = release
 		case m.Package.Version != "":
-			tasks.Log("Using version number in minepkg.toml")
+			tasks.Log("Using version number in minepkg.toml: " + m.Package.Version)
 		default:
 			repo, err := git.PlainOpen("./")
 			if err != nil {
