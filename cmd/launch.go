@@ -78,6 +78,10 @@ Alternativly: Can be used in directories containing a minepkg.toml manifest to l
 				Minecraft: "*",
 				Version:   "latest", // TODO: get from id
 			}
+			if overwriteMcVersion != "" {
+				reqs.Minecraft = overwriteMcVersion
+			}
+
 			release, err := apiClient.FindRelease(context.TODO(), args[0], reqs)
 			if err != nil {
 				logger.Fail(err.Error())
