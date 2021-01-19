@@ -14,10 +14,9 @@ func init() {
 const prefixLength = len("minepkg://")
 
 var protoHandlerCmd = &cobra.Command{
-	Use:     "proto-handler",
-	Aliases: []string{"signin"},
-	Args:    cobra.ExactArgs(1),
-	Hidden:  true,
+	Use:    "proto-handler",
+	Args:   cobra.ExactArgs(1),
+	Hidden: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println(args)
 

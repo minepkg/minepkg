@@ -102,6 +102,11 @@ Alternativly: Can be used in directories containing a minepkg.toml manifest to l
 			// overwrite some instance launch options with flags
 			instanceReqOverwrites(instance)
 
+			if overwriteMcVersion == "" {
+				fmt.Println("mc * resolved to: " + release.LatestTestedMinecraftVersion())
+				instance.Manifest.Requirements.Minecraft = release.LatestTestedMinecraftVersion()
+			}
+
 			// TODO: only show when there actually is a update. ask user?
 			logger.Headline("Updating instance")
 			// maybe not update requirements every time

@@ -2,7 +2,7 @@ module github.com/fiws/minepkg
 
 require (
 	github.com/BurntSushi/toml v0.3.1
-	github.com/Masterminds/semver v1.5.0
+	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/Tnze/go-mc v1.15.2-0.20200408080201-cf150c16fa2e
 	github.com/briandowns/spinner v1.11.1
 	github.com/dchest/uniuri v0.0.0-20200228104902-7aecb25e1fe5
@@ -11,7 +11,6 @@ require (
 	github.com/frankban/quicktest v1.10.0 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/gookit/color v1.2.5
-	github.com/lunixbochs/vtclean v1.0.0 // indirect
 	github.com/manifoldco/promptui v0.7.0
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mholt/archiver v3.1.1+incompatible

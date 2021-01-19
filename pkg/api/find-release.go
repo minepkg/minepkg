@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/Masterminds/semver"
+	"github.com/Masterminds/semver/v3"
 )
 
 // RequirementQuery is a query for a release describing contained requirements

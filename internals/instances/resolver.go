@@ -70,7 +70,7 @@ func (r *Resolver) ResolveManifest(man *manifest.Manifest) error {
 
 		reqs := &api.RequirementQuery{
 			Version:   version,
-			Minecraft: man.Requirements.Minecraft,
+			Minecraft: r.GlobalReqs.MinecraftVersion(),
 			Plattform: man.PlatformString(),
 		}
 

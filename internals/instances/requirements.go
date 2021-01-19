@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Masterminds/semver"
+	"github.com/Masterminds/semver/v3"
 	"github.com/fiws/minepkg/internals/merrors"
 	"github.com/fiws/minepkg/pkg/manifest"
 )

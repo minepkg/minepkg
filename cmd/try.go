@@ -106,7 +106,7 @@ It will be deleted after testing.
 		// overwrite some instance launch options with flags
 		instanceReqOverwrites(&instance)
 
-		if instance.Manifest.Requirements.Minecraft == "*" {
+		if overwriteMcVersion == "" {
 			fmt.Println("mc * resolved to: " + release.LatestTestedMinecraftVersion())
 			instance.Manifest.Requirements.Minecraft = release.LatestTestedMinecraftVersion()
 		}
