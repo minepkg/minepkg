@@ -15,11 +15,9 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/fiws/minepkg/pkg/api"
 	"github.com/fiws/minepkg/pkg/manifest"
-	"github.com/gookit/color"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 	"github.com/stoewer/go-strcase"
-	"gopkg.in/src-d/go-git.v4"
 )
 
 var projectName = regexp.MustCompile(`^([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])$`)
@@ -46,7 +44,6 @@ var initCmd = &cobra.Command{
 		}
 
 		man := manifest.Manifest{}
-		var gitRepo bool
 
 		chForgeVersions := make(chan *api.ForgeVersionResponse)
 		go func(ch chan *api.ForgeVersionResponse) {
@@ -57,13 +54,9 @@ var initCmd = &cobra.Command{
 			ch <- res
 		}(chForgeVersions)
 
-		if _, err := git.PlainOpen("./"); err == nil {
-			gitRepo = true
-		}
-
 		wd, _ := os.Getwd()
-
 		defaultName := strcase.KebabCase(filepath.Base(wd))
+		hasGradle := checkGradle()
 
 		if yes == true {
 			man.Package.Name = defaultName
@@ -119,33 +112,24 @@ var initCmd = &cobra.Command{
 			Default: "MIT",
 		})
 
-		// not using git. ask for the version
-		if gitRepo == false {
-			logger.Info("You can use git tags for versioning if you want: just submit an empty version")
-			man.Package.Version = stringPrompt(&promptui.Prompt{
-				Label:   "Version",
-				Default: "1.0.0",
-				Validate: func(s string) error {
-					switch {
-					case s == "":
-						return nil
-					case strings.HasPrefix(s, "v"):
-						return errors.New("Please do not include v as a prefix")
-					}
-
-					if _, err := semver.NewVersion(s); err != nil {
-						return errors.New("Not a valid semver version (major.minor.patch)")
-					}
-
+		man.Package.Version = stringPrompt(&promptui.Prompt{
+			Label:   "Version",
+			Default: "",
+			Validate: func(s string) error {
+				switch {
+				case s == "":
 					return nil
-				},
-			})
-		} else {
-			logger.Info(
-				color.Gray.Sprint("Version:") +
-					" [Using git tags]" +
-					color.Gray.Sprint(" (see \"minepkg help manifest\")"))
-		}
+				case strings.HasPrefix(s, "v"):
+					return errors.New("Please do not include v as a prefix")
+				}
+
+				if _, err := semver.NewVersion(s); err != nil {
+					return errors.New("Not a valid semver version (major.minor.patch)")
+				}
+
+				return nil
+			},
+		})
 
 		fmt.Println("")
 		logger.Info("[requirements]")
@@ -154,13 +138,15 @@ var initCmd = &cobra.Command{
 
 		switch man.Package.Platform {
 		case "fabric":
+			fmt.Println("Leaving * here is usually fine")
 			man.Requirements.Fabric = stringPrompt(&promptui.Prompt{
-				Label: "Minimum Fabric version",
+				Label:   "Minimum Fabric version",
+				Default: "*",
 				// TODO: validation
 			})
 			man.Requirements.Minecraft = stringPrompt(&promptui.Prompt{
 				Label:   "Supported Minecraft version",
-				Default: "1.15",
+				Default: "1.16",
 				// TODO: validation
 			})
 		case "forge":
@@ -185,24 +171,14 @@ var initCmd = &cobra.Command{
 		}
 
 		// generate hooks section for mods
-		if man.Package.Type == manifest.TypeMod {
-			files, err := ioutil.ReadDir("./")
-			if err != nil {
-				logger.Fail(err.Error())
-			}
-			for _, f := range files {
-				if f.Name() == "gradlew" {
-					fmt.Println("")
-					logger.Info("[hooks]")
-					useHook := boolPrompt(&promptui.Prompt{
-						Label:     "Do you want to use \"./gradlew build\" as your build hook",
-						Default:   "Y",
-						IsConfirm: true,
-					})
-					if useHook == true {
-						man.Hooks.Build = "./gradlew build"
-					}
-				}
+		if man.Package.Type == manifest.TypeMod && hasGradle {
+			useHook := boolPrompt(&promptui.Prompt{
+				Label:     "Do you want to use \"./gradlew build\" as your build command",
+				Default:   "Y",
+				IsConfirm: true,
+			})
+			if useHook == true {
+				man.Dev.BuildCommand = "./gradlew build"
 			}
 		}
 
@@ -210,6 +186,19 @@ var initCmd = &cobra.Command{
 		writeManifest(&man)
 		logger.Info(" ✓ Created minepkg.toml")
 	},
+}
+
+func checkGradle() bool {
+	files, err := ioutil.ReadDir("./")
+	if err != nil {
+		logger.Fail(err.Error())
+	}
+	for _, f := range files {
+		if f.Name() == "gradlew" {
+			return true
+		}
+	}
+	return false
 }
 
 func writeManifest(man *manifest.Manifest) {

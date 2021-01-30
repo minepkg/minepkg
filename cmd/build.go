@@ -44,10 +44,11 @@ var buildCmd = &cobra.Command{
 		}
 
 		buildScript := "gradle --build-cache build"
-		if m.Hooks.Build != "" {
+		buildCmd := m.Dev.BuildCommand
+		if buildCmd != "" {
 			logger.Log("Using custom build hook")
-			logger.Log("» " + m.Hooks.Build)
-			buildScript = m.Hooks.Build
+			logger.Log("» " + buildCmd)
+			buildScript = buildCmd
 		} else {
 			logger.Log("Using default build step (gradle --build-cache build)")
 		}

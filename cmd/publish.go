@@ -25,8 +25,6 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
-	"gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 // doomRegex: (\d+\.\d+\.\d-)?(\d+\.\d+\.\d)(.+)?
@@ -127,23 +125,7 @@ var publishCmd = &cobra.Command{
 		case m.Package.Version != "":
 			tasks.Log("Using version number in minepkg.toml: " + m.Package.Version)
 		default:
-			repo, err := git.PlainOpen("./")
-			if err != nil {
-				logger.Fail("Can't fallback to git tag version (not a valid git repo)")
-			}
-			iter, err := repo.Tags()
-
-			// TODO: warn user about quirks match
-			iter.ForEach(func(ref *plumbing.Reference) error {
-				match := versionFromTag(ref)
-				if match != "" {
-					m.Package.Version = match
-				}
-
-				return nil
-			})
-
-			logger.Info("  Found version from git " + m.Package.Version)
+			logger.Fail("No version set in minepkg.toml and no release version passed. Please set one.")
 		}
 
 		if m.Package.Version == "" {
@@ -164,61 +146,15 @@ var publishCmd = &cobra.Command{
 			logger.Fail(err.Error())
 		}
 
-		// just publish the manifest for modpacks
-		// TODO: check if anything needs publishing
-		// if m.Package.Type == manifest.TypeModpack {
-		// 	logger.Info("Creating release")
-		// 	release, err = project.CreateRelease(context.TODO(), &m)
-		// 	if err != nil {
-		// 		logger.Fail(err.Error())
-		// 	}
-		// 	logger.Info(" ✓ Released " + release.Package.Version)
-		// 	return
-		// }
-
 		tasks.Step("🏗", "Building")
 
-		if m.Hooks.Build == "" && m.Package.Type == manifest.TypeModpack {
+		buildCmd := m.Dev.BuildCommand
+		if buildCmd == "" && m.Package.Type == manifest.TypeModpack {
 			skipBuild = true
 		}
 
 		if skipBuild != true {
-			buildScript := "gradle --build-cache build"
-			if m.Hooks.Build != "" {
-				tasks.Log("Using custom build hook")
-				tasks.Log(" running " + m.Hooks.Build)
-				buildScript = m.Hooks.Build
-			} else {
-				tasks.Log("Using default build step (gradle --build-cache build)")
-			}
-
-			// TODO: I don't think this is multi platform
-			build := exec.Command("sh", []string{"-c", buildScript}...)
-			build.Env = os.Environ()
-
-			if nonInteractive == true {
-				terminalOutput(build)
-			}
-
-			var spinner func()
-			if nonInteractive != true {
-				spinner = spinnerOutput(build)
-			}
-
-			startTime := time.Now()
-			build.Start()
-			if nonInteractive != true {
-				spinner()
-			}
-
-			err = build.Wait()
-			if err != nil {
-				// TODO: output logs or something
-				fmt.Println(err)
-				logger.Fail("Build step failed. Aborting")
-			}
-
-			logger.Info(" ✓ Finished build in " + time.Now().Sub(startTime).String())
+			buildMod(&m, tasks)
 		} else {
 			logger.Info("Skipped build")
 		}
@@ -339,23 +275,6 @@ func injectManifest(r *zip.ReadCloser, m *manifest.Manifest) error {
 		}
 	}
 	return w.Close()
-}
-
-func versionFromTag(ref *plumbing.Reference) string {
-	tagName := string(ref.Name())[10:]
-
-	var version string
-	matches := semverDoom.FindStringSubmatch(tagName)
-
-	switch {
-	case len(matches) == 0:
-		return version
-	case matches[2] != "" && matches[3] == "":
-		version = matches[2]
-	case matches[2] != "" && matches[3] != "":
-		version = matches[2] + "+" + matches[3][1:]
-	}
-	return version
 }
 
 func terminalWidth() int {
@@ -544,10 +463,11 @@ search:
 
 func buildMod(m *manifest.Manifest, tasks *cmdlog.Task) {
 	buildScript := "gradle --build-cache build"
-	if m.Hooks.Build != "" {
+	buildCmd := m.Dev.BuildCommand
+	if buildCmd != "" {
 		tasks.Log("Using custom build hook")
-		tasks.Log(" running " + m.Hooks.Build)
-		buildScript = m.Hooks.Build
+		tasks.Log(" running " + buildCmd)
+		buildScript = buildCmd
 	} else {
 		tasks.Log("Using default build step (gradle --build-cache build)")
 	}

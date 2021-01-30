@@ -112,11 +112,11 @@ type Manifest struct {
 		// This field is REQUIRED
 		Name        string `toml:"name" json:"name"`
 		Description string `toml:"description" json:"description"`
-		// Version is the version number of this package. A preceeding `v` (like `v2.1.1`) should NOT
-		// be allowed for consistency
+		// Version is the version number of this package. A preceeding `v` (like `v2.1.1`) is NOT
+		// allowed to preserve consistency
 		// The version may include prerelease information like `1.2.2-beta.0` or build
 		// related information `1.2.1+B7382-2018`.
-		// The version can be omited. In that case minepkg will try to use git tags
+		// The version can be omited. Publishing will require a version number as flag in that case
 		Version string `toml:"version,omitempty" json:"version,omitempty"`
 		// Platform incidates the supported playform of this package. can be `fabric`, `forge` or `vanilla`
 		Platform string   `toml:"platform,omitempty" json:"platform,omitempty"`
@@ -154,9 +154,10 @@ type Manifest struct {
 	// Dependencies lists runtime dependencies of this package
 	// this list can contain mods and modpacks
 	Dependencies `toml:"dependencies" json:"dependencies,omitempty"`
-	// Hooks currently only contains the (optional) build command to use before publishing
-	Hooks struct {
-		Build string `toml:"build,omitempty" json:"build,omitempty"`
+	// Dev contains development & testing related options
+	Dev struct {
+		// BuildCommand is the command used for building this package (usually "./gradlew build")
+		BuildCommand string `toml:"build,omitempty" json:"build,omitempty"`
 	} `toml:"hooks" json:"hooks"`
 }
 
