@@ -1,7 +1,10 @@
-.PHONY: build run
+.PHONY: build run test
 
 build:
 	go build -ldflags="-s -w" -o ./out/minepkg
+
+test:
+	go test -v ./...
 
 build-linux:
 	GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o ./out/minepkg-linux

@@ -1,30 +1,29 @@
 package pack
 
 import (
-	"fmt"
 	"os"
 	"testing"
 )
 
-func TestPackage_Files(t *testing.T) {
+// func TestPackage_Files(t *testing.T) {
 
-	testFile, _ := os.Open("../../testdata/fake-testmod-0.0.1.jar")
-	testFileInfo, _ := testFile.Stat()
+// 	testFile, _ := os.Open("../../testdata/fake-testmod-0.0.1.jar")
+// 	testFileInfo, _ := testFile.Stat()
 
-	tests := []struct {
-		name string
-		pkg  *Reader
-	}{
-		{"test", NewReader(testFile, testFileInfo.Size())},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			p := tt.pkg
-			files := p.Files()
-			fmt.Println(files)
-		})
-	}
-}
+// 	tests := []struct {
+// 		name string
+// 		pkg  *Reader
+// 	}{
+// 		{"test", NewReader(testFile, testFileInfo.Size())},
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			p := tt.pkg
+// 			files := p.Files()
+// 			fmt.Printf("%+v\n", files)
+// 		})
+// 	}
+// }
 
 func TestPackage_Manifest(t *testing.T) {
 
