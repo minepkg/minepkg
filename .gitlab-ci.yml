@@ -15,6 +15,7 @@ snapshot build:
     - tags # no version tags
   script:
     - goreleaser release --snapshot --skip-publish
+    - make test
   artifacts:
     paths:
       - dist

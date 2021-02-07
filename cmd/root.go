@@ -99,9 +99,9 @@ func initRoot() {
 	// Global flags
 	rootCmd.PersistentFlags().BoolVarP(&disableColors, "no-color", "", false, "disable color output")
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.minepkg/config.toml)")
-	rootCmd.PersistentFlags().BoolP("accept-minecraft-eula", "a", false, "Accept Mojang's Minecraft eula. See https://account.mojang.com/documents/minecraft_eula. Needed to start the Minecraft server")
+	rootCmd.PersistentFlags().BoolP("accept-minecraft-eula", "a", false, "Accept Mojang's Minecraft eula. See https://account.mojang.com/documents/minecraft_eula")
 	rootCmd.PersistentFlags().BoolP("system-java", "", false, "Use system java instead of internal installation for launching Minecraft server or client")
-	rootCmd.PersistentFlags().BoolP("verbose", "", false, "More verbose logging. Not realy implented yet")
+	rootCmd.PersistentFlags().BoolP("verbose", "", false, "More verbose logging. Not really implented yet")
 
 	viper.BindPFlag("noColor", rootCmd.PersistentFlags().Lookup("no-color"))
 	viper.BindPFlag("useSystemJava", rootCmd.PersistentFlags().Lookup("system-java"))

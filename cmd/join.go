@@ -22,110 +22,102 @@ import (
 	"github.com/spf13/viper"
 )
 
+type joinCommandeer struct {
+	cmd *cobra.Command
+}
+
 func init() {
-	joinCmd.Flags().BoolP("system-java", "", false, "Use system java instead of internal installation")
-	viper.BindPFlag("useSystemJava", joinCmd.Flags().Lookup("system-java"))
+	j := joinCommandeer{}
+	var joinCmd = &cobra.Command{
+		Use:     "join <ip/hostname>",
+		Short:   "Joins a compatible server without any setup",
+		Long:    `Servers have to be started with \"minepkg launch --server\" or include the minepkg-companion mod`,
+		Example: `  minepkg join demoserver.minepkg.io`,
+		Aliases: []string{"i-wanna-play-on", "connect"},
+		Args:    cobra.ExactArgs(1),
+		Run:     j.run,
+	}
+
 	rootCmd.AddCommand(joinCmd)
 }
 
-// TODO: use launch logic (save setup)
-var joinCmd = &cobra.Command{
-	Use:     "join <ip/hostname>",
-	Short:   "Joins a compatible server without any setup",
-	Long:    `Servers have to be started with \"minepkg launch --server\" or include the minepkg-companion mod`,
-	Example: `  minepkg join demoserver.minepkg.io`,
-	Aliases: []string{"i-wanna-play-on", "connect"},
-	Args:    cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+func (j *joinCommandeer) run(cmd *cobra.Command, args []string) {
 
-		var resolvedModpack *api.Release
-		ip := "127.0.0.1"
-		connectionString := strings.Split(args[0], ":")
-		host := connectionString[0]
-		port := "25565"
+	var resolvedModpack *api.Release
+	ip := "127.0.0.1"
+	connectionString := strings.Split(args[0], ":")
+	host := connectionString[0]
+	port := "25565"
 
-		if len(connectionString) == 2 {
-			port = connectionString[1]
-		}
+	if len(connectionString) == 2 {
+		port = connectionString[1]
+	}
 
-		if host != "localhost" {
-			rawIP, err := net.LookupHost(host)
-			if err != nil {
-				logger.Fail("Could not resolve host " + host)
-			}
-
-			ip = strings.Join(rawIP, ".")
-		}
-
-		resolvedModpack = resolveViaSLP(ip, port)
-		if resolvedModpack == nil {
-			resolvedModpack = resolveFromAPI(ip)
-		}
-
-		if resolvedModpack == nil {
-			logger.Info("Could not determine the server modpack")
-			os.Exit(1)
-		}
-
-		// looks like we can join this server, so we start initializing the instance stuff here
-		instance := instances.Instance{
-			GlobalDir:  globalDir,
-			Lockfile:   manifest.NewLockfile(),
-			MinepkgAPI: apiClient,
-		}
-
-		instanceDir := filepath.Join(instance.InstancesDir(), "server."+ip+"."+resolvedModpack.Package.Name+"."+resolvedModpack.Package.Platform)
-		os.MkdirAll(instanceDir, os.ModePerm)
-
-		instance.Directory = instanceDir
-		wd, err := os.Getwd()
+	if host != "localhost" {
+		rawIP, err := net.LookupHost(host)
 		if err != nil {
-			logger.Fail(err.Error())
-		}
-		// change dir to the instance
-		if err := os.Chdir(instanceDir); err != nil {
-			logger.Fail(err.Error())
+			logger.Fail("Could not resolve host " + host)
 		}
 
-		defer os.Chdir(wd) // move back to working directory
+		ip = strings.Join(rawIP, ".")
+	}
 
-		creds, err := ensureMojangAuth()
-		if err != nil {
-			logger.Fail(err.Error())
-		}
-		instance.MojangCredentials = creds
+	resolvedModpack = resolveViaSLP(ip, port)
+	if resolvedModpack == nil {
+		resolvedModpack = resolveFromAPI(ip)
+	}
 
-		instance.Manifest = resolvedModpack.Manifest
-		fmt.Println("Using modpack " + resolvedModpack.Identifier())
+	if resolvedModpack == nil {
+		logger.Info("Could not determine the server modpack")
+		os.Exit(1)
+	}
 
-		// force the latest requirements
-		if err := instance.UpdateLockfileRequirements(context.TODO()); err != nil {
-			logger.Fail(err.Error())
-		}
+	// looks like we can join this server, so we start initializing the instance stuff here
+	instance := instances.Instance{
+		GlobalDir:  globalDir,
+		Lockfile:   manifest.NewLockfile(),
+		MinepkgAPI: apiClient,
+	}
 
-		// force the latest dependencies
-		if err := instance.UpdateLockfileDependencies(context.TODO()); err != nil {
-			logger.Fail(err.Error())
-		}
+	instanceDir := filepath.Join(instance.InstancesDir(), "server."+ip+"."+resolvedModpack.Package.Name+"."+resolvedModpack.Package.Platform)
+	os.MkdirAll(instanceDir, os.ModePerm)
 
-		instance.SaveLockfile()
+	instance.Directory = instanceDir
+	wd, err := os.Getwd()
+	if err != nil {
+		logger.Fail(err.Error())
+	}
+	// change dir to the instance
+	if err := os.Chdir(instanceDir); err != nil {
+		logger.Fail(err.Error())
+	}
 
-		cliLauncher := launch.CLILauncher{Instance: &instance, ServerMode: serverMode}
-		cliLauncher.Prepare()
+	defer os.Chdir(wd) // move back to working directory
 
-		if viper.GetBool("useSystemJava") == true {
-			instance.UseSystemJava()
-		}
+	creds, err := ensureMojangAuth()
+	if err != nil {
+		logger.Fail(err.Error())
+	}
+	instance.MojangCredentials = creds
 
-		fmt.Println("\nLaunching Minecraft …")
-		opts := &instances.LaunchOptions{
-			JoinServer: ip + ":" + port,
-		}
-		err = cliLauncher.Launch(opts)
-		if err != nil {
-			logger.Fail(err.Error())
-		}
-	},
+	instance.Manifest = resolvedModpack.Manifest
+	fmt.Println("Using modpack " + resolvedModpack.Identifier())
+
+	cliLauncher := launch.CLILauncher{Instance: &instance, ServerMode: false}
+	cliLauncher.Prepare()
+
+	if viper.GetBool("useSystemJava") == true {
+		instance.UseSystemJava()
+	}
+
+	fmt.Println("\nLaunching Minecraft …")
+	opts := &instances.LaunchOptions{
+		JoinServer: ip + ":" + port,
+	}
+	err = cliLauncher.Launch(opts)
+	if err != nil {
+		logger.Fail(err.Error())
+	}
 }
 
 type modpackDescription struct {

@@ -1,6 +1,9 @@
 package launch
 
 import (
+	"io/ioutil"
+	"path/filepath"
+
 	"github.com/fiws/minepkg/internals/instances"
 )
 
@@ -37,6 +40,11 @@ func (c *CLILauncher) Launch(opts *instances.LaunchOptions) error {
 	// stop was succesfull, so we ignore the error here
 	if cmd.ProcessState.ExitCode() == 130 || cmd.ProcessState.ExitCode() == 0 {
 		return nil
+	}
+
+	if len(c.originalServerProps) != 0 {
+		settingsFile := filepath.Join(c.Instance.McDir(), "server.properties")
+		ioutil.WriteFile(settingsFile, c.originalServerProps, 0644)
 	}
 
 	return c.HandleCrash()

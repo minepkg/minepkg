@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fiws/minepkg/internals/instances"
 	"github.com/fiws/minepkg/pkg/mojang"
 )
 
@@ -79,20 +78,6 @@ func ensureMojangAuth() (*mojang.AuthResponse, error) {
 		return nil, err
 	}
 	return credStore.MojangAuth, nil
-}
-
-func instanceReqOverwrites(instance *instances.Instance) {
-	if overwriteFabricVersion != "" {
-		instance.Manifest.Requirements.Fabric = overwriteFabricVersion
-	}
-	if overwriteMcVersion != "" {
-		fmt.Println("mc version overwritten!")
-		instance.Manifest.Requirements.Minecraft = overwriteMcVersion
-	}
-	if overwriteCompanion != "" {
-		fmt.Println("companion overwritten!")
-		instance.Manifest.Requirements.MinepkgCompanion = overwriteCompanion
-	}
 }
 
 // CopyFile copies a file from src to dst. If src and dst files exist, and are
