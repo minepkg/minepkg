@@ -9,7 +9,7 @@ import (
 
 	"github.com/fiws/minepkg/internals/downloadmgr"
 	"github.com/fiws/minepkg/internals/pack"
-	"github.com/fiws/minepkg/internals/resolver/v2"
+	"github.com/fiws/minepkg/internals/resolver"
 	"github.com/fiws/minepkg/pkg/manifest"
 )
 
