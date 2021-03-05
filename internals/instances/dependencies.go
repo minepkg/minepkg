@@ -9,6 +9,7 @@ import (
 
 	"github.com/fiws/minepkg/internals/downloadmgr"
 	"github.com/fiws/minepkg/internals/pack"
+	"github.com/fiws/minepkg/internals/resolver/v2"
 	"github.com/fiws/minepkg/pkg/manifest"
 )
 
@@ -33,21 +34,14 @@ func (i *Instance) UpdateLockfileDependencies(ctx context.Context) error {
 		i.Manifest.AddDependency("minepkg-companion", v)
 	}
 
-	res := NewResolver(i.MinepkgAPI, i.Lockfile.PlatformLock())
+	res := resolver.New(i.MinepkgAPI, i.Lockfile.PlatformLock())
 	err := res.ResolveManifest(i.Manifest)
 
 	if err != nil {
 		return err
 	}
-	for _, release := range res.Resolved {
-		i.Lockfile.AddDependency(&manifest.DependencyLock{
-			Name:     release.Package.Name,
-			Version:  release.Package.Version,
-			Type:     release.Package.Type,
-			IPFSHash: release.Meta.IPFSHash,
-			Sha256:   release.Meta.Sha256,
-			URL:      release.DownloadURL(),
-		})
+	for _, lock := range res.Resolved {
+		i.Lockfile.AddDependency(lock)
 	}
 
 	// This is kind of a hack

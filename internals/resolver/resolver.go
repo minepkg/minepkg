@@ -1,4 +1,4 @@
-package instances
+package resolver
 
 import (
 	"context"
@@ -14,7 +14,7 @@ var (
 	ErrNoGlobalReqs = errors.New("No GlobalReqs set. They are required to resolve")
 )
 
-// ErrNoMatchingRelease is returned if a wanted dependency (package) could not be resolved given the requirements
+// ErrNoMatchingRelease is returned if a wanted releaseendency (package) could not be resolved given the requirements
 type ErrNoMatchingRelease struct {
 	// Package is the name of the pacakge that can not be resolved
 	Package string
@@ -42,17 +42,17 @@ func (e *ErrNoMatchingRelease) Error() string {
 
 // Resolver resolves given the mods of given dependencies
 type Resolver struct {
-	Resolved   map[string]*api.Release
+	Resolved   map[string]*manifest.DependencyLock
 	client     *api.MinepkgAPI
 	GlobalReqs manifest.PlatformLock
 	// IgnoreVersion will make the resolver ignore all version requirements and just fetch the latest version for everything
 	IgnoreVersion bool
 }
 
-// NewResolver returns a new resolver
-func NewResolver(client *api.MinepkgAPI, reqs manifest.PlatformLock) *Resolver {
+// New returns a new resolver
+func New(client *api.MinepkgAPI, reqs manifest.PlatformLock) *Resolver {
 	return &Resolver{
-		Resolved:      make(map[string]*api.Release),
+		Resolved:      make(map[string]*manifest.DependencyLock),
 		client:        client,
 		GlobalReqs:    reqs,
 		IgnoreVersion: false,
@@ -80,12 +80,9 @@ func (r *Resolver) ResolveManifest(man *manifest.Manifest) error {
 
 		release, err := r.client.FindRelease(context.TODO(), name, reqs)
 		if err != nil {
-			if err == api.ErrNotMatchingRelease {
-				return &ErrNoMatchingRelease{Package: name, Requirements: reqs}
-			}
 			return err
 		}
-		err = r.ResolveSingle(release)
+		err = r.Resolve(release)
 		if err != nil {
 			return err
 		}
@@ -94,46 +91,65 @@ func (r *Resolver) ResolveManifest(man *manifest.Manifest) error {
 	return nil
 }
 
-// Resolve find all dependencies from the given `id`
-// and adds it to the `resolved` map
-func (r *Resolver) Resolve(releases []*api.Release) error {
-	for _, release := range releases {
-		r.ResolveSingle(release)
+// Resolve resolves all dependencies of a single package
+func (r *Resolver) Resolve(release *api.Release) error {
+
+	r.addResolvedRelease(release)
+	resolveNext := release.InterpretedDependencies()
+
+	for len(resolveNext) != 0 {
+		resolveNow := resolveNext
+		resolveNext = []*manifest.InterpretedDependency{}
+
+		for _, dep := range resolveNow {
+			// already resolved
+			_, ok := r.Resolved[dep.Name]
+			if ok == true {
+				continue
+			}
+			r.Resolved[dep.Name] = nil
+
+			resolvedDep, err := r.resolveMinepkg(dep)
+			if err != nil {
+				return err
+			}
+			r.addResolvedRelease(resolvedDep)
+			resolveNext = append(resolveNext, resolvedDep.InterpretedDependencies()...)
+		}
 	}
 
 	return nil
 }
 
-// ResolveSingle resolves all dependencies of a single release
-func (r *Resolver) ResolveSingle(release *api.Release) error {
-	r.Resolved[release.Package.Name] = release
-	original := release
-	// TODO: parallelize
-	for name, versionRequirement := range release.Dependencies {
-		_, ok := r.Resolved[name]
-		if ok == true {
-			continue
-		}
-		r.Resolved[name] = nil
-		reqs := &api.RequirementQuery{
-			Minecraft: r.GlobalReqs.MinecraftVersion(),
-			Version:   versionRequirement,
-			Plattform: r.GlobalReqs.PlatformName(),
-		}
+func (r *Resolver) addResolvedRelease(release *api.Release) {
+	r.Resolved[release.Package.Name] = &manifest.DependencyLock{
+		Name:     release.Package.Name,
+		Version:  release.Package.Version,
+		Type:     release.Package.Type,
+		IPFSHash: release.Meta.IPFSHash,
+		Sha256:   release.Meta.Sha256,
+		URL:      release.DownloadURL(),
+	}
+}
 
-		if r.IgnoreVersion {
-			reqs.Version = "*"
-		}
-
-		release, err := r.client.FindRelease(context.TODO(), name, reqs)
-		if err != nil {
-			if err == api.ErrNotMatchingRelease {
-				return &ErrNoMatchingRelease{Package: name, Requirements: reqs, Parent: original}
-			}
-			return err
-		}
-		r.ResolveSingle(release)
+func (r *Resolver) resolveMinepkg(dep *manifest.InterpretedDependency) (*api.Release, error) {
+	reqs := &api.RequirementQuery{
+		Minecraft: r.GlobalReqs.MinecraftVersion(),
+		Version:   dep.Source,
+		Plattform: r.GlobalReqs.PlatformName(),
 	}
 
-	return nil
+	if r.IgnoreVersion {
+		reqs.Version = "*"
+	}
+
+	release, err := r.client.FindRelease(context.TODO(), dep.Name, reqs)
+	if err != nil {
+		return nil, err
+	}
+	return release, nil
+}
+
+func resolveHttp() {
+
 }
