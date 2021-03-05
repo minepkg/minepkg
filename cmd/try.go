@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -88,7 +89,8 @@ func (t *tryCommandeer) run(cmd *cobra.Command, args []string) {
 		Plattform: "fabric", // TODO!!!
 	}
 	release, err := apiClient.FindRelease(context.TODO(), name, reqs)
-	if err != nil && err != api.ErrNotMatchingRelease {
+	var e *api.ErrNoMatchingRelease
+	if err != nil && errors.As(err, &e) != true {
 		logger.Fail(err.Error())
 	}
 	if release == nil {

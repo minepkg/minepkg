@@ -17,8 +17,8 @@ var (
 	ErrorNotFound = errors.New("Resource not found")
 	// ErrorBadRequest gets returned when a 400 occured
 	ErrorBadRequest = errors.New("Bad Request")
-	// DefaultURL is "https://test-api.minepkg.io/v1"
-	DefaultURL = "https://test-api.minepkg.io/v1"
+	// DefaultURL is "https://api.preview.minepkg.io/v1"
+	DefaultURL = "https://api.preview.minepkg.io/v1"
 )
 
 // MinepkgAPI contains credentials and methods to talk
@@ -26,7 +26,7 @@ var (
 type MinepkgAPI struct {
 	// HTTP is the internal http client
 	HTTP *http.Client
-	// BaseAPI is the API url used. defaults to `https://test-api.minepkg.io/v1`
+	// BaseAPI is the API url used. defaults to `https://api.preview.minepkg.io/v1`
 	APIUrl string
 	APIKey string
 	JWT    string

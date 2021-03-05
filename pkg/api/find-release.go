@@ -24,6 +24,18 @@ type RequirementQuery struct {
 // ErrInvalidMinecraftRequirement is returned if an invalid minecraft requirement was passed
 var ErrInvalidMinecraftRequirement = errors.New("Minecraft requirement is invalid. Only * or a version number is allowed. No semver")
 
+// ErrNoMatchingRelease is returned if a wanted releaseendency (package) could not be resolved given the requirements
+type ErrNoMatchingRelease struct {
+	// Package is the name of the package that can not be resolved
+	Package string
+	// Requirements are the requirements for this package to resolve (eg. minecraft version)
+	Requirements *RequirementQuery
+}
+
+func (e *ErrNoMatchingRelease) Error() string {
+	return fmt.Sprintf("No release found for package \"%s\" with requirements: %s", e.Package, e.Requirements)
+}
+
 // FindRelease gets the latest release matching the passed requirements via `RequirementQuery`
 func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *RequirementQuery) (*Release, error) {
 	p := Project{client: m, Name: project}
@@ -47,7 +59,7 @@ func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *Requ
 
 	// found nothing
 	if len(releases) == 0 {
-		return nil, ErrNotMatchingRelease
+		return nil, &ErrNoMatchingRelease{Package: project, Requirements: reqs}
 	}
 
 	testedReleases := make([]*Release, 0, len(releases))
@@ -77,7 +89,7 @@ func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *Requ
 				return release, nil
 			}
 		}
-		return nil, ErrNotMatchingRelease
+		return nil, &ErrNoMatchingRelease{Package: project, Requirements: reqs}
 		// return releases[0], nil
 	}
 
@@ -101,7 +113,7 @@ func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *Requ
 	}
 
 	// found nothing
-	return nil, ErrNotMatchingRelease
+	return nil, &ErrNoMatchingRelease{Package: project, Requirements: reqs}
 }
 
 // testedFor returns true if this release was tested worked for the given minecraft version

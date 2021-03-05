@@ -21,15 +21,20 @@ var (
 
 // Store stures the minepkg & mojang tokens
 type Store struct {
-	globalDir     string
-	NoKeyRingMode bool
-	MinepkgAuth   *oauth2.Token
-	MojangAuth    *mojang.AuthResponse
+	globalDir string
+	// MinepkgServiceName should be different for each api env
+	MinepkgServiceName string
+	NoKeyRingMode      bool
+	MinepkgAuth        *oauth2.Token
+	MojangAuth         *mojang.AuthResponse
 }
 
-// New creates a new downloadmgr
-func New(globalDir string) (*Store, error) {
-	store := &Store{globalDir: globalDir}
+// New creates a new credentials store
+func New(globalDir string, serviceName string) (*Store, error) {
+	store := &Store{globalDir: globalDir, MinepkgServiceName: serviceName}
+	if store.MinepkgServiceName == "" {
+		store.MinepkgServiceName = minepkgAuthService
+	}
 	// TODO: error handling!
 	err := store.Find()
 	if err != nil {
@@ -41,7 +46,7 @@ func New(globalDir string) (*Store, error) {
 // Find tries to find existing credentials
 func (s *Store) Find() error {
 	// find minepkg credentials
-	minepkgAuth, err := keyring.Get(minepkgAuthService, minepkgAuthUser)
+	minepkgAuth, err := keyring.Get(s.MinepkgServiceName, minepkgAuthUser)
 	switch err {
 	case nil:
 		err := json.Unmarshal([]byte(minepkgAuth), &s.MinepkgAuth)

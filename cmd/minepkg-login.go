@@ -30,7 +30,7 @@ func minepkgLogin() {
 		fmt.Println("This seems to be a server. You can not login on a server.")
 		fmt.Println("Set the environment variable MINEPKG_API_KEY to a valid API key instead to authorize.")
 		// TODO: create link
-		fmt.Println("See https://test-www.minepkg.io/docs/server-auth for more info")
+		fmt.Println("See https://preview.minepkg.io/docs/server-auth for more info")
 		fmt.Println("You can also add --force if you want to try to open a browser nonetheless")
 		os.Exit(1)
 	}

@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,9 +10,6 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/fiws/minepkg/pkg/manifest"
 )
-
-// ErrNotMatchingRelease gets returned if no matching release was found
-var ErrNotMatchingRelease = errors.New("No matching release found for this dependency")
 
 func (r *Release) decorate(c *MinepkgAPI) {
 	r.client = c

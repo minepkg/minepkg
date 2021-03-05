@@ -76,7 +76,7 @@ func initRoot() {
 	}
 	token := os.Getenv("MINEPKG_API_TOKEN")
 	globalDir = filepath.Join(home, ".minepkg")
-	credStore, err = credentials.New(globalDir)
+	credStore, err = credentials.New(globalDir, apiClient.APIUrl)
 	if err != nil {
 		if token != "" {
 			logger.Warn("Could not initialize credential store: " + err.Error())
