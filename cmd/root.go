@@ -17,8 +17,11 @@ import (
 // TODO: this logger is not so great – also: it should not be global
 var logger *cmdlog.Logger = cmdlog.New()
 
-// Version is the cmd version. It is set by main.go from goreleaser
-var Version string = "0.0.46-dev"
+// Version is the current version. it should be set by goreleaser
+var Version string
+
+// nextVersion is a placeholder version. only used for local dev
+var nextVersion string = "0.1.0-dev-local"
 
 var (
 	cfgFile       string
@@ -31,10 +34,10 @@ var (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Version: Version,
-	Use:     "minepkg",
-	Short:   "Minepkg at your service.",
-	Long:    "Manage Minecraft mods with ease",
+	// Version gets set dynamically
+	Use:   "minepkg",
+	Short: "Minepkg at your service.",
+	Long:  "Manage Minecraft mods with ease",
 
 	Example: `
   minepkg init -l fabric
@@ -54,6 +57,10 @@ func Execute() {
 }
 
 func initRoot() {
+	rootCmd.Version = Version
+	if rootCmd.Version == "" {
+		rootCmd.Version = nextVersion
+	}
 	home, err := os.UserHomeDir()
 	if err != nil {
 		panic(err)
