@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="220" src="./assets/logo.svg" alt="minepkg" />
+  <img align="center" width="100" src="./assets/logo.svg" alt="minepkg" />
   <div align="center">
     minepkg is a package manager designed to install Minecraft mods and modpacks.
   </div>
