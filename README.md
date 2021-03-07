@@ -16,17 +16,19 @@
 
 * Installs mods from [minepkg](https://minepkg.io/) (with dependency resolution)
 * Can launch Minecraft
+* Join compatible modded Servers with one command (Installs modpack and launches Minecraft for you)
 * Saves your installed mods in a sharable `minepkg.toml`
   * `minepkg.toml` modpacks can extend other modpacks
+* Publish mods and modpacks to minepkg.io
 
 ## Installation
 
 ### Linux & MacOS
 
-Run this in your favourite shell. The installation will require/ask for sudo rights.
+Run this in your favourite shell.
 
 ```bash
-bash <(curl -s https://storage.googleapis.com/minepkg-client/installer.sh)
+curl -s https://preview.minepkg.io/install.sh | bash
 ```
 
 ### Windows
@@ -34,13 +36,13 @@ bash <(curl -s https://storage.googleapis.com/minepkg-client/installer.sh)
 Run this in **powershell**
 
 ```
-. { iwr -useb https://storage.googleapis.com/minepkg-client/windows-installer.ps1} | iex; minepkg
+. { iwr -useb https://preview.minepkg.io/install.ps1} | iex
 ```
 
 ## Usage
 
 ```
-❯ minepkg --help
+$ minepkg --help
 Manage Minecraft mods with ease
 
 Usage:
@@ -50,34 +52,34 @@ Examples:
 
   minepkg init -l fabric
   minepkg install modmenu@latest
-  minepkg install https://minepkg.io/projects/desire-paths
+  minepkg join demo.minepkg.host
 
 Available Commands:
-  build               Runs the build hook (falls back to gradle build)
+  build               Runs the set buildCmd (falls back to gradle build)
   help                Help about any command
   init                Creates a new mod or modpack in the current directory
-  install             installs one or more packages
+  install             Installs one or more packages in your current modpack or mod
   join                Joins a compatible server without any setup
-  launch              Launch a local or remote modpack.
+  launch              Launch the given or local modpack.
   login               Sign in to Mojang in order to start Minecraft
-  minepkg-login       Sign in to minepkg.io
+  minepkg-login       Sign in to minepkg.io (mainly for publishing)
   publish             Publishes the local package in the current directory
-  remove              removes specified package from the manifest
+  remove              Removes specified package from the current package
   selfupdate          Updates minepkg to the latest version
   try                 Lets you try a mod or modpack in Minecraft
-  update              updates all installed dependencies
-  update-requirements updates installed requirements (minecraft & loader version)
+  update              Updates all installed dependencies
+  update-requirements Updates installed requirements (minecraft & loader version)
 
 Flags:
-  -a, --accept-minecraft-eula   Accept Mojang's Minecraft eula. […]
+  -a, --accept-minecraft-eula   Accept Minecraft's eula. […]
       --config string           config file (default is $HOME/.minepkg/config.toml)
   -h, --help                    help for minepkg
       --no-color                disable color output
-      --system-java             Use system java […]
+      --system-java             Use system java instead […]
       --verbose                 More verbose logging. Not really implented yet
+  -v, --version                 version for minepkg
 
 Use "minepkg [command] --help" for more information about a command.
-
 
 ```
 
@@ -89,7 +91,7 @@ Use "minepkg [command] --help" for more information about a command.
 
 ## Building
 
-Requires go 1.11+. Don't use your GOPATH.
+Requires go ~ 1.16+. Could also work with older go versions.
 Just `go run main.go [commands]` or `go build -o out/minepkg`
 
 ```
