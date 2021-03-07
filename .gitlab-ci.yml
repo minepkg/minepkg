@@ -33,27 +33,6 @@ release build:
     paths:
       - dist
 
-linux packages:
-  stage: package
-  image: "tenzer/fpm:no-entrypoint"
-  only:
-    - /^v\d+\.\d+\.\d+-?.*$/
-  dependencies:
-    - release build
-  variables:
-    GIT_STRATEGY: none
-  script:
-    - mkdir -p ./source/usr/bin
-    - cp dist/minepkg_linux_amd64/minepkg ./source/usr/bin
-    - fpm -s dir -C ./source -t deb -n minepkg -v $CI_COMMIT_REF_NAME .
-    - fpm -s dir -C ./source -t rpm -n minepkg -v $CI_COMMIT_REF_NAME .
-    - fpm -s dir -C ./source -t pacman -n minepkg -v $CI_COMMIT_REF_NAME .
-  artifacts:
-    paths:
-      - '*.deb'
-      - '*.rpm'
-      - '*.pkg.tar.xz' # pacman
-
 gcs release:
   stage: release
   image: google/cloud-sdk:slim

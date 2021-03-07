@@ -72,5 +72,5 @@ manifestVersion = 0
   enderio = "github:example/patched-enderio@5.0.2"
 
 # This section is intended for mod developers to ease publishing
-[hooks]
-  build = "gradle build"
+[dev]
+  buildCmd = "gradle build"

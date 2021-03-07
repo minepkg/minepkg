@@ -27,3 +27,20 @@ release:
   gitlab:
     owner: minepkg
     name: cli
+nfpms:
+  -
+    # ID of the nfpm config, must be unique.
+    id: default
+
+    # Name of the package.
+    package_name: minepkg
+
+    homepage: https://minepkg.io/
+    maintainer: Filip Weiss <me@fiws.net>
+    description: A package manager designed to install Minecraft mods and modpacks.
+    license: MIT
+    formats:
+      - apk
+      - deb
+      - rpm
+
