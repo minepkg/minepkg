@@ -17,7 +17,7 @@ func init() {
 var mloginCmd = &cobra.Command{
 	Use:     "minepkg-login",
 	Aliases: []string{"signin"},
-	Short:   "Sign in to minepkg.io",
+	Short:   "Sign in to minepkg.io (mainly for publishing)",
 	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		minepkgLogin()

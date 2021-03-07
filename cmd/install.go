@@ -14,7 +14,7 @@ func init() {
 
 var installCmd = &cobra.Command{
 	Use:     "install [name/url/id]",
-	Short:   "installs one or more packages",
+	Short:   "Installs one or more packages in your current modpack or mod",
 	Long:    `Adds package(s) to your local modpack or mod. Launch the modpack with minepkg launch`,
 	Aliases: []string{"isntall", "i", "add"},
 	Run: func(cmd *cobra.Command, args []string) {

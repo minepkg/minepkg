@@ -32,7 +32,7 @@ func init() {
 		Use:     "join <ip/hostname>",
 		Short:   "Joins a compatible server without any setup",
 		Long:    `Servers have to be started with \"minepkg launch --server\" or include the minepkg-companion mod`,
-		Example: `  minepkg join demoserver.minepkg.io`,
+		Example: `  minepkg join demo.minepkg.host`,
 		Aliases: []string{"i-wanna-play-on", "connect"},
 		Args:    cobra.ExactArgs(1),
 		Run:     j.run,

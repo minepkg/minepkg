@@ -14,7 +14,7 @@ func init() {
 
 var removeCmd = &cobra.Command{
 	Use:     "remove <package>",
-	Short:   "removes specified package from the manifest",
+	Short:   "Removes specified package from the current package",
 	Aliases: []string{"delete", "un", "uninstall", "rm"},
 	Run: func(cmd *cobra.Command, args []string) {
 		instance, err := instances.NewInstanceFromWd()

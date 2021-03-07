@@ -41,25 +41,43 @@ Run this in **powershell**
 
 ```
 ❯ minepkg --help
-Manage Minecraft mods with ease.
-
-Examples:
-  minepkg install rftools
-  minepkg install https://minecraft.curseforge.com/projects/storage-drawers
+Manage Minecraft mods with ease
 
 Usage:
   minepkg [command]
 
+Examples:
+
+  minepkg init -l fabric
+  minepkg install modmenu@latest
+  minepkg install https://minepkg.io/projects/desire-paths
+
 Available Commands:
-  completion  Output shell completion code for bash
-  help        Help about any command
-  install     installz packages
-  refresh     Fetches all mods that are available
+  build               Runs the build hook (falls back to gradle build)
+  help                Help about any command
+  init                Creates a new mod or modpack in the current directory
+  install             installs one or more packages
+  join                Joins a compatible server without any setup
+  launch              Launch a local or remote modpack.
+  login               Sign in to Mojang in order to start Minecraft
+  minepkg-login       Sign in to minepkg.io
+  publish             Publishes the local package in the current directory
+  remove              removes specified package from the manifest
+  selfupdate          Updates minepkg to the latest version
+  try                 Lets you try a mod or modpack in Minecraft
+  update              updates all installed dependencies
+  update-requirements updates installed requirements (minecraft & loader version)
 
 Flags:
-  -h, --help            help for minepkg
+  -a, --accept-minecraft-eula   Accept Mojang's Minecraft eula. […]
+      --config string           config file (default is $HOME/.minepkg/config.toml)
+  -h, --help                    help for minepkg
+      --no-color                disable color output
+      --system-java             Use system java […]
+      --verbose                 More verbose logging. Not really implented yet
 
 Use "minepkg [command] --help" for more information about a command.
+
 
 ```
 

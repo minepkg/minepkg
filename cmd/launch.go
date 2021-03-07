@@ -36,7 +36,7 @@ func init() {
 	l := launchCommandeer{}
 	l.cmd = &cobra.Command{
 		Use:   "launch [modpack]",
-		Short: "Launch a local or remote modpack.",
+		Short: "Launch the given or local modpack.",
 		Long: `If a modpack name or URL is supplied, that modpack will be launched.
 	Alternativly: Can be used in directories containing a minepkg.toml manifest to launch that modpack.
 		`,

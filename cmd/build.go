@@ -15,7 +15,7 @@ func init() {
 
 var buildCmd = &cobra.Command{
 	Use:   "build",
-	Short: "Runs the build hook (falls back to gradle build)",
+	Short: "Runs the set buildCmd (falls back to gradle build)",
 	Run: func(cmd *cobra.Command, args []string) {
 		startTime := time.Now()
 

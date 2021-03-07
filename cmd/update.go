@@ -19,7 +19,7 @@ func init() {
 
 var updateCmd = &cobra.Command{
 	Use:   "update",
-	Short: "updates all installed dependencies",
+	Short: "Updates all installed dependencies",
 	Long: `
 This updates the local mods according to the minepkg.toml. 
 Edit the minepkg.toml to change the version requirements.
@@ -41,9 +41,9 @@ Edit the minepkg.toml to change the version requirements.
 
 var updateReqCmd = &cobra.Command{
 	Use:   "update-requirements",
-	Short: "updates installed requirements (minecraft & loader version)",
+	Short: "Updates installed requirements (minecraft & loader version)",
 	Long: `
-This updates the installed requirements according to the minepkg.toml. 
+This updates the installed requirements according to the minepkg.toml.
 Edit the minepkg.toml to change the version requirements.
 `,
 	Aliases: []string{"update-req"},

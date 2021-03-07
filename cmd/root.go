@@ -18,7 +18,7 @@ import (
 var logger *cmdlog.Logger = cmdlog.New()
 
 // Version is the cmd version. It is set by main.go from goreleaser
-var Version string
+var Version string = "0.0.46-dev"
 
 var (
 	cfgFile       string
@@ -31,7 +31,7 @@ var (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Version: "local-dev",
+	Version: Version,
 	Use:     "minepkg",
 	Short:   "Minepkg at your service.",
 	Long:    "Manage Minecraft mods with ease",
@@ -39,29 +39,14 @@ var rootCmd = &cobra.Command{
 	Example: `
   minepkg init -l fabric
   minepkg install modmenu@latest
-  minepkg install https://minepkg.io/projects/desire-paths`,
-}
-
-var completionCmd = &cobra.Command{
-	Use:   "completion",
-	Args:  cobra.MaximumNArgs(1),
-	Short: "Output shell completion code for bash",
-	Long: `To load completion run
-
-. <(minepkg completion)
-
-You can add that line to your ~/.bashrc or ~/.profile to
-persist completion in your shell.
-`,
-	Run: func(cmd *cobra.Command, args []string) {
-		rootCmd.GenBashCompletion(os.Stdout)
-	},
+  minepkg join demo.minepkg.host`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	initRoot()
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -69,7 +54,6 @@ func Execute() {
 }
 
 func initRoot() {
-	rootCmd.Version = Version
 	home, err := os.UserHomeDir()
 	if err != nil {
 		panic(err)
@@ -99,7 +83,7 @@ func initRoot() {
 	// Global flags
 	rootCmd.PersistentFlags().BoolVarP(&disableColors, "no-color", "", false, "disable color output")
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.minepkg/config.toml)")
-	rootCmd.PersistentFlags().BoolP("accept-minecraft-eula", "a", false, "Accept Mojang's Minecraft eula. See https://account.mojang.com/documents/minecraft_eula")
+	rootCmd.PersistentFlags().BoolP("accept-minecraft-eula", "a", false, "Accept Minecraft's eula. See https://www.minecraft.net/en-us/eula/")
 	rootCmd.PersistentFlags().BoolP("system-java", "", false, "Use system java instead of internal installation for launching Minecraft server or client")
 	rootCmd.PersistentFlags().BoolP("verbose", "", false, "More verbose logging. Not really implented yet")
 
