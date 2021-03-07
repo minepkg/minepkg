@@ -158,14 +158,24 @@ func (l *launchCommandeer) run(cmd *cobra.Command, args []string) {
 
 	// build and add the local jar
 	if instance.Manifest.Package.Type == manifest.TypeMod {
-		tasks := logger.NewTask(1)
-		buildMod(instance.Manifest, tasks)
+		build := instance.BuildMod()
+		cmdTerminalOutput(build)
+		build.Start()
+		err := build.Wait()
+		if err != nil {
+			// TODO: output logs or something
+			fmt.Println(err)
+			logger.Fail("Build step failed. Aborting")
+		}
 		// copy jar
-		jar := findJar()
+		jar, err := instance.FindModJar()
+		if err != nil {
+			logger.Fail(err.Error())
+		}
 		_, targetName := filepath.Split(jar)
 		fmt.Printf("adding %s to temporary modpack\n", jar)
 		// TODO: mod could already be there if it has a circular dependency
-		err := CopyFile(jar, filepath.Join(instance.ModsDir(), targetName))
+		err = CopyFile(jar, filepath.Join(instance.ModsDir(), targetName))
 		if err != nil {
 			logger.Fail(err.Error())
 		}

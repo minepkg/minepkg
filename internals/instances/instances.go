@@ -27,12 +27,12 @@ var (
 
 	// ErrNoInstance is returned if no mc instance was found
 	ErrNoInstance = &merrors.CliError{
-		Err:  "No minepkg.toml file was found in this directory",
+		Text: "No minepkg.toml file was found in this directory",
 		Help: "Create a new modpack with \"minepkg init\" or move into a folder containing a minepkg.toml file",
 	}
 	// ErrMissingRequirementMinecraft is returned if requirements.minecraft is not set
 	ErrMissingRequirementMinecraft = &merrors.CliError{
-		Err:  "The manifest is missing the required requirements.minecraft field",
+		Text: "The manifest is missing the required requirements.minecraft field",
 		Help: "Add the field as documented on https://test-www.minepkg.io/docs/manifest#requirements",
 	}
 )

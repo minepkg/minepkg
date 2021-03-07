@@ -1,11 +1,15 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"strings"
+	"time"
 
+	"github.com/briandowns/spinner"
 	"github.com/fiws/minepkg/pkg/mojang"
 )
 
@@ -138,4 +142,30 @@ func copyFileContents(src, dst string) (err error) {
 	}
 	err = out.Sync()
 	return
+}
+
+func cmdSpinnerOutput(build *exec.Cmd) func() {
+	stdout, _ := build.StdoutPipe()
+	scanner := bufio.NewScanner(stdout)
+	// TODO: stderr!!
+
+	return func() {
+		s := spinner.New(spinner.CharSets[9], 100*time.Millisecond) // Build our new spinner
+		s.Prefix = " "
+		s.Start()
+		s.Suffix = " [no build output yet]"
+
+		maxTextWidth := terminalWidth() - 4 // spinner + spaces
+		for scanner.Scan() {
+			s.Suffix = " " + truncateString(scanner.Text(), maxTextWidth)
+		}
+		stdout.Close()
+		s.Suffix = ""
+		s.Stop()
+	}
+}
+
+func cmdTerminalOutput(b *exec.Cmd) {
+	b.Stderr = os.Stderr
+	b.Stdout = os.Stdout
 }

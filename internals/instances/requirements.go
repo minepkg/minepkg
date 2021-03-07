@@ -12,12 +12,12 @@ import (
 var (
 	// ErrNoFabricLoader is returned if the wanted fabric version was not found
 	ErrNoFabricLoader = &merrors.CliError{
-		Err:  "Could not find fabric loader for wanted minecraft version",
+		Text: "Could not find fabric loader for wanted minecraft version",
 		Help: "Your minecraft version might not be supported by fabric or their API currently is unavailable",
 	}
 	// ErrNoFabricMapping is returned if the wanted fabric mapping was not found
 	ErrNoFabricMapping = &merrors.CliError{
-		Err:  "Could not find fabric mapping for wanted minecraft version",
+		Text: "Could not find fabric mapping for wanted minecraft version",
 		Help: "Your minecraft version might not be supported by fabric or their API currently is unavailable",
 	}
 )

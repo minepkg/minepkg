@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"archive/zip"
-	"bufio"
 	"bytes"
 	"context"
 	"errors"
@@ -11,233 +10,221 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/briandowns/spinner"
-	"github.com/fiws/minepkg/internals/cmdlog"
+	"github.com/fiws/minepkg/internals/instances"
 	"github.com/fiws/minepkg/pkg/api"
 	"github.com/fiws/minepkg/pkg/manifest"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
 // doomRegex: (\d+\.\d+\.\d-)?(\d+\.\d+\.\d)(.+)?
 var semverDoom = regexp.MustCompile(`(\d+\.\d+\.\d+-)?(\d+\.\d+\.\d+)(.+)?`)
-var apiURL = "https://test-api.minepkg.io/v1"
+var apiURL = "https://api.preview.minepkg.io/v1"
 
-var (
-	dry            bool
-	skipBuild      bool
-	nonInteractive bool
-	release        string
-)
+type publishCommandeer struct {
+	cmd *cobra.Command
+
+	dry       bool
+	skipBuild bool
+	release   string
+	file      string
+}
 
 func init() {
-	publishCmd.Flags().BoolVarP(&dry, "dry", "", false, "Dry run without publishing")
-	publishCmd.Flags().BoolVarP(&skipBuild, "skip-build", "", false, "Skips building the package")
-	publishCmd.Flags().BoolVarP(&nonInteractive, "non-interactive", "y", false, "Answers all interactive questions with the default")
-	publishCmd.Flags().StringVarP(&release, "release", "r", "", "The release version number to publish")
-	rootCmd.AddCommand(publishCmd)
-}
-
-var publishCmd = &cobra.Command{
-	Use:   "publish",
-	Short: "Publishes the local package in the current directory",
-	Args:  cobra.ExactArgs(0),
-	Run: func(cmd *cobra.Command, args []string) {
-
-		tasks := logger.NewTask(3)
-		tasks.Step("📚", "Preparing Publish")
-
-		tasks.Log("Checking minepkg.toml")
-		minepkg, err := ioutil.ReadFile("./minepkg.toml")
-		if err != nil {
-			logger.Fail("Could not find a minepkg.toml in this directory")
-		}
-
-		m := manifest.Manifest{}
-		_, err = toml.Decode(string(minepkg), &m)
-		if err != nil {
-			logger.Fail(err.Error())
-		}
-
-		switch {
-		case m.Requirements.Minecraft == "":
-			logger.Fail("Your minepkg.toml is missing a minecraft version under [requirements]")
-		case m.Requirements.Forge == "" && m.Requirements.Fabric == "":
-			logger.Fail("Your minepkg.toml is missing either forge or fabric in [requirements]")
-		}
-
-		tasks.Log("Checking Authentication")
-		if apiClient.JWT == "" {
-			logger.Warn("You need to login to minepkg.io first")
-			minepkgLogin()
-		}
-
-		logger.Log("Checking access rights")
-		timeout, cancel := context.WithTimeout(context.Background(), time.Second*5)
-		defer cancel()
-		project, err := apiClient.GetProject(timeout, m.Package.Name)
-
-		if err == api.ErrorNotFound {
-			if nonInteractive != true {
-				create := boolPrompt(&promptui.Prompt{
-					Label:     "Project " + m.Package.Name + " does not exists yet. Do you want to create it",
-					Default:   "Y",
-					IsConfirm: true,
-				})
-				if create != true {
-					logger.Info("Aborting")
-					os.Exit(0)
-				}
-			}
-			readme, _ := getReadme()
-			project, err = apiClient.CreateProject(&api.Project{
-				Name:   m.Package.Name,
-				Type:   m.Package.Type,
-				Readme: readme,
-			})
-			if err != nil {
-				logger.Fail(err.Error())
-			}
-			logger.Info("Project " + project.Name + " created")
-		} else if err != nil {
-			logger.Fail(err.Error())
-		}
-
-		// TODO: reimplement!
-		// if res.Header.Get("mpkg-write-access") == "" {
-		// 	// TODO: check for other problems here!
-		// 	logger.Fail("Do not have write access for " + m.Package.Name)
-		// }
-
-		tasks.Log("Determening version to publish")
-		switch {
-		case release != "":
-			tasks.Log("Using supplied release version number: " + release)
-			m.Package.Version = release
-		case m.Package.Version != "":
-			tasks.Log("Using version number in minepkg.toml: " + m.Package.Version)
-		default:
-			logger.Fail("No version set in minepkg.toml and no release version passed. Please set one.")
-		}
-
-		if m.Package.Version == "" {
-			logger.Fail("Could not determine version to publish")
-		}
-
-		// check if version exists
-		logger.Log("Checking if release exists")
-
-		// TODO: static fabric is bad!
-		release, err := apiClient.GetRelease(context.TODO(), "fabric", m.Package.Name+"@"+m.Package.Version)
-
-		switch {
-		case err == nil && release.Meta.Published != false:
-			logger.Fail("Release already published!")
-		case err != nil && err != api.ErrorNotFound:
-			// unknown error
-			logger.Fail(err.Error())
-		}
-
-		tasks.Step("🏗", "Building")
-
-		buildCmd := m.Dev.BuildCommand
-		if buildCmd == "" && m.Package.Type == manifest.TypeModpack {
-			skipBuild = true
-		}
-
-		if skipBuild != true {
-			buildMod(&m, tasks)
-		} else {
-			logger.Info("Skipped build")
-		}
-
-		var artifact string
-
-		if m.Package.Type == manifest.TypeMod {
-			// find se jar
-			tasks.Log("Finding jar file")
-			artifact = findJar()
-		} else {
-			// find all modpack related files
-			tasks.Log("Archiving modpack file")
-			// TODO: can fail, better logging, allow modpacks without any files
-			artifact = buildModpackZIP()
-		}
-
-		tasks.Step("☁", "Uploading package")
-
-		if dry == true {
-			logger.Info("Skipping upload because this is a dry run")
-			if artifact != "" {
-				logger.Info("Build package can be found here: " + artifact)
-			}
-			os.Exit(0)
-		}
-
-		if release == nil {
-			logger.Info("Creating release")
-			r := apiClient.NewUnpublishedRelease(&m)
-			if artifact == "" {
-				r = apiClient.NewRelease(&m)
-			}
-			release, err = project.CreateRelease(context.TODO(), r)
-			if err != nil {
-				if merr, ok := err.(*api.MinepkgError); ok {
-					errorMsg := fmt.Sprintf("[%d] Api error: %s", merr.StatusCode, merr.Message)
-					logger.Fail(errorMsg)
-				} else {
-					logger.Fail(err.Error() + ". Check internet connection or report bug!")
-				}
-			}
-		}
-
-		// upload tha file
-		if artifact != "" {
-			logger.Info("Uploading artifact (" + artifact + ")")
-			file, err := os.Open(artifact)
-			if release, err = release.Upload(file); err != nil {
-				logger.Fail(err.Error())
-			}
-		} else if release.Meta.Published == false {
-			logger.Fail("This release expects an artifact to upload but we have nothing to upload.\n Contact support to cleanup this package")
-		}
-
-		logger.Info(" ✓ Released " + release.Package.Version)
-	},
-}
-
-func spinnerOutput(build *exec.Cmd) func() {
-	stdout, _ := build.StdoutPipe()
-	scanner := bufio.NewScanner(stdout)
-	// TODO: stderr!!
-
-	return func() {
-		s := spinner.New(spinner.CharSets[9], 100*time.Millisecond) // Build our new spinner
-		s.Prefix = " "
-		s.Start()
-		s.Suffix = " [no build output yet]"
-
-		maxTextWidth := terminalWidth() - 4 // spinner + spaces
-		for scanner.Scan() {
-			s.Suffix = " " + truncateString(scanner.Text(), maxTextWidth)
-		}
-		stdout.Close()
-		s.Suffix = ""
-		s.Stop()
+	l := publishCommandeer{}
+	l.cmd = &cobra.Command{
+		Use:     "publish",
+		Short:   "Publishes the local package in the current directory",
+		Aliases: []string{"run", "start", "play"},
+		Args:    cobra.MaximumNArgs(1),
+		Run:     l.run,
 	}
+
+	l.cmd.Flags().BoolVarP(&l.dry, "dry", "", false, "Dry run without publishing")
+	l.cmd.Flags().BoolVarP(&l.skipBuild, "skip-build", "", false, "Skips building the package")
+	l.cmd.Flags().StringVarP(&l.release, "release", "r", "", "The release version number to publish")
+
+	rootCmd.AddCommand(l.cmd)
 }
 
-func terminalOutput(b *exec.Cmd) {
-	b.Stderr = os.Stderr
-	b.Stdout = os.Stdout
+func (p *publishCommandeer) run(cmd *cobra.Command, args []string) {
+
+	nonInteractive := viper.GetBool("nonInteractive")
+
+	tasks := logger.NewTask(3)
+	tasks.Step("📚", "Preparing Publish")
+
+	tasks.Log("Checking minepkg.toml")
+	instance, err := instances.NewInstanceFromWd()
+	if err != nil {
+		logger.Fail(err.Error())
+	}
+
+	m := instance.Manifest
+
+	switch {
+	case m.Requirements.Minecraft == "":
+		logger.Fail("Your minepkg.toml is missing a minecraft version under [requirements]")
+	case m.Requirements.Forge == "" && m.Requirements.Fabric == "":
+		logger.Fail("Your minepkg.toml is missing either forge or fabric in [requirements]")
+	}
+
+	tasks.Log("Checking Authentication")
+	if apiClient.JWT == "" {
+		logger.Warn("You need to login to minepkg.io first")
+		minepkgLogin()
+	}
+
+	logger.Log("Checking access rights")
+	timeout, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	project, err := apiClient.GetProject(timeout, m.Package.Name)
+
+	if err == api.ErrorNotFound {
+		if nonInteractive != true {
+			create := boolPrompt(&promptui.Prompt{
+				Label:     "Project " + m.Package.Name + " does not exists yet. Do you want to create it",
+				Default:   "Y",
+				IsConfirm: true,
+			})
+			if create != true {
+				logger.Info("Aborting")
+				os.Exit(0)
+			}
+		}
+		readme, _ := getReadme()
+		project, err = apiClient.CreateProject(&api.Project{
+			Name:   m.Package.Name,
+			Type:   m.Package.Type,
+			Readme: readme,
+		})
+		if err != nil {
+			logger.Fail(err.Error())
+		}
+		logger.Info("Project " + project.Name + " created")
+	} else if err != nil {
+		logger.Fail(err.Error())
+	}
+
+	// TODO: reimplement!
+	// if res.Header.Get("mpkg-write-access") == "" {
+	// 	// TODO: check for other problems here!
+	// 	logger.Fail("Do not have write access for " + m.Package.Name)
+	// }
+
+	tasks.Log("Determening version to publish")
+	switch {
+	case p.release != "":
+		tasks.Log("Using supplied release version number: " + p.release)
+		m.Package.Version = p.release
+	case m.Package.Version != "":
+		tasks.Log("Using version number in minepkg.toml: " + m.Package.Version)
+	default:
+		logger.Fail("No version set in minepkg.toml and no release version passed. Please set one.")
+	}
+
+	if m.Package.Version == "" {
+		logger.Fail("Could not determine version to publish")
+	}
+
+	// check if version exists
+	logger.Log("Checking if release exists")
+
+	// TODO: static fabric is bad!
+	release, err := apiClient.GetRelease(context.TODO(), "fabric", m.Package.Name+"@"+m.Package.Version)
+
+	switch {
+	case err == nil && release.Meta.Published != false:
+		logger.Fail("Release already published!")
+	case err != nil && err != api.ErrorNotFound:
+		// unknown error
+		logger.Fail(err.Error())
+	}
+
+	tasks.Step("🏗", "Building")
+
+	buildCmd := m.Dev.BuildCommand
+	if (buildCmd == "" && m.Package.Type == manifest.TypeModpack) || p.file != "" {
+		p.skipBuild = true
+	}
+
+	if p.skipBuild != true {
+		build := instance.BuildMod()
+		cmdTerminalOutput(build)
+		build.Start()
+		err := build.Wait()
+		if err != nil {
+			// TODO: output logs or something
+			fmt.Println(err)
+			logger.Fail("Build step failed. Aborting")
+		}
+	} else {
+		logger.Info("Skipped build")
+	}
+
+	var artifact string
+
+	if m.Package.Type == manifest.TypeMod {
+		// find se jar
+		tasks.Log("Finding jar file")
+		artifact, err = p.findJar(instance)
+		if err != nil {
+			logger.Fail(artifact)
+		}
+	} else {
+		// find all modpack related files
+		tasks.Log("Archiving modpack file")
+		// TODO: can fail, better logging, allow modpacks without any files
+		artifact = buildModpackZIP()
+	}
+
+	tasks.Step("☁", "Uploading package")
+
+	if p.dry == true {
+		logger.Info("Skipping upload because this is a dry run")
+		if artifact != "" {
+			logger.Info("Build package can be found here: " + artifact)
+		}
+		os.Exit(0)
+	}
+
+	if release == nil {
+		logger.Info("Creating release")
+		r := apiClient.NewUnpublishedRelease(m)
+		if artifact == "" {
+			r = apiClient.NewRelease(m)
+		}
+		release, err = project.CreateRelease(context.TODO(), r)
+		if err != nil {
+			if merr, ok := err.(*api.MinepkgError); ok {
+				errorMsg := fmt.Sprintf("[%d] Api error: %s", merr.StatusCode, merr.Message)
+				logger.Fail(errorMsg)
+			} else {
+				logger.Fail(err.Error() + ". Check internet connection or report bug!")
+			}
+		}
+	}
+
+	// upload the file
+	if artifact != "" {
+		logger.Info("Uploading artifact (" + artifact + ")")
+		file, err := os.Open(artifact)
+		if release, err = release.Upload(file); err != nil {
+			logger.Fail(err.Error())
+		}
+	} else if release.Meta.Published == false {
+		logger.Fail("This release expects an artifact to upload but we have nothing to upload.\n Contact support to cleanup this package")
+	}
+
+	logger.Info(" ✓ Released " + release.Package.Version)
 }
 
 func injectManifest(r *zip.ReadCloser, m *manifest.Manifest) error {
@@ -424,79 +411,14 @@ func defaultFilter(path string) bool {
 	return true
 }
 
-func findJar() string {
-	files, err := ioutil.ReadDir("./build/libs")
-	if err != nil {
-		logger.Fail(err.Error())
-	}
-	if len(files) == 0 {
-		logger.Fail("No build files found in ./build/libs")
-	}
-
-	chosen := files[0]
-
-search:
-	for _, file := range files[1:] {
-		name := file.Name()
-		base := filepath.Base(name)
-
-		// filter out dev and sources jars
-		switch {
-		case strings.HasSuffix(base, "dev.jar"):
-			continue
-		case strings.HasSuffix(base, "sources.jar"):
-			continue
-		// worldedit uses dist for the runnable jars. lets hope this
-		// does not break any other mods
-		case strings.HasSuffix(base, "dist.jar"):
-			// we choose this file and stop
-			chosen = file
-			break search
+func (p *publishCommandeer) findJar(instance *instances.Instance) (string, error) {
+	if p.file != "" {
+		abs, err := filepath.Abs(p.file)
+		if err != nil {
+			return "", fmt.Errorf("provided --file path '%s' is invalid:\n  %w", p.file, err)
 		}
-		if len(file.Name()) < len(chosen.Name()) {
-			chosen = file
-		}
+		return abs, nil
 	}
 
-	return filepath.Join("./build/libs", chosen.Name())
-}
-
-func buildMod(m *manifest.Manifest, tasks *cmdlog.Task) {
-	buildScript := "gradle --build-cache build"
-	buildCmd := m.Dev.BuildCommand
-	if buildCmd != "" {
-		tasks.Log("Using custom build hook")
-		tasks.Log(" running " + buildCmd)
-		buildScript = buildCmd
-	} else {
-		tasks.Log("Using default build step (gradle --build-cache build)")
-	}
-
-	// TODO: I don't think this is multi platform
-	build := exec.Command("sh", []string{"-c", buildScript}...)
-	build.Env = os.Environ()
-
-	if nonInteractive == true {
-		terminalOutput(build)
-	}
-
-	var spinner func()
-	if nonInteractive != true {
-		spinner = spinnerOutput(build)
-	}
-
-	startTime := time.Now()
-	build.Start()
-	if nonInteractive != true {
-		spinner()
-	}
-
-	err := build.Wait()
-	if err != nil {
-		// TODO: output logs or something
-		fmt.Println(err)
-		logger.Fail("Build step failed. Aborting")
-	}
-
-	logger.Info(" ✓ Finished build in " + time.Now().Sub(startTime).String())
+	return instance.FindModJar()
 }
