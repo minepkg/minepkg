@@ -14,9 +14,9 @@ import (
 
 var (
 	// ErrorNotFound gets returned when a 404 occured
-	ErrorNotFound = errors.New("Resource not found")
+	ErrorNotFound = errors.New("resource not found")
 	// ErrorBadRequest gets returned when a 400 occured
-	ErrorBadRequest = errors.New("Bad Request")
+	ErrorBadRequest = errors.New("bad Request")
 	// DefaultURL is "https://api.preview.minepkg.io/v1"
 	DefaultURL = "https://api.preview.minepkg.io/v1"
 )
@@ -172,28 +172,6 @@ func (m *MinepkgAPI) postJSON(ctx context.Context, url string, data interface{})
 		return nil, err
 	}
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
-	req = req.WithContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	m.decorate(req)
-	return m.HTTP.Do(req)
-}
-
-func (m *MinepkgAPI) post(ctx context.Context, url string, body io.Reader) (*http.Response, error) {
-	req, err := http.NewRequest("POST", url, body)
-	req = req.WithContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	m.decorate(req)
-	return m.HTTP.Do(req)
-}
-
-func (m *MinepkgAPI) put(ctx context.Context, url string, body io.Reader) (*http.Response, error) {
-	req, err := http.NewRequest("PUT", url, body)
 	req = req.WithContext(ctx)
 	if err != nil {
 		return nil, err

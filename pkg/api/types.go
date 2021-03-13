@@ -75,7 +75,7 @@ type ReleaseTest struct {
 }
 
 func (rt *ReleaseTest) worksWithMCVersion(mcVersion *semver.Version) bool {
-	return rt.Works && (mcVersion == nil || mcVersion.Equal(mcVersion) == true)
+	return rt.Works && (mcVersion == nil || mcVersion.Equal(mcVersion))
 }
 
 // Requirements contains the wanted Minecraft version

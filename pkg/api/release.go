@@ -68,7 +68,7 @@ func (r *Release) WorksWithManifest(man *manifest.Manifest) bool {
 	}
 	for _, test := range r.Tests {
 		mcVersion := semver.MustParse(test.Minecraft)
-		if mcConstraint.Check(mcVersion) == true && test.Works {
+		if mcConstraint.Check(mcVersion) && test.Works {
 			return true
 		}
 	}

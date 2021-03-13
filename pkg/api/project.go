@@ -30,7 +30,7 @@ func (m *MinepkgAPI) GetProjects(ctx context.Context, opts *GetProjectsQuery) ([
 
 	uri.Query().Set("type", opts.Type)
 	uri.Query().Set("platform", opts.Platform)
-	if opts.Simple == true {
+	if opts.Simple {
 		uri.Query().Set("simple", "true")
 	}
 

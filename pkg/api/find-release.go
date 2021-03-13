@@ -21,7 +21,7 @@ type RequirementQuery struct {
 }
 
 // ErrInvalidMinecraftRequirement is returned if an invalid minecraft requirement was passed
-var ErrInvalidMinecraftRequirement = errors.New("Minecraft requirement is invalid. Only * or a version number is allowed. No semver")
+var ErrInvalidMinecraftRequirement = errors.New("minecraft requirement is invalid. Only * or a version number is allowed. No semver")
 
 // ErrNoMatchingRelease is returned if a wanted releaseendency (package) could not be resolved given the requirements
 type ErrNoMatchingRelease struct {
@@ -98,14 +98,14 @@ func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *Requ
 
 	// seach for tested releases first
 	for _, release := range testedReleases {
-		if versionConstraint.Check(release.SemverVersion()) == true {
+		if versionConstraint.Check(release.SemverVersion()) {
 			return release, nil
 		}
 	}
 
 	// fallback to search all releases
 	for _, release := range releases {
-		if release.compatWith(wantedMCSemver) && versionConstraint.Check(release.SemverVersion()) == true {
+		if release.compatWith(wantedMCSemver) && versionConstraint.Check(release.SemverVersion()) {
 			return release, nil
 		}
 	}
@@ -118,7 +118,7 @@ func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *Requ
 func (r *Release) testedFor(mcVersion *semver.Version) bool {
 
 	// precondition (release requirement is compatible) failed
-	if r.compatWith(mcVersion) == false {
+	if !r.compatWith(mcVersion) {
 		return false
 	}
 
