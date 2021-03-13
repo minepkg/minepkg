@@ -14,14 +14,16 @@
 
 ## Features
 
-* Installs mods from [minepkg](https://minepkg.io/) (with dependency resolution)
+* Installs mods from [minepkg](https://preview.minepkg.io/) (with dependency resolution)
 * Can launch Minecraft
-* Join compatible modded Servers with one command (Installs modpack and launches Minecraft for you)
+* Join compatible modded Servers with one command (Installs modpack and launches Minecraft & joins the server for you)
 * Saves your installed mods in a sharable `minepkg.toml`
   * `minepkg.toml` modpacks can extend other modpacks
 * Publish mods and modpacks to minepkg.io
 
 ## Installation
+
+You can read the [installation docs here](https://preview.minepkg.io/docs/install) for more detailed instructions.
 
 ### Linux & MacOS
 
@@ -40,6 +42,10 @@ Run this in **powershell**
 ```
 
 ## Usage
+
+* [FAQ](https://preview.minepkg.io/docs/faq)
+* [Manifest Documentation](https://preview.minepkg.io/docs/manifest)
+* [Mod publishing](https://preview.minepkg.io/docs/mod-publishing)
 
 ```
 $ minepkg --help
