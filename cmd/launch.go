@@ -102,7 +102,7 @@ func (l *launchCommandeer) run(cmd *cobra.Command, args []string) {
 		launch.ApplyInstanceOverwrites(instance, l.overwrites)
 
 		if l.overwrites.McVersion == "" {
-			fmt.Println("mc * resolved to: " + release.LatestTestedMinecraftVersion())
+			fmt.Println("Minecraft version '*' resolved to: " + release.LatestTestedMinecraftVersion())
 			instance.Manifest.Requirements.Minecraft = release.LatestTestedMinecraftVersion()
 		}
 

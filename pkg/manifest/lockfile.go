@@ -21,12 +21,17 @@ var (
 	DependencyLockTypeMod = "mod"
 	// DependencyLockTypeModpack describes a modpack dependency
 	DependencyLockTypeModpack = "modpack"
+
+	PlatformFabric  = "fabric"
+	PlatformForge   = "forge"
+	PlatformVanilla = "vanilla"
 )
 
 // PlatformLock describes a quierable platform (fabric, forge)
 type PlatformLock interface {
 	PlatformName() string
 	MinecraftVersion() string
+	PlatformVersion() string
 }
 
 // Lockfile includes resolved dependencies and requirements
@@ -51,6 +56,9 @@ func (f *FabricLock) PlatformName() string { return "fabric" }
 // MinecraftVersion returns the minecraft version
 func (f *FabricLock) MinecraftVersion() string { return f.Minecraft }
 
+// PlatformVersion returns the fabric mod loader version
+func (f *FabricLock) PlatformVersion() string { return f.FabricLoader }
+
 // VanillaLock describes resolved vanilla requirements
 type VanillaLock struct {
 	Minecraft string `toml:"minecraft" json:"minecraft"`
@@ -61,6 +69,9 @@ func (v *VanillaLock) PlatformName() string { return "vanilla" }
 
 // MinecraftVersion returns the minecraft version
 func (v *VanillaLock) MinecraftVersion() string { return v.Minecraft }
+
+// PlatformVersion returns ""
+func (f *VanillaLock) PlatformVersion() string { return "" }
 
 // ForgeLock describes resolved forge requirements
 // this is not used for now, because forge does not provide a API
@@ -75,6 +86,9 @@ func (f *ForgeLock) PlatformName() string { return "forge" }
 
 // MinecraftVersion returns the minecraft version
 func (f *ForgeLock) MinecraftVersion() string { return f.Minecraft }
+
+// MinecraftVersion returns the forge loader version
+func (f *ForgeLock) PlatformVersion() string { return f.ForgeLoader }
 
 // DependencyLock is a single resolved dependency
 type DependencyLock struct {

@@ -55,7 +55,11 @@ func (c *CLILauncher) Prepare() error {
 	}
 
 	// resolve requirements
-	if instance.Lockfile == nil || instance.Lockfile.HasRequirements() == false {
+	outdatedReqs, err := instance.AreRequirementsOutdated()
+	if err != nil {
+		return err
+	}
+	if outdatedReqs {
 		s.Update("Preparing launch – Resolving Requirements")
 		err := instance.UpdateLockfileRequirements(context.TODO())
 		if err != nil {
@@ -65,8 +69,12 @@ func (c *CLILauncher) Prepare() error {
 	}
 
 	// resolve dependencies
-	// TODO: len check does not account for same number but different mods
-	if len(instance.Manifest.Dependencies) != len(instance.Lockfile.Dependencies) {
+	outdatedDeps, err := instance.AreDependenciesOutdated()
+	if err != nil {
+		return err
+	}
+	// also update deps when reqs are outdated
+	if outdatedReqs || outdatedDeps {
 		s.Update("Preparing launch – Resolving Dependencies")
 		err := instance.UpdateLockfileDependencies(context.TODO())
 		if err != nil {

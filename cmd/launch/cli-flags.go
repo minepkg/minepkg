@@ -29,11 +29,11 @@ func ApplyInstanceOverwrites(instance *instances.Instance, o *OverwriteFlags) {
 		instance.Manifest.Requirements.Fabric = o.FabricVersion
 	}
 	if o.McVersion != "" {
-		fmt.Println("mc version overwritten!")
+		fmt.Println("Minecraft version overwritten to version: " + o.McVersion)
 		instance.Manifest.Requirements.Minecraft = o.McVersion
 	}
 	if o.MinepkgCompanion != "" {
-		fmt.Println("companion overwritten!")
+		fmt.Println("Companion overwritten!")
 		instance.Manifest.Requirements.MinepkgCompanion = o.MinepkgCompanion
 	}
 }

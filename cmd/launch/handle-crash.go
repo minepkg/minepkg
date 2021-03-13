@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 
 	"github.com/fiws/minepkg/internals/instances"
 	"github.com/fiws/minepkg/pkg/api"
@@ -19,6 +18,18 @@ func (c *CLILauncher) HandleCrash() error {
 	man := c.Instance.Manifest
 	platform := man.PlatformString()
 
+	packageName := man.Package.Name
+	packageVersion := man.Package.Version
+	if man.Package.BasedOn != "" {
+		if len(man.Dependencies) != 1 {
+			fmt.Println("Customized modpacks do not support crash reports for now. Skipping")
+			return nil
+		}
+		// looks like an unmodified modpack instance. use that as name
+		packageName = man.Package.BasedOn
+		packageVersion = man.Dependencies[packageName]
+	}
+
 	fmt.Println("--------------------")
 	fmt.Println("Minecraft crashed :(")
 	fmt.Println("Here is some debug info")
@@ -26,7 +37,7 @@ func (c *CLILauncher) HandleCrash() error {
 	fmt.Println("  OS: " + runtime.GOOS)
 	fmt.Printf("  CPUs: %d\n", runtime.NumCPU())
 	fmt.Println("[instance]")
-	fmt.Printf("  package: %s@%s\n", man.Package.Name, man.Package.Version)
+	fmt.Printf("  package: %s@%s\n", packageName, packageVersion)
 	fmt.Println("  platform: " + man.PlatformString())
 	fmt.Println("  minecraft: " + man.Requirements.Minecraft)
 	fmt.Println("[launch]")
@@ -45,22 +56,6 @@ func (c *CLILauncher) HandleCrash() error {
 
 	fmt.Println("\nSubmitting crash report to minepkg.io …")
 
-	packageName := man.Package.Name
-	if strings.HasPrefix(packageName, "_instance") {
-		// looks like an unmodified modpack instance. use that as name
-		// TODO: check is not too percise
-		if len(man.Dependencies) == 1 {
-			// this basically is man.Depdendencies.GetFirstKey()
-			// because Dependencies only has one key at this point
-			for key := range man.Dependencies {
-				packageName = key
-			}
-		} else {
-			fmt.Println("Customized modpacks do not support crash reports for now. Skipping")
-			return nil
-		}
-	}
-
 	mods := make(map[string]string)
 
 	for _, dep := range c.Instance.Lockfile.Dependencies {
@@ -77,7 +72,7 @@ func (c *CLILauncher) HandleCrash() error {
 		Package: api.CrashReportPackage{
 			Platform: man.Package.Platform,
 			Name:     packageName,
-			Version:  man.Package.Version,
+			Version:  packageVersion,
 		},
 		Server:           c.ServerMode,
 		MinecraftVersion: c.Instance.Lockfile.MinecraftVersion(),

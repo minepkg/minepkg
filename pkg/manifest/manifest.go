@@ -123,7 +123,8 @@ type Manifest struct {
 		License  string   `toml:"license,omitempty" json:"license,omitempty"`
 		Provides []string `toml:"provides,omitempty" json:"provides,omitempty"`
 		// BasedOn can be a another package that this one is based on.
-		// Most notabily, this field is used for instances to determine what modpack is running
+		// Most notabily, this field is used for instances to determine what modpack is actually running
+		// This field is striped when publishing the package to the minepkg api
 		BasedOn string `toml:"basedOn,omitempty" json:"basedOn,omitempty"`
 		// Savegame can be the name of the primary savegame on this modpack. Not applicable for other package types.
 		// This savegame will be used when launching this package via `minepkg try`.
@@ -157,8 +158,8 @@ type Manifest struct {
 	// Dev contains development & testing related options
 	Dev struct {
 		// BuildCommand is the command used for building this package (usually "./gradlew build")
-		BuildCommand string `toml:"build,omitempty" json:"build,omitempty"`
-	} `toml:"hooks" json:"hooks"`
+		BuildCommand string `toml:"buildCommand,omitempty" json:"buildCommand,omitempty"`
+	} `toml:"dev" json:"dev"`
 }
 
 // Dependencies are the dependencies of a mod or modpack as a map

@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	minepkgAuthService = "minepkg"
-	minepkgAuthUser    = "minepkg_auth_data"
+	minepkgAuthServiceFallback = "minepkg"
+	minepkgAuthUser            = "minepkg_auth_data"
 
 	mojangAuthService = "minepkg"
 	mojangAuthUser    = "mojang_auth_data"
@@ -33,7 +33,7 @@ type Store struct {
 func New(globalDir string, serviceName string) (*Store, error) {
 	store := &Store{globalDir: globalDir, MinepkgServiceName: serviceName}
 	if store.MinepkgServiceName == "" {
-		store.MinepkgServiceName = minepkgAuthService
+		store.MinepkgServiceName = minepkgAuthServiceFallback
 	}
 	// TODO: error handling!
 	err := store.Find()
@@ -110,7 +110,7 @@ func (s *Store) SetMinepkgAuth(auth *oauth2.Token) error {
 	if s.NoKeyRingMode {
 		return s.writeCredentialFile("minepkg-credentials.json", authJSONBlob)
 	}
-	return keyring.Set(minepkgAuthService, minepkgAuthUser, string(authJSONBlob))
+	return keyring.Set(s.MinepkgServiceName, minepkgAuthUser, string(authJSONBlob))
 }
 
 // readCredentialFile is a helper that reads a file from the minepkg config dir

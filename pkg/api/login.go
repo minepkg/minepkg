@@ -77,7 +77,7 @@ func (m *MinepkgAPI) OAuthLogin(c *OAuthLoginConfig) *oauth2.Token {
 		resState := query.Get("state")
 		switch {
 		case resState != state:
-			responseErr = errors.New("Request was intercepted. Try logging in again")
+			responseErr = errors.New("request was intercepted – try logging in again")
 
 		case code == "":
 			// TODO: better description
@@ -106,6 +106,8 @@ func (m *MinepkgAPI) OAuthLogin(c *OAuthLoginConfig) *oauth2.Token {
 	if err != nil {
 		log.Fatal(err)
 	}
+	// set token for this api client
+	m.JWT = token.AccessToken
 	return token
 }
 
