@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"sort"
-	"strconv"
 
 	"github.com/Masterminds/semver/v3"
 )
@@ -49,8 +48,7 @@ func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *Requ
 		}
 	}
 
-	// tildify maybe kinda unexpected here …
-	wantedVersion := tildifySemverString(reqs.Version)
+	wantedVersion := reqs.Version
 
 	releases, err := p.GetReleases(ctx, reqs.Plattform)
 	if err != nil {
@@ -174,19 +172,4 @@ func (r *ReleaseList) Latest() *Release {
 		}
 	}
 	panic("FindLatestRelease internal error. Could not find release again")
-}
-
-func tildifySemverString(semverReq string) string {
-	// empty string
-	if len(semverReq) == 0 {
-		return semverReq
-	}
-
-	// first char is not a number. so this probably is a semver char → skip
-	if _, err := strconv.Atoi(semverReq[:1]); err != nil {
-		return semverReq
-	}
-
-	// apply the default to everything else
-	return "~" + semverReq
 }

@@ -31,8 +31,8 @@ Example manifest.toml:
     # version that works
     some-modpack = "*"
 
-  [hooks]
-    build = "gradle build"
+  [dev]
+    buildCommand = "gradle build"
 
 Dependencies
 
@@ -40,8 +40,8 @@ The dependencies map (map[string]string) contains all dependencies of a package.
 
 The "key" always is the package name. For example `test-utils`
 
-The "value" usually is a semver version number, like this: `~1.4.2`
-This reads install 1.4.x (so any patch release is allowed) from minepkg (the default source)
+The "value" usually is a semver version number, like this: `^1.4.2`
+This will allow any update except major versions.
 
 The following semver formats are allowed:
 
@@ -136,8 +136,6 @@ type Manifest struct {
 		// The Minecraft version is binding and implementers should not install
 		// Mods for non-matching Minecraft versions.
 		// Modpack & Mod Authors are encuraged to use semver to allow a broader install range.
-		// Plain version numbers just default to the `~` semver operator here. Allowing patches but not minor or major versions.
-		// So `1.12.0` and `~1.12.0` are equal
 		// This field is REQUIRED
 		Minecraft string `toml:"minecraft" json:"minecraft"`
 		// Fabric is a semver version string describing the required Fabric version
