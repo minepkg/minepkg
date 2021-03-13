@@ -5,11 +5,11 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/fiws/minepkg/pkg/logparser"
+	"github.com/fiws/minepkg/internals/logparser"
 )
 
 // ErrorUnknown is returned if the error could not be parsed
-var ErrorUnknown = errors.New("Unknown Error")
+var ErrorUnknown = errors.New("unknown Error")
 
 // ModRequirement describes a mod dependency
 type ModRequirement struct {

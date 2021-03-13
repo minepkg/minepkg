@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fiws/minepkg/pkg/api"
+	"github.com/fiws/minepkg/internals/api"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 )

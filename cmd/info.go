@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fiws/minepkg/pkg/api"
+	"github.com/fiws/minepkg/internals/api"
 	"github.com/spf13/cobra"
 )
 

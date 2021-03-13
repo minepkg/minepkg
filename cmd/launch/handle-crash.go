@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/fiws/minepkg/internals/api"
 	"github.com/fiws/minepkg/internals/instances"
-	"github.com/fiws/minepkg/pkg/api"
 )
 
 // HandleCrash handles a crash by submitting it to minepkg.io and outputting some debug info

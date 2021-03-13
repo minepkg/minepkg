@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
-	"github.com/fiws/minepkg/pkg/mojang"
+	"github.com/fiws/minepkg/internals/mojang"
 )
 
 // MinepkgMapping is a server mapping (very unfinished)

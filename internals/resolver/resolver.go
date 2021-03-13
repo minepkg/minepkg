@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/fiws/minepkg/pkg/api"
+	"github.com/fiws/minepkg/internals/api"
 	"github.com/fiws/minepkg/pkg/manifest"
 )
 
 var (
 	// ErrNoGlobalReqs is returned when GlobalReqs was not set
-	ErrNoGlobalReqs = errors.New("No GlobalReqs set. They are required to resolve")
+	ErrNoGlobalReqs = errors.New("no GlobalReqs set. They are required to resolve")
 )
 
 // ErrNoMatchingRelease is returned if a wanted releaseendency (package) could not be resolved given the requirements

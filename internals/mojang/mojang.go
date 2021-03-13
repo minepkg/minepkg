@@ -6,16 +6,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io"
 	"io/ioutil"
 	"net/http"
 )
 
 var (
 	// ErrorNotFound gets returned when a 404 occured
-	ErrorNotFound = errors.New("Resource not found")
+	ErrorNotFound = errors.New("resource not found")
 	// ErrorBadRequest gets returned when a 400 occured
-	ErrorBadRequest = errors.New("Bad Request")
+	ErrorBadRequest = errors.New("bad Request")
 )
 
 // Client contains credentials and methods to talk
@@ -74,7 +73,7 @@ func (m *Client) Login(username string, password string) (*AuthResponse, error) 
 // MojangEnsureToken checks if the token need to be refreshed and does so it required. it returns a valid token
 func (m *Client) MojangEnsureToken(accessToken string, clientToken string) (*AuthResponse, error) {
 	ok, _ := m.mojangCheckValid(accessToken, clientToken)
-	if ok == true {
+	if ok {
 		return &AuthResponse{AccessToken: accessToken, ClientToken: clientToken}, nil
 	}
 	return m.MojangRefreshToken(accessToken, clientToken)
@@ -127,17 +126,6 @@ func (m *Client) MojangRefreshToken(accessToken string, clientToken string) (*Au
 	return &auth, nil
 }
 
-// get is a helper that does a get request and also sets various things
-func (m *Client) get(ctx context.Context, url string) (*http.Response, error) {
-	req, err := http.NewRequest("GET", url, nil)
-	req = req.WithContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	m.decorate(req)
-	return m.HTTP.Do(req)
-}
-
 // postJSON posts json
 func (m *Client) postJSON(ctx context.Context, url string, data interface{}) (*http.Response, error) {
 	jsonData, err := json.Marshal(data)
@@ -154,31 +142,9 @@ func (m *Client) postJSON(ctx context.Context, url string, data interface{}) (*h
 	return m.HTTP.Do(req)
 }
 
-func (m *Client) post(ctx context.Context, url string, body io.Reader) (*http.Response, error) {
-	req, err := http.NewRequest("POST", url, body)
-	req = req.WithContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	m.decorate(req)
-	return m.HTTP.Do(req)
-}
-
-func (m *Client) put(ctx context.Context, url string, body io.Reader) (*http.Response, error) {
-	req, err := http.NewRequest("PUT", url, body)
-	req = req.WithContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	m.decorate(req)
-	return m.HTTP.Do(req)
-}
-
 // decorate decorates a request with the User-Agent header and a auth header if set
 func (m *Client) decorate(req *http.Request) {
-	req.Header.Set("User-Agent", "minepkg (https://github.com/fiws/minepkg)")
+	req.Header.Set("User-Agent", "minepkg (https://github.com/minepkg/minepkg)")
 	if req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", "application/json")
 	}

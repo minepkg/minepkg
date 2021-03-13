@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"github.com/fiws/minepkg/internals/minecraft"
+	"github.com/fiws/minepkg/internals/mojang"
 	"github.com/fiws/minepkg/pkg/manifest"
-	"github.com/fiws/minepkg/pkg/mojang"
 )
 
 var (

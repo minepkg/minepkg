@@ -13,7 +13,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/Masterminds/semver/v3"
-	"github.com/fiws/minepkg/pkg/api"
+	"github.com/fiws/minepkg/internals/api"
 	"github.com/fiws/minepkg/pkg/manifest"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"

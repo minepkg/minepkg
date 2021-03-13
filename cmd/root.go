@@ -5,10 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/fiws/minepkg/internals/api"
 	"github.com/fiws/minepkg/internals/cmdlog"
 	"github.com/fiws/minepkg/internals/credentials"
-	"github.com/fiws/minepkg/pkg/api"
-	"github.com/fiws/minepkg/pkg/mojang"
+	"github.com/fiws/minepkg/internals/mojang"
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

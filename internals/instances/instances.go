@@ -10,9 +10,9 @@ import (
 	"github.com/fiws/minepkg/internals/merrors"
 
 	"github.com/BurntSushi/toml"
-	"github.com/fiws/minepkg/pkg/api"
+	"github.com/fiws/minepkg/internals/api"
+	"github.com/fiws/minepkg/internals/mojang"
 	"github.com/fiws/minepkg/pkg/manifest"
-	"github.com/fiws/minepkg/pkg/mojang"
 	"github.com/gookit/color"
 	strcase "github.com/stoewer/go-strcase"
 )
