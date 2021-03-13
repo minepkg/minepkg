@@ -89,7 +89,7 @@ outer:
 			dir := strings.Join(dirs[0:n+1], string(filepath.Separator))
 
 			// see if we already created that dir. skip creating in that case
-			if _, ok := createdDirs[dir]; ok == true {
+			if _, ok := createdDirs[dir]; ok {
 				continue
 			}
 

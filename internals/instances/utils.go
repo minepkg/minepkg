@@ -60,7 +60,7 @@ func existOrDownload(lib minecraft.Lib) {
 		osName = "osx"
 	}
 	if lib.Natives[osName] != "" {
-		nativeID, _ := lib.Natives[osName]
+		nativeID := lib.Natives[osName]
 		native := lib.Downloads.Classifiers[nativeID]
 		url = native.URL
 		path = filepath.Join(globalDir, native.Path)
@@ -97,8 +97,8 @@ func (i *Instance) ensureAssets(man *minecraft.LaunchManifest) error {
 	}
 
 	for _, asset := range missing {
-		fileRes, err := http.Get(asset.DownloadURL())
-		// TODO: check status code and all the things!
+		// TODO: check status code and err!
+		fileRes, _ := http.Get(asset.DownloadURL())
 		os.MkdirAll(filepath.Join(i.GlobalDir, "assets/objects", asset.Hash[:2]), os.ModePerm)
 		dest, err := os.Create(filepath.Join(i.GlobalDir, "assets/objects", asset.UnixPath()))
 		if err != nil {

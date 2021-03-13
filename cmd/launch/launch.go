@@ -36,6 +36,11 @@ func (c *CLILauncher) Launch(opts *instances.LaunchOptions) error {
 		return nil
 	}()
 
+	// TODO: what kind of errors are here?
+	if err != nil {
+		return err
+	}
+
 	// minecraft server will always return code 130 when
 	// stop was succesfull, so we ignore the error here
 	if cmd.ProcessState.ExitCode() == 130 || cmd.ProcessState.ExitCode() == 0 {

@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	ErrNoBuildFiles = errors.New("No build files found in ./build/libs")
+	ErrNoBuildFiles = errors.New("no build files found in ./build/libs")
 )
 
 // BuildMod uses the manifest "dev.buildCmd" script to build this package

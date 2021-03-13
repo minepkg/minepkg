@@ -83,14 +83,19 @@ func (t *tryCommandeer) run(cmd *cobra.Command, args []string) {
 		version = comp[1]
 	}
 
+	mcVersion := "latest"
+	if t.overwrites.McVersion != "" {
+		mcVersion = t.overwrites.McVersion
+	}
+
 	reqs := &api.RequirementQuery{
 		Version:   version,
-		Minecraft: "*",
+		Minecraft: mcVersion,
 		Plattform: "fabric", // TODO!!!
 	}
 	release, err := apiClient.FindRelease(context.TODO(), name, reqs)
 	var e *api.ErrNoMatchingRelease
-	if err != nil && errors.As(err, &e) != true {
+	if err != nil && !errors.As(err, &e) {
 		logger.Fail(err.Error())
 	}
 	if release == nil {
@@ -122,7 +127,7 @@ func (t *tryCommandeer) run(cmd *cobra.Command, args []string) {
 	}
 
 	startSave := ""
-	if t.plain != true && instance.Manifest.Package.Type != manifest.TypeModpack && instance.Manifest.PlatformString() == "fabric" {
+	if !t.plain && instance.Manifest.Package.Type != manifest.TypeModpack && instance.Manifest.PlatformString() == "fabric" {
 		instance.Manifest.AddDependency(t.tryBase, "*")
 		// TODO: make this generic
 		if t.tryBase == "test-mansion" {
@@ -133,7 +138,7 @@ func (t *tryCommandeer) run(cmd *cobra.Command, args []string) {
 	// add/overwrite the wanted mod or modpack
 	instance.Manifest.AddDependency(release.Package.Name, release.Package.Version)
 
-	if viper.GetBool("useSystemJava") == true {
+	if viper.GetBool("useSystemJava") {
 		instance.UseSystemJava()
 	}
 
@@ -181,7 +186,7 @@ func (t *tryCommandeer) run(cmd *cobra.Command, args []string) {
 		logger.Fail(err.Error())
 	}
 
-	if t.photosession == true {
+	if t.photosession {
 		screenshotDir := filepath.Join(instance.McDir(), "./screenshots")
 		entries, err := ioutil.ReadDir(screenshotDir)
 		if err != nil {
@@ -190,7 +195,7 @@ func (t *tryCommandeer) run(cmd *cobra.Command, args []string) {
 		}
 		fmt.Println("uploading screenshots now")
 		for _, e := range entries {
-			if e.IsDir() != true {
+			if !e.IsDir() {
 				fmt.Println("uploading " + e.Name())
 				f, err := os.Open(filepath.Join(screenshotDir, e.Name()))
 				if err != nil {

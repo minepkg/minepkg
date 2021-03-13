@@ -28,7 +28,7 @@ type joinCommandeer struct {
 
 func init() {
 	j := joinCommandeer{}
-	var joinCmd = &cobra.Command{
+	j.cmd = &cobra.Command{
 		Use:     "join <ip/hostname>",
 		Short:   "Joins a compatible server without any setup",
 		Long:    `Servers have to be started with \"minepkg launch --server\" or include the minepkg-companion mod`,
@@ -38,7 +38,7 @@ func init() {
 		Run:     j.run,
 	}
 
-	rootCmd.AddCommand(joinCmd)
+	rootCmd.AddCommand(j.cmd)
 }
 
 func (j *joinCommandeer) run(cmd *cobra.Command, args []string) {
@@ -106,7 +106,7 @@ func (j *joinCommandeer) run(cmd *cobra.Command, args []string) {
 	cliLauncher := launch.CLILauncher{Instance: &instance, ServerMode: false}
 	cliLauncher.Prepare()
 
-	if viper.GetBool("useSystemJava") == true {
+	if viper.GetBool("useSystemJava") {
 		instance.UseSystemJava()
 	}
 

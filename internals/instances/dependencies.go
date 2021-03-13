@@ -74,7 +74,7 @@ func (i *Instance) FindMissingDependencies() ([]*manifest.DependencyLock, error)
 func (i *Instance) LinkDependencies() error {
 	files, err := ioutil.ReadDir(i.ModsDir())
 	if err != nil {
-		if os.IsNotExist(err) == true {
+		if os.IsNotExist(err) {
 			if err := os.MkdirAll(i.ModsDir(), os.ModePerm); err != nil {
 				return err
 			}

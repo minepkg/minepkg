@@ -25,13 +25,13 @@ import (
 
 var (
 	// ErrLaunchNotImplemented is returned if attemting to start a non vanilla instance
-	ErrLaunchNotImplemented = errors.New("Can only launch vanilla & fabric instances (for now)")
+	ErrLaunchNotImplemented = errors.New("can only launch vanilla & fabric instances (for now)")
 	// ErrNoCredentials is returned when an instance is launched without `MojangProfile` beeing set
-	ErrNoCredentials = errors.New("Can not launch without mojang credentials")
+	ErrNoCredentials = errors.New("can not launch without mojang credentials")
 	// ErrNoPaidAccount is returned when an instance is launched without `MojangProfile` beeing set
-	ErrNoPaidAccount = errors.New("You need to buy Minecraft to launch it")
+	ErrNoPaidAccount = errors.New("you need to buy Minecraft to launch it")
 	// ErrorNoVersion is returned if no mc version was detected
-	ErrorNoVersion = errors.New("Could not detect minecraft version")
+	ErrorNoVersion = errors.New("could not detect minecraft version")
 )
 
 // GetLaunchManifest returns the merged manifest for the instance
@@ -102,7 +102,7 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	)
 
 	// server mode does not need minecraft credentials
-	if opts.Server != true {
+	if !opts.Server {
 		creds = i.MojangCredentials
 		if creds == nil {
 			return nil, ErrNoCredentials
@@ -143,7 +143,7 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	}
 
 	// Download assets if not skipped
-	if opts.SkipDownload != true {
+	if !opts.SkipDownload {
 		i.ensureAssets(launchManifest)
 	}
 
@@ -169,7 +169,7 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 
 	for _, lib := range libs {
 
-		if opts.SkipDownload != true {
+		if !opts.SkipDownload {
 			// TODO: replace with method
 			existOrDownload(lib)
 		}
@@ -177,7 +177,7 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 		// copy natives. not sure if this implementation is complete
 		if len(lib.Natives) != 0 {
 			// extract native to temp dir
-			nativeID, _ := lib.Natives[osName]
+			nativeID := lib.Natives[osName]
 			native := lib.Downloads.Classifiers[nativeID]
 
 			p := filepath.Join(libDir, native.Path)
@@ -259,13 +259,13 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 		cmdArgs = append([]string{"-XstartOnFirstThread"}, cmdArgs...)
 	}
 
-	if opts.Server == false {
+	if !opts.Server {
 		cmdArgs = append(cmdArgs, strings.Split(args, " ")...)
 	} else {
 		cmdArgs = append(cmdArgs, "nogui")
 	}
 
-	if opts.Debug == true {
+	if opts.Debug {
 		fmt.Println("cmd: ")
 		fmt.Println(cmdArgs)
 		fmt.Println("tmpdir: " + tmpDir)
@@ -287,7 +287,7 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 		cmd.Env = append(cmd.Env, "MINEPKG_COMPANION_PLAY=local://"+opts.StartSave)
 	}
 
-	if opts.Server == true {
+	if opts.Server {
 		cmd.Stdin = os.Stdin
 	}
 

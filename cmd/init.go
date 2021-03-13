@@ -23,9 +23,8 @@ import (
 var projectName = regexp.MustCompile(`^([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])$`)
 
 var (
-	force  bool
-	loader string
-	yes    bool
+	force bool
+	yes   bool
 )
 
 func init() {
@@ -39,7 +38,7 @@ var initCmd = &cobra.Command{
 	Short: "Creates a new mod or modpack in the current directory",
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if _, err := ioutil.ReadFile("./minepkg.toml"); err == nil && force != true {
+		if _, err := ioutil.ReadFile("./minepkg.toml"); err == nil && !force {
 			logger.Fail("This directory already contains a minepkg.toml. Use --force to overwrite it")
 		}
 
@@ -58,7 +57,7 @@ var initCmd = &cobra.Command{
 		defaultName := strcase.KebabCase(filepath.Base(wd))
 		hasGradle := checkGradle()
 
-		if yes == true {
+		if yes {
 			man.Package.Name = defaultName
 			man.Package.Type = "modpack"
 			man.Package.Platform = "fabric"
@@ -89,13 +88,13 @@ var initCmd = &cobra.Command{
 			Validate: func(s string) error {
 				switch {
 				case strings.ToLower(s) != s:
-					return errors.New("May only contain lowercase characters")
+					return errors.New("may only contain lowercase characters")
 				case strings.HasPrefix(s, "-"):
-					return errors.New("May not start with a –")
+					return errors.New("may not start with a –")
 				case strings.HasSuffix(s, "-"):
-					return errors.New("May not end with a –")
-				case projectName.MatchString(s) != true:
-					return errors.New("May only contain alphanumeric characters and dashes -")
+					return errors.New("may not end with a –")
+				case !projectName.MatchString(s):
+					return errors.New("may only contain alphanumeric characters and dashes -")
 				}
 				return nil
 			},
@@ -120,11 +119,11 @@ var initCmd = &cobra.Command{
 				case s == "":
 					return nil
 				case strings.HasPrefix(s, "v"):
-					return errors.New("Please do not include v as a prefix")
+					return errors.New("please do not include v as a prefix")
 				}
 
 				if _, err := semver.NewVersion(s); err != nil {
-					return errors.New("Not a valid semver version (major.minor.patch)")
+					return errors.New("not a valid semver version (major.minor.patch)")
 				}
 
 				return nil
@@ -177,7 +176,7 @@ var initCmd = &cobra.Command{
 				Default:   "Y",
 				IsConfirm: true,
 			})
-			if useHook == true {
+			if useHook {
 				man.Dev.BuildCommand = "./gradlew build"
 			}
 		}

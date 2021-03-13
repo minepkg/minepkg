@@ -71,7 +71,7 @@ func (i *Instance) AreDependenciesOutdated() (bool, error) {
 		}
 		lockEntry, ok := lock.Dependencies[dep.Name]
 		// missing dependency
-		if ok != true {
+		if !ok {
 			return true, nil
 		}
 		// Version does not mactch

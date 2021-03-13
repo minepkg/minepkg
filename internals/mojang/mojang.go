@@ -58,7 +58,7 @@ func (m *Client) Login(username string, password string) (*AuthResponse, error) 
 	if res.StatusCode != http.StatusOK {
 		mojangErr := mojangError{}
 		if err := parseJSON(res, &mojangErr); err != nil {
-			return nil, errors.New("Mojang API did response with unexpected status " + res.Status)
+			return nil, errors.New("mojang API did response with unexpected status " + res.Status)
 		}
 		return nil, mojangErr
 	}

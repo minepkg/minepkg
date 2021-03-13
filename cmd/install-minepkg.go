@@ -34,7 +34,7 @@ func installFromMinepkg(mods []string, instance *instances.Instance) error {
 	}
 
 	// resolve requirements
-	if instance.Lockfile == nil || instance.Lockfile.HasRequirements() == false {
+	if instance.Lockfile == nil || !instance.Lockfile.HasRequirements() {
 		s.Suffix = " Resolving Requirements"
 		instance.UpdateLockfileRequirements(context.TODO())
 		instance.SaveLockfile()

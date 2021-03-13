@@ -50,6 +50,6 @@ var buildCmd = &cobra.Command{
 			logger.Fail("Build step failed. Aborting")
 		}
 
-		logger.Info("Finished build in " + time.Now().Sub(startTime).String())
+		logger.Info("Finished build in " + time.Since(startTime).String())
 	},
 }

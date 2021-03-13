@@ -60,7 +60,7 @@ func login() *mojang.AuthResponse {
 
 func basicValidation(input string) error {
 	if len(input) == 0 {
-		return errors.New("You have to enter something …")
+		return errors.New("you have to enter something …")
 	}
 	return nil
 }

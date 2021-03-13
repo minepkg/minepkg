@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"archive/zip"
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -11,23 +10,16 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
-	"github.com/BurntSushi/toml"
 	"github.com/fiws/minepkg/internals/api"
 	"github.com/fiws/minepkg/internals/instances"
 	"github.com/fiws/minepkg/pkg/manifest"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"golang.org/x/crypto/ssh/terminal"
 )
-
-// doomRegex: (\d+\.\d+\.\d-)?(\d+\.\d+\.\d)(.+)?
-var semverDoom = regexp.MustCompile(`(\d+\.\d+\.\d+-)?(\d+\.\d+\.\d+)(.+)?`)
-var apiURL = "https://api.preview.minepkg.io/v1"
 
 type publishCommandeer struct {
 	cmd *cobra.Command
@@ -89,13 +81,13 @@ func (p *publishCommandeer) run(cmd *cobra.Command, args []string) {
 	project, err := apiClient.GetProject(timeout, m.Package.Name)
 
 	if err == api.ErrorNotFound {
-		if nonInteractive != true {
+		if !nonInteractive {
 			create := boolPrompt(&promptui.Prompt{
 				Label:     "Project " + m.Package.Name + " does not exists yet. Do you want to create it",
 				Default:   "Y",
 				IsConfirm: true,
 			})
-			if create != true {
+			if !create {
 				logger.Info("Aborting")
 				os.Exit(0)
 			}
@@ -142,7 +134,7 @@ func (p *publishCommandeer) run(cmd *cobra.Command, args []string) {
 	release, err := apiClient.GetRelease(context.TODO(), "fabric", m.Package.Name+"@"+m.Package.Version)
 
 	switch {
-	case err == nil && release.Meta.Published != false:
+	case err == nil && !release.Meta.Published:
 		logger.Fail("Release already published!")
 	case err != nil && err != api.ErrorNotFound:
 		// unknown error
@@ -156,7 +148,7 @@ func (p *publishCommandeer) run(cmd *cobra.Command, args []string) {
 		p.skipBuild = true
 	}
 
-	if p.skipBuild != true {
+	if !p.skipBuild {
 		build := instance.BuildMod()
 		cmdTerminalOutput(build)
 		build.Start()
@@ -188,7 +180,7 @@ func (p *publishCommandeer) run(cmd *cobra.Command, args []string) {
 
 	tasks.Step("☁", "Uploading package")
 
-	if p.dry == true {
+	if p.dry {
 		logger.Info("Skipping upload because this is a dry run")
 		if artifact != "" {
 			logger.Info("Build package can be found here: " + artifact)
@@ -220,65 +212,11 @@ func (p *publishCommandeer) run(cmd *cobra.Command, args []string) {
 		if release, err = release.Upload(file); err != nil {
 			logger.Fail(err.Error())
 		}
-	} else if release.Meta.Published == false {
+	} else if !release.Meta.Published {
 		logger.Fail("This release expects an artifact to upload but we have nothing to upload.\n Contact support to cleanup this package")
 	}
 
 	logger.Info(" ✓ Released " + release.Package.Version)
-}
-
-func injectManifest(r *zip.ReadCloser, m *manifest.Manifest) error {
-	dest, err := os.Create("tmp-minepkg-package.jar")
-	if err != nil {
-		return err
-	}
-	// Create a new zip archive.
-	w := zip.NewWriter(dest)
-
-	// generate toml
-	buf := new(bytes.Buffer)
-	if err := toml.NewEncoder(buf).Encode(m); err != nil {
-		return err
-	}
-
-	f, err := w.Create("minepkg.toml")
-	if err != nil {
-		return err
-	}
-	f.Write(buf.Bytes())
-
-	for _, f := range r.File {
-		target, err := w.CreateHeader(&f.FileHeader)
-		if err != nil {
-			log.Fatal(err)
-		}
-		reader, err := f.Open()
-		if err != nil {
-			return err
-		}
-		_, err = io.Copy(target, reader)
-		if err != nil {
-			return err
-		}
-	}
-	return w.Close()
-}
-
-func terminalWidth() int {
-	fd := int(os.Stdout.Fd())
-	termWidth, _, _ := terminal.GetSize(fd)
-	return termWidth
-}
-
-func truncateString(str string, num int) string {
-	bnoden := str
-	if len(str) > num {
-		if num > 3 {
-			num -= 3
-		}
-		bnoden = str[0:num] + "..."
-	}
-	return bnoden
 }
 
 func getReadme() (string, error) {
@@ -296,7 +234,7 @@ func getReadme() (string, error) {
 	}
 
 	if readme == "" {
-		return "", errors.New("Could not find any readme file")
+		return "", errors.New("could not find any readme file")
 	}
 
 	file, err := ioutil.ReadFile(readme)
@@ -364,7 +302,7 @@ func addToZip(archive *zip.Writer, path string, filter ...filter) (int, error) {
 
 		// skip filtered paths
 		for _, f := range filter {
-			if f(path) == false {
+			if !f(path) {
 				return nil
 			}
 		}

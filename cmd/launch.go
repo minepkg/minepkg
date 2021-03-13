@@ -20,14 +20,11 @@ import (
 type launchCommandeer struct {
 	cmd *cobra.Command
 
-	version       string
-	serverMode    bool
-	useSystemJava bool
-	debugMode     bool
-	offlineMode   bool
-	acceptEula    bool
-	onlyPrepare   bool
-	crashTest     bool
+	serverMode  bool
+	debugMode   bool
+	offlineMode bool
+	onlyPrepare bool
+	crashTest   bool
 
 	overwrites *launch.OverwriteFlags
 }
@@ -121,13 +118,13 @@ func (l *launchCommandeer) run(cmd *cobra.Command, args []string) {
 	}
 
 	switch {
-	case l.crashTest && l.serverMode != true:
+	case l.crashTest && !l.serverMode:
 		logger.Fail("Can only crashtest servers. append --server to crashtest")
 	case instance.Manifest.PlatformString() == "forge":
 		logger.Fail("Can not launch forge modpacks for now. Sorry.")
 	}
 
-	if viper.GetBool("useSystemJava") == true {
+	if viper.GetBool("useSystemJava") {
 		instance.UseSystemJava()
 	}
 
@@ -137,7 +134,7 @@ func (l *launchCommandeer) run(cmd *cobra.Command, args []string) {
 
 	// we need login credentials to launch the client
 	// the server needs no creds
-	if l.serverMode != true {
+	if !l.serverMode {
 		creds, err := ensureMojangAuth()
 		if err != nil {
 			logger.Fail(err.Error())
@@ -183,7 +180,7 @@ func (l *launchCommandeer) run(cmd *cobra.Command, args []string) {
 
 	launchManifest := cliLauncher.LaunchManifest
 
-	if l.onlyPrepare == true {
+	if l.onlyPrepare {
 		fmt.Println("Skipping launch as requested")
 		os.Exit(0)
 	}
@@ -199,7 +196,7 @@ func (l *launchCommandeer) run(cmd *cobra.Command, args []string) {
 	launchErr := make(chan error)
 	crashErr := make(chan error)
 
-	if l.crashTest == true {
+	if l.crashTest {
 
 		go func() {
 			tries := 0

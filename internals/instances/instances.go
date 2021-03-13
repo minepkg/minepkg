@@ -162,7 +162,7 @@ func NewInstanceFromWd() (*Instance, error) {
 		if err != nil {
 			return false
 		}
-		return info.IsDir() != true
+		return !info.IsDir()
 	}()
 
 	// TODO: maybe add this to the minepkg toml.
@@ -173,10 +173,10 @@ func NewInstanceFromWd() (*Instance, error) {
 		if err != nil {
 			return false
 		}
-		return info.IsDir() != true
+		return !info.IsDir()
 	}()
 
-	if hasManifest == false {
+	if !hasManifest {
 		return nil, ErrNoInstance
 	}
 
@@ -206,7 +206,7 @@ func NewInstanceFromWd() (*Instance, error) {
 func (i *Instance) initManifest() error {
 	minepkg, err := ioutil.ReadFile(i.ManifestPath())
 	if err != nil {
-		if os.IsNotExist(err) != true {
+		if !os.IsNotExist(err) {
 			return err
 		}
 		manifest := manifest.New()

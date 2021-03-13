@@ -10,7 +10,8 @@ import (
 // CopyOverwrites copies everything from the instance dir (with a few exceptions) to the minecraft dir
 // exceptions are: the minecraft folder itself and minepkg related files (manifest & lockfile)
 func (i *Instance) CopyOverwrites() error {
-	err := filepath.Walk(i.OverwritesDir(), func(fullPath string, info os.FileInfo, err error) error {
+	// TODO: error ignored in Walk? check
+	err := filepath.Walk(i.OverwritesDir(), func(fullPath string, info os.FileInfo, _ error) error {
 		// get a relative path
 		path, err := filepath.Rel(i.OverwritesDir(), fullPath)
 		if err != nil {
@@ -21,7 +22,7 @@ func (i *Instance) CopyOverwrites() error {
 		case path == ".":
 			// skip root
 			return nil
-		case strings.HasPrefix(path, "excluded") == true:
+		case strings.HasPrefix(path, "excluded"):
 			// skip everything starting with "excluded"
 			return filepath.SkipDir
 		case path == "minecraft" || path == "saves":
@@ -75,7 +76,8 @@ func (i *Instance) CopyOverwrites() error {
 func (i *Instance) CopyLocalSaves() error {
 	os.MkdirAll(filepath.Join(i.McDir(), "saves"), os.ModePerm)
 	start := filepath.Join(i.Directory, "saves")
-	err := filepath.Walk(start, func(aPath string, info os.FileInfo, err error) error {
+	// TODO: error ignored in Walk? check
+	err := filepath.Walk(start, func(aPath string, info os.FileInfo, _ error) error {
 		// get a relative path
 		path, err := filepath.Rel(start, aPath)
 		if err != nil {
