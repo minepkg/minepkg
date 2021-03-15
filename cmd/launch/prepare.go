@@ -47,7 +47,7 @@ func (c *CLILauncher) Prepare() error {
 	defer s.Stop()
 	s.Update("Preparing launch")
 
-	if instance.HasJava() == false {
+	if !instance.HasJava() {
 		s.Update("Preparing launch – Downloading java")
 		if err := instance.UpdateJava(); err != nil {
 			return err
@@ -101,7 +101,7 @@ func (c *CLILauncher) Prepare() error {
 		mgr.Add(downloadmgr.NewHTTPItem(c.LaunchManifest.Downloads.Client.URL, mainJar))
 	}
 
-	if serverMode != true {
+	if !serverMode {
 		missingAssets, err := instance.FindMissingAssets(launchManifest)
 		if err != nil {
 			return err

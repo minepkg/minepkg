@@ -13,7 +13,7 @@ func (c *CLILauncher) Launch(opts *instances.LaunchOptions) error {
 	switch {
 	case opts.LaunchManifest == nil:
 		opts.LaunchManifest = c.LaunchManifest
-	case opts.Server == false:
+	case !opts.Server:
 		opts.Server = c.ServerMode
 	}
 

@@ -12,7 +12,6 @@ type MaybeSpinner struct {
 	Spin    bool
 	Spinner *spinner.Spinner
 	Msg     string
-	started bool
 }
 
 // Start might start the spinner
