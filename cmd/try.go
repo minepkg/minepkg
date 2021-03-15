@@ -83,7 +83,7 @@ func (t *tryCommandeer) run(cmd *cobra.Command, args []string) {
 		version = comp[1]
 	}
 
-	mcVersion := "latest"
+	mcVersion := "*"
 	if t.overwrites.McVersion != "" {
 		mcVersion = t.overwrites.McVersion
 	}
@@ -118,7 +118,6 @@ func (t *tryCommandeer) run(cmd *cobra.Command, args []string) {
 	fmt.Println("Creating temporary modpack with " + release.Identifier())
 
 	// overwrite some instance launch options with flags
-	// TODO 100 100 100 !!!!
 	launch.ApplyInstanceOverwrites(&instance, t.overwrites)
 
 	if t.overwrites.McVersion == "" {

@@ -145,7 +145,7 @@ func (c *CLILauncher) Prepare() error {
 	if serverMode {
 		s.Update("Preparing server files")
 		c.prepareServer()
-		if c.OfflineMode == true {
+		if c.OfflineMode {
 			s.Update("Preparing for offline mode")
 			c.prepareOfflineServer()
 		}
