@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/fiws/minepkg/internals/globals"
 	"github.com/fiws/minepkg/internals/mojang"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
@@ -22,6 +23,7 @@ var loginCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		login()
 	},
+	Hidden: true,
 }
 
 func login() *mojang.AuthResponse {
@@ -49,11 +51,11 @@ func login() *mojang.AuthResponse {
 		os.Exit(0)
 	}
 
-	auth, err := mojangClient.Login(username, password)
+	auth, err := globals.MojangClient.Login(username, password)
 	if err != nil {
 		logger.Fail("Probably invalid credentials. not sure: " + err.Error())
 	}
-	credStore.SetMojangAuth(auth)
+	globals.CredStore.SetMojangAuth(auth)
 
 	return auth
 }

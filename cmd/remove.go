@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/fiws/minepkg/internals/globals"
 	"github.com/fiws/minepkg/internals/instances"
 	"github.com/spf13/cobra"
 )
@@ -14,11 +15,11 @@ func init() {
 
 var removeCmd = &cobra.Command{
 	Use:     "remove <package>",
-	Short:   "Removes specified package from the current package",
+	Short:   "Removes supplied package from the current directory & package",
 	Aliases: []string{"delete", "un", "uninstall", "rm"},
 	Run: func(cmd *cobra.Command, args []string) {
 		instance, err := instances.NewInstanceFromWd()
-		instance.MinepkgAPI = apiClient
+		instance.MinepkgAPI = globals.ApiClient
 		if err != nil {
 			logger.Fail("Instance problem: " + err.Error())
 		}

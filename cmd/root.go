@@ -5,10 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/fiws/minepkg/internals/api"
+	"github.com/fiws/minepkg/cmd/dev"
 	"github.com/fiws/minepkg/internals/cmdlog"
 	"github.com/fiws/minepkg/internals/credentials"
-	"github.com/fiws/minepkg/internals/mojang"
+	"github.com/fiws/minepkg/internals/globals"
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -26,9 +26,6 @@ var nextVersion string = "0.1.0-dev-local"
 var (
 	cfgFile       string
 	globalDir     = "/tmp"
-	credStore     *credentials.Store
-	apiClient     = api.New()
-	mojangClient  = mojang.New()
 	disableColors bool
 )
 
@@ -51,7 +48,7 @@ func Execute() {
 	initRoot()
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		logger.Fail(err.Error())
 		os.Exit(1)
 	}
 }
@@ -67,7 +64,7 @@ func initRoot() {
 	}
 	token := os.Getenv("MINEPKG_API_TOKEN")
 	globalDir = filepath.Join(home, ".minepkg")
-	credStore, err = credentials.New(globalDir, apiClient.APIUrl)
+	credStore, err := credentials.New(globalDir, globals.ApiClient.APIUrl)
 	if err != nil {
 		if token != "" {
 			logger.Warn("Could not initialize credential store: " + err.Error())
@@ -75,13 +72,14 @@ func initRoot() {
 			logger.Fail("Could not initialize credential store: " + err.Error())
 		}
 	}
+	globals.CredStore = credStore
 
 	if credStore.MinepkgAuth != nil {
-		apiClient.JWT = credStore.MinepkgAuth.AccessToken
+		globals.ApiClient.JWT = credStore.MinepkgAuth.AccessToken
 	}
 
 	if token != "" {
-		apiClient.JWT = token
+		globals.ApiClient.JWT = token
 		fmt.Println("Using MINEPKG_API_TOKEN for authentication")
 	}
 
@@ -100,6 +98,9 @@ func initRoot() {
 	viper.BindPFlag("acceptMinecraftEula", rootCmd.PersistentFlags().Lookup("accept-minecraft-eula"))
 	viper.BindPFlag("verboseLogging", rootCmd.PersistentFlags().Lookup("verbose"))
 	viper.BindPFlag("nonInteractive", rootCmd.PersistentFlags().Lookup("non-interactive"))
+
+	// subcommands
+	rootCmd.AddCommand(dev.SubCmd)
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -139,6 +140,6 @@ func initConfig() {
 
 	if viper.GetString("apiUrl") != "" {
 		logger.Warn("NOT using default minepkg API URL: " + viper.GetString("apiUrl"))
-		apiClient.APIUrl = viper.GetString("apiUrl")
+		globals.ApiClient.APIUrl = viper.GetString("apiUrl")
 	}
 }

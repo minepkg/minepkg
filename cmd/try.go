@@ -11,15 +11,39 @@ import (
 
 	"github.com/fiws/minepkg/cmd/launch"
 	"github.com/fiws/minepkg/internals/api"
+	"github.com/fiws/minepkg/internals/commands"
+	"github.com/fiws/minepkg/internals/globals"
 	"github.com/fiws/minepkg/internals/instances"
 	"github.com/fiws/minepkg/pkg/manifest"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-type tryCommandeer struct {
-	cmd *cobra.Command
+func init() {
+	runner := &tryRunner{}
+	cmd := commands.New(&cobra.Command{
+		Use:   "try <package>",
+		Short: "Lets you try a mod or modpack in Minecraft",
+		Long: `
+This creates a temporary Minecraft instance which includes the given mod or modpack.
+It will be deleted after testing.
+	`,
+		Aliases: []string{"test"},
+		Args:    cobra.ExactArgs(1),
+	}, runner)
 
+	cmd.Flags().StringVarP(&runner.tryBase, "base", "b", "test-mansion", "Base modpack to use for testing")
+	cmd.Flags().BoolVarP(&runner.serverMode, "server", "s", false, "Start a server instead of a client")
+	cmd.Flags().BoolVarP(&runner.offlineMode, "offline", "", false, "Start the server in offline mode (server only)")
+	cmd.Flags().BoolVarP(&runner.plain, "plain", "p", false, "Do not include default mods for testing")
+	cmd.Flags().BoolVarP(&runner.photosession, "photosession", "", false, "Upload all screenshots (take with F2) to the project")
+
+	runner.overwrites = launch.CmdOverwriteFlags(cmd.Command)
+
+	rootCmd.AddCommand(cmd.Command)
+}
+
+type tryRunner struct {
 	tryBase      string
 	plain        bool
 	photosession bool
@@ -29,31 +53,9 @@ type tryCommandeer struct {
 	overwrites *launch.OverwriteFlags
 }
 
-func init() {
-	t := tryCommandeer{}
-	t.cmd = &cobra.Command{
-		Use:   "try <package>",
-		Short: "Lets you try a mod or modpack in Minecraft",
-		Long: `
-This creates a temporary Minecraft instance which includes the given mod or modpack.
-It will be deleted after testing.
-	`,
-		Aliases: []string{"test"},
-		Args:    cobra.ExactArgs(1),
-		Run:     t.run,
-	}
+func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
+	apiClient := globals.ApiClient
 
-	t.cmd.Flags().StringVarP(&t.tryBase, "base", "b", "test-mansion", "Base modpack to use for testing")
-	t.cmd.Flags().BoolVarP(&t.serverMode, "server", "s", false, "Start a server instead of a client")
-	t.cmd.Flags().BoolVarP(&t.offlineMode, "offline", "", false, "Start the server in offline mode (server only)")
-	t.cmd.Flags().BoolVarP(&t.plain, "plain", "p", false, "Do not include default mods for testing")
-	t.cmd.Flags().BoolVarP(&t.photosession, "photosession", "", false, "Upload all screenshots (take with F2) to the project")
-
-	t.overwrites = launch.CmdOverwriteFlags(t.cmd)
-	rootCmd.AddCommand(t.cmd)
-}
-
-func (t *tryCommandeer) run(cmd *cobra.Command, args []string) {
 	tempDir, err := ioutil.TempDir("", args[0])
 	wd, _ := os.Getwd()
 	os.Chdir(tempDir) // change working directory to temporary dir
@@ -61,7 +63,7 @@ func (t *tryCommandeer) run(cmd *cobra.Command, args []string) {
 	defer os.RemoveAll(tempDir) // cleanup dir after minecraft is closed
 	defer os.Chdir(wd)          // move back to working directory
 	if err != nil {
-		logger.Fail(err.Error())
+		return err
 	}
 	instance := instances.Instance{
 		GlobalDir:  globalDir,
@@ -72,7 +74,7 @@ func (t *tryCommandeer) run(cmd *cobra.Command, args []string) {
 
 	creds, err := ensureMojangAuth()
 	if err != nil {
-		logger.Fail(err.Error())
+		return err
 	}
 	instance.MojangCredentials = creds
 
@@ -96,7 +98,7 @@ func (t *tryCommandeer) run(cmd *cobra.Command, args []string) {
 	release, err := apiClient.FindRelease(context.TODO(), name, reqs)
 	var e *api.ErrNoMatchingRelease
 	if err != nil && !errors.As(err, &e) {
-		logger.Fail(err.Error())
+		return err
 	}
 	if release == nil {
 		// TODO: check if this was a 404
@@ -148,7 +150,7 @@ func (t *tryCommandeer) run(cmd *cobra.Command, args []string) {
 		NonInteractive: viper.GetBool("nonInteractive"),
 	}
 	if err := cliLauncher.Prepare(); err != nil {
-		logger.Fail(err.Error())
+		return err
 	}
 	launchManifest := cliLauncher.LaunchManifest
 
@@ -182,7 +184,7 @@ func (t *tryCommandeer) run(cmd *cobra.Command, args []string) {
 	}
 	err = cliLauncher.Launch(opts)
 	if err != nil {
-		logger.Fail(err.Error())
+		return err
 	}
 
 	if t.photosession {
@@ -190,7 +192,7 @@ func (t *tryCommandeer) run(cmd *cobra.Command, args []string) {
 		entries, err := ioutil.ReadDir(screenshotDir)
 		if err != nil {
 			fmt.Println("No screenshots taken, skipping upload")
-			return
+			return nil
 		}
 		fmt.Println("uploading screenshots now")
 		for _, e := range entries {
@@ -209,4 +211,5 @@ func (t *tryCommandeer) run(cmd *cobra.Command, args []string) {
 			}
 		}
 	}
+	return err
 }

@@ -5,28 +5,34 @@ import (
 	"os"
 
 	"github.com/fiws/minepkg/internals/api"
+	"github.com/fiws/minepkg/internals/commands"
+	"github.com/fiws/minepkg/internals/globals"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 )
 
 func init() {
-	mloginCmd.Flags().BoolVarP(&force, "force", "", false, "Try to open browser in any case to login")
-	rootCmd.AddCommand(mloginCmd)
+	runner := &mpkgLoginRunner{}
+	cmd := commands.New(&cobra.Command{
+		Use:     "minepkg-login",
+		Aliases: []string{"signin"},
+		Short:   "Sign in to minepkg.io (mainly for publishing)",
+		Args:    cobra.ExactArgs(0),
+		Hidden:  true,
+	}, runner)
+
+	cmd.Flags().BoolVar(&runner.force, "force", false, "Always try to open the browser for login")
+
+	rootCmd.AddCommand(cmd.Command)
 }
 
-var mloginCmd = &cobra.Command{
-	Use:     "minepkg-login",
-	Aliases: []string{"signin"},
-	Short:   "Sign in to minepkg.io (mainly for publishing)",
-	Args:    cobra.ExactArgs(0),
-	Run: func(cmd *cobra.Command, args []string) {
-		minepkgLogin()
-	},
+type mpkgLoginRunner struct {
+	force bool
 }
 
-func minepkgLogin() {
+func (i *mpkgLoginRunner) RunE(cmd *cobra.Command, args []string) error {
 
-	if !force && !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
+	if !i.force && !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
 		fmt.Println("This seems to be a server. You can not login on a server.")
 		fmt.Println("Set the environment variable MINEPKG_API_KEY to a valid API key instead to authorize.")
 		// TODO: create link
@@ -44,8 +50,12 @@ func minepkgLogin() {
 		Scopes:       []string{"offline", "full_access"},
 	}
 
-	token := apiClient.OAuthLogin(&oAuthConfig)
+	token := globals.ApiClient.OAuthLogin(&oAuthConfig)
 
-	credStore.SetMinepkgAuth(token)
+	if err := globals.CredStore.SetMinepkgAuth(token); err != nil {
+		return err
+	}
 	fmt.Println(`Login to minepkg successful. You should now be able to publish packages!`)
+
+	return nil
 }

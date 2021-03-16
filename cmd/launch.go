@@ -11,15 +11,37 @@ import (
 
 	"github.com/fiws/minepkg/cmd/launch"
 	"github.com/fiws/minepkg/internals/api"
+	"github.com/fiws/minepkg/internals/commands"
+	"github.com/fiws/minepkg/internals/globals"
 	"github.com/fiws/minepkg/internals/instances"
 	"github.com/fiws/minepkg/pkg/manifest"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-type launchCommandeer struct {
-	cmd *cobra.Command
+func init() {
+	runner := &launchRunner{}
+	cmd := commands.New(&cobra.Command{
+		Use:   "launch [modpack]",
+		Short: "Launch the given or local modpack.",
+		Long: `If a modpack name or URL is supplied, that modpack will be launched.
+	Alternativly: Can be used in directories containing a minepkg.toml manifest to launch that modpack.
+		`,
+		Aliases: []string{"run", "start", "play"},
+		Args:    cobra.MaximumNArgs(1),
+	}, runner)
 
+	cmd.Flags().BoolVarP(&runner.serverMode, "server", "s", false, "Start a server instead of a client")
+	cmd.Flags().BoolVarP(&runner.debugMode, "debug", "", false, "Do not start, just debug")
+	cmd.Flags().BoolVarP(&runner.offlineMode, "offline", "", false, "Start the server in offline mode (server only)")
+	cmd.Flags().BoolVarP(&runner.onlyPrepare, "only-prepare", "", false, "Only prepare, skip launching")
+	cmd.Flags().BoolVarP(&runner.crashTest, "crashtest", "", false, "Stop server after it's online (can be used for testing)")
+	runner.overwrites = launch.CmdOverwriteFlags(cmd.Command)
+
+	rootCmd.AddCommand(cmd.Command)
+}
+
+type launchRunner struct {
 	serverMode  bool
 	debugMode   bool
 	offlineMode bool
@@ -29,30 +51,9 @@ type launchCommandeer struct {
 	overwrites *launch.OverwriteFlags
 }
 
-func init() {
-	l := launchCommandeer{}
-	l.cmd = &cobra.Command{
-		Use:   "launch [modpack]",
-		Short: "Launch the given or local modpack.",
-		Long: `If a modpack name or URL is supplied, that modpack will be launched.
-	Alternativly: Can be used in directories containing a minepkg.toml manifest to launch that modpack.
-		`,
-		Aliases: []string{"run", "start", "play"},
-		Args:    cobra.MaximumNArgs(1),
-		Run:     l.run,
-	}
+func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
+	apiClient := globals.ApiClient
 
-	l.cmd.Flags().BoolVarP(&l.serverMode, "server", "s", false, "Start a server instead of a client")
-	l.cmd.Flags().BoolVarP(&l.debugMode, "debug", "", false, "Do not start, just debug")
-	l.cmd.Flags().BoolVarP(&l.offlineMode, "offline", "", false, "Start the server in offline mode (server only)")
-	l.cmd.Flags().BoolVarP(&l.onlyPrepare, "only-prepare", "", false, "Only prepare, skip launching")
-	l.cmd.Flags().BoolVarP(&l.crashTest, "crashtest", "", false, "Stop server after it's online (can be used for testing)")
-
-	l.overwrites = launch.CmdOverwriteFlags(l.cmd)
-	rootCmd.AddCommand(l.cmd)
-}
-
-func (l *launchCommandeer) run(cmd *cobra.Command, args []string) {
 	var instance *instances.Instance
 	var instanceDir string
 
@@ -281,4 +282,6 @@ func (l *launchCommandeer) run(cmd *cobra.Command, args []string) {
 		stopAfterCrashtest()
 		// normal exit
 	}
+
+	return nil
 }

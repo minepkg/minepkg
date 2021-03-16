@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/fiws/minepkg/internals/globals"
 	"github.com/fiws/minepkg/internals/instances"
 	"github.com/spf13/cobra"
 )
@@ -22,7 +23,7 @@ var installCmd = &cobra.Command{
 		if err != nil {
 			logger.Fail("Instance problem: " + err.Error())
 		}
-		instance.MinepkgAPI = apiClient
+		instance.MinepkgAPI = globals.ApiClient
 		fmt.Printf("Installing to %s\n", instance.Desc())
 		fmt.Println() // empty line
 

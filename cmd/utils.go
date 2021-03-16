@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/fiws/minepkg/internals/globals"
 	"github.com/fiws/minepkg/internals/mojang"
 )
 
@@ -49,6 +50,8 @@ func HumanFloat32(num float32) string {
 
 func ensureMojangAuth() (*mojang.AuthResponse, error) {
 	var loginData = &mojang.AuthResponse{}
+	credStore := globals.CredStore
+	mojangClient := globals.MojangClient
 
 	if credStore.MojangAuth == nil || credStore.MojangAuth.AccessToken == "" {
 		loginData = login()

@@ -22,7 +22,7 @@ func (l *Logger) println(a string) {
 }
 
 // pritEmoji prints string e only when emojis are enabled
-func (l *Logger) pritEmoji(e string) {
+func (l *Logger) printEmoji(e string) {
 	if l.emojis == true {
 		fmt.Print(e + " ")
 	}
@@ -52,13 +52,13 @@ func (l *Logger) Log(s string) {
 
 // Warn will print a warning
 func (l *Logger) Warn(s string) {
-	l.pritEmoji("⚠️ ")
+	l.printEmoji("⚠️ ")
 	color.Style{color.FgYellow, color.OpBold}.Println(s)
 }
 
 // Fail will print the given message with PrintLn and then exit 1
 func (l *Logger) Fail(s string) {
-	l.pritEmoji("💣")
+	l.printEmoji("💣")
 	color.Style{color.FgRed, color.OpBold}.Print("Error: ")
 	color.Style{color.FgWhite, color.OpBold}.Println(s)
 	os.Exit(1)

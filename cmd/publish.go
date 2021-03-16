@@ -14,6 +14,8 @@ import (
 	"time"
 
 	"github.com/fiws/minepkg/internals/api"
+	"github.com/fiws/minepkg/internals/commands"
+	"github.com/fiws/minepkg/internals/globals"
 	"github.com/fiws/minepkg/internals/instances"
 	"github.com/fiws/minepkg/pkg/manifest"
 	"github.com/manifoldco/promptui"
@@ -21,34 +23,31 @@ import (
 	"github.com/spf13/viper"
 )
 
-type publishCommandeer struct {
-	cmd *cobra.Command
+func init() {
+	runner := &publishRunner{}
+	cmd := commands.New(&cobra.Command{
+		Use:     "publish",
+		Short:   "Publishes the local package in the current directory",
+		Aliases: []string{"run", "start", "play"},
+		Args:    cobra.MaximumNArgs(1),
+	}, runner)
 
+	cmd.Flags().BoolVarP(&runner.dry, "dry", "", false, "Dry run without publishing")
+	cmd.Flags().BoolVarP(&runner.skipBuild, "skip-build", "", false, "Skips building the package")
+	cmd.Flags().StringVarP(&runner.release, "release", "r", "", "The release version number to publish")
+
+	rootCmd.AddCommand(cmd.Command)
+}
+
+type publishRunner struct {
 	dry       bool
 	skipBuild bool
 	release   string
 	file      string
 }
 
-func init() {
-	l := publishCommandeer{}
-	l.cmd = &cobra.Command{
-		Use:     "publish",
-		Short:   "Publishes the local package in the current directory",
-		Aliases: []string{"run", "start", "play"},
-		Args:    cobra.MaximumNArgs(1),
-		Run:     l.run,
-	}
-
-	l.cmd.Flags().BoolVarP(&l.dry, "dry", "", false, "Dry run without publishing")
-	l.cmd.Flags().BoolVarP(&l.skipBuild, "skip-build", "", false, "Skips building the package")
-	l.cmd.Flags().StringVarP(&l.release, "release", "r", "", "The release version number to publish")
-
-	rootCmd.AddCommand(l.cmd)
-}
-
-func (p *publishCommandeer) run(cmd *cobra.Command, args []string) {
-
+func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
+	apiClient := globals.ApiClient
 	nonInteractive := viper.GetBool("nonInteractive")
 
 	tasks := logger.NewTask(3)
@@ -57,7 +56,7 @@ func (p *publishCommandeer) run(cmd *cobra.Command, args []string) {
 	tasks.Log("Checking minepkg.toml")
 	instance, err := instances.NewInstanceFromWd()
 	if err != nil {
-		logger.Fail(err.Error())
+		return err
 	}
 
 	m := instance.Manifest
@@ -70,9 +69,10 @@ func (p *publishCommandeer) run(cmd *cobra.Command, args []string) {
 	}
 
 	tasks.Log("Checking Authentication")
-	if apiClient.JWT == "" {
+	if globals.ApiClient.JWT == "" {
 		logger.Warn("You need to login to minepkg.io first")
-		minepkgLogin()
+		runner := &mpkgLoginRunner{}
+		runner.RunE(cmd, args)
 	}
 
 	logger.Log("Checking access rights")
@@ -99,11 +99,11 @@ func (p *publishCommandeer) run(cmd *cobra.Command, args []string) {
 			Readme: readme,
 		})
 		if err != nil {
-			logger.Fail(err.Error())
+			return err
 		}
 		logger.Info("Project " + project.Name + " created")
 	} else if err != nil {
-		logger.Fail(err.Error())
+		return err
 	}
 
 	// TODO: reimplement!
@@ -138,7 +138,7 @@ func (p *publishCommandeer) run(cmd *cobra.Command, args []string) {
 		logger.Fail("Release already published!")
 	case err != nil && err != api.ErrorNotFound:
 		// unknown error
-		logger.Fail(err.Error())
+		return err
 	}
 
 	tasks.Step("🏗", "Building")
@@ -169,7 +169,7 @@ func (p *publishCommandeer) run(cmd *cobra.Command, args []string) {
 		tasks.Log("Finding jar file")
 		artifact, err = p.findJar(instance)
 		if err != nil {
-			logger.Fail(artifact)
+			return err
 		}
 	} else {
 		// find all modpack related files
@@ -197,10 +197,9 @@ func (p *publishCommandeer) run(cmd *cobra.Command, args []string) {
 		release, err = project.CreateRelease(context.TODO(), r)
 		if err != nil {
 			if merr, ok := err.(*api.MinepkgError); ok {
-				errorMsg := fmt.Sprintf("[%d] Api error: %s", merr.StatusCode, merr.Message)
-				logger.Fail(errorMsg)
+				return fmt.Errorf("[%d] Api error: %s", merr.StatusCode, merr.Message)
 			} else {
-				logger.Fail(err.Error() + ". Check internet connection or report bug!")
+				return fmt.Errorf("%w. Check internet connection or report bug", err)
 			}
 		}
 	}
@@ -209,21 +208,25 @@ func (p *publishCommandeer) run(cmd *cobra.Command, args []string) {
 	if artifact != "" {
 		logger.Info("Uploading artifact (" + artifact + ")")
 		file, err := os.Open(artifact)
+		if err != nil {
+			return err
+		}
 		if release, err = release.Upload(file); err != nil {
-			logger.Fail(err.Error())
+			return err
 		}
 	} else if !release.Meta.Published {
 		logger.Fail("This release expects an artifact to upload but we have nothing to upload.\n Contact support to cleanup this package")
 	}
 
 	logger.Info(" ✓ Released " + release.Package.Version)
+	return nil
 }
 
 func getReadme() (string, error) {
 	files, err := ioutil.ReadDir(".")
 	// something is wrong
 	if err != nil {
-		logger.Fail(err.Error())
+		return "", err
 	}
 
 	readme := ""
@@ -239,7 +242,7 @@ func getReadme() (string, error) {
 
 	file, err := ioutil.ReadFile(readme)
 	if err != nil {
-		logger.Fail(err.Error())
+		return "", err
 	}
 	return string(file), nil
 
@@ -349,7 +352,7 @@ func defaultFilter(path string) bool {
 	return true
 }
 
-func (p *publishCommandeer) findJar(instance *instances.Instance) (string, error) {
+func (p *publishRunner) findJar(instance *instances.Instance) (string, error) {
 	if p.file != "" {
 		abs, err := filepath.Abs(p.file)
 		if err != nil {

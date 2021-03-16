@@ -11,11 +11,13 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/fiws/minepkg/internals/api"
 	"github.com/fiws/minepkg/internals/downloadmgr"
+	"github.com/fiws/minepkg/internals/globals"
 	"github.com/fiws/minepkg/internals/instances"
 	"github.com/manifoldco/promptui"
 )
 
 func installFromMinepkg(mods []string, instance *instances.Instance) error {
+	apiClient := globals.ApiClient
 
 	cacheDir := filepath.Join(globalDir, "cache")
 	os.MkdirAll(cacheDir, os.ModePerm)
@@ -134,7 +136,7 @@ func installFromMinepkg(mods []string, instance *instances.Instance) error {
 }
 
 func searchFallback(ctx context.Context, name string) *api.Project {
-	projects, _ := apiClient.GetProjects(ctx, &api.GetProjectsQuery{})
+	projects, _ := globals.ApiClient.GetProjects(ctx, &api.GetProjectsQuery{})
 
 	filtered := make([]api.Project, 0, 10)
 	for _, p := range projects {

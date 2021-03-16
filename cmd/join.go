@@ -16,32 +16,30 @@ import (
 	"github.com/Tnze/go-mc/bot"
 	"github.com/fiws/minepkg/cmd/launch"
 	"github.com/fiws/minepkg/internals/api"
+	"github.com/fiws/minepkg/internals/commands"
+	"github.com/fiws/minepkg/internals/globals"
 	"github.com/fiws/minepkg/internals/instances"
 	"github.com/fiws/minepkg/pkg/manifest"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-type joinCommandeer struct {
-	cmd *cobra.Command
-}
-
 func init() {
-	j := joinCommandeer{}
-	j.cmd = &cobra.Command{
+	cmd := commands.New(&cobra.Command{
 		Use:     "join <ip/hostname>",
 		Short:   "Joins a compatible server without any setup",
 		Long:    `Servers have to be started with \"minepkg launch --server\" or include the minepkg-companion mod`,
 		Example: `  minepkg join demo.minepkg.host`,
 		Aliases: []string{"i-wanna-play-on", "connect"},
 		Args:    cobra.ExactArgs(1),
-		Run:     j.run,
-	}
+	}, &joinRunner{})
 
-	rootCmd.AddCommand(j.cmd)
+	rootCmd.AddCommand(cmd.Command)
 }
 
-func (j *joinCommandeer) run(cmd *cobra.Command, args []string) {
+type joinRunner struct{}
+
+func (i *joinRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	var resolvedModpack *api.Release
 	ip := "127.0.0.1"
@@ -76,7 +74,7 @@ func (j *joinCommandeer) run(cmd *cobra.Command, args []string) {
 	instance := instances.Instance{
 		GlobalDir:  globalDir,
 		Lockfile:   manifest.NewLockfile(),
-		MinepkgAPI: apiClient,
+		MinepkgAPI: globals.ApiClient,
 	}
 
 	instanceDir := filepath.Join(instance.InstancesDir(), "server."+ip+"."+resolvedModpack.Package.Name+"."+resolvedModpack.Package.Platform)
@@ -85,18 +83,18 @@ func (j *joinCommandeer) run(cmd *cobra.Command, args []string) {
 	instance.Directory = instanceDir
 	wd, err := os.Getwd()
 	if err != nil {
-		logger.Fail(err.Error())
+		return err
 	}
 	// change dir to the instance
 	if err := os.Chdir(instanceDir); err != nil {
-		logger.Fail(err.Error())
+		return err
 	}
 
 	defer os.Chdir(wd) // move back to working directory
 
 	creds, err := ensureMojangAuth()
 	if err != nil {
-		logger.Fail(err.Error())
+		return err
 	}
 	instance.MojangCredentials = creds
 
@@ -116,8 +114,10 @@ func (j *joinCommandeer) run(cmd *cobra.Command, args []string) {
 	}
 	err = cliLauncher.Launch(opts)
 	if err != nil {
-		logger.Fail(err.Error())
+		return err
 	}
+
+	return nil
 }
 
 type modpackDescription struct {
@@ -163,7 +163,7 @@ func resolveViaSLP(ip string, port string) *api.Release {
 		// raw version from minecraft slp.. might need to check that
 		Minecraft: data.Version.Name,
 	}
-	release, err := apiClient.FindRelease(context.TODO(), data.MinepkgModpack.Name, reqs)
+	release, err := globals.ApiClient.FindRelease(context.TODO(), data.MinepkgModpack.Name, reqs)
 	if err != nil {
 		logger.Fail("Could not fetch release: " + err.Error())
 	}
@@ -177,8 +177,8 @@ func resolveViaSLP(ip string, port string) *api.Release {
 func resolveFromAPI(ip string) *api.Release {
 	var server *MinepkgMapping
 	req, _ := http.NewRequest("GET", "https://test-api.minepkg.io/v1/server-mappings/"+ip, nil)
-	apiClient.DecorateRequest(req)
-	res, err := apiClient.HTTP.Do(req)
+	globals.ApiClient.DecorateRequest(req)
+	res, err := globals.ApiClient.HTTP.Do(req)
 	buf, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		logger.Fail(err.Error())
@@ -200,7 +200,7 @@ func resolveFromAPI(ip string) *api.Release {
 	}
 
 	// TODO: get release instead of find
-	release, err := apiClient.FindRelease(context.TODO(), name, reqs)
+	release, err := globals.ApiClient.FindRelease(context.TODO(), name, reqs)
 	if err != nil {
 		return nil
 	}

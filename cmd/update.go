@@ -8,6 +8,7 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/fiws/minepkg/internals/downloadmgr"
+	"github.com/fiws/minepkg/internals/globals"
 	"github.com/fiws/minepkg/internals/instances"
 	"github.com/spf13/cobra"
 )
@@ -28,7 +29,7 @@ Edit the minepkg.toml to change the version requirements.
 	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		instance, err := instances.NewInstanceFromWd()
-		instance.MinepkgAPI = apiClient
+		instance.MinepkgAPI = globals.ApiClient
 		if err != nil {
 			logger.Fail("Instance problem: " + err.Error())
 		}
@@ -50,7 +51,8 @@ Edit the minepkg.toml to change the version requirements.
 	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		instance, err := instances.NewInstanceFromWd()
-		instance.MinepkgAPI = apiClient
+		instance.MinepkgAPI = globals.ApiClient
+
 		if err != nil {
 			logger.Fail("Instance problem: " + err.Error())
 		}
