@@ -4,9 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -61,10 +59,6 @@ func (i *joinRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	resolvedModpack = resolveViaSLP(ip, port)
-	if resolvedModpack == nil {
-		resolvedModpack = resolveFromAPI(ip)
-	}
-
 	if resolvedModpack == nil {
 		logger.Info("Could not determine the server modpack")
 		os.Exit(1)
@@ -171,38 +165,5 @@ func resolveViaSLP(ip string, port string) *api.Release {
 		logger.Fail("Server modpack is not published on minepkg.io")
 	}
 
-	return release
-}
-
-func resolveFromAPI(ip string) *api.Release {
-	var server *MinepkgMapping
-	req, _ := http.NewRequest("GET", "https://test-api.minepkg.io/v1/server-mappings/"+ip, nil)
-	globals.ApiClient.DecorateRequest(req)
-	res, err := globals.ApiClient.HTTP.Do(req)
-	buf, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		logger.Fail(err.Error())
-	}
-	if res.StatusCode == 404 {
-		logger.Fail("Server not in minepkg.io database (the server has to be started with minepkg)")
-	}
-	if res.StatusCode != 200 {
-		logger.Fail("minepkg.io server database not reachable")
-	}
-	json.Unmarshal(buf, &server)
-
-	name, version := splitPackageName(server.Modpack)
-
-	reqs := &api.RequirementQuery{
-		Version:   version,
-		Minecraft: "*",
-		Plattform: server.Platform,
-	}
-
-	// TODO: get release instead of find
-	release, err := globals.ApiClient.FindRelease(context.TODO(), name, reqs)
-	if err != nil {
-		return nil
-	}
 	return release
 }

@@ -45,7 +45,7 @@ var selfupdateCmd = &cobra.Command{
 	Use:   "selfupdate",
 	Short: "Updates minepkg to the latest version",
 	Args:  cobra.ExactArgs(0),
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 
 		toUpdate, err := os.Executable()
 		if err != nil {
@@ -75,8 +75,14 @@ var selfupdateCmd = &cobra.Command{
 		fmt.Println("Downloading new version")
 		// TODO: if this version is newer
 		newCli, err := ioutil.TempFile(globalDir, parsed.Version)
+		if err != nil {
+			return err
+		}
 		newCli.Chmod(0700)
 		download, err := http.Get(parsed.PlatformBinary())
+		if err != nil {
+			return err
+		}
 		_, err = io.Copy(newCli, download.Body)
 		if err != nil {
 			logger.Fail(err.Error())
@@ -112,6 +118,7 @@ var selfupdateCmd = &cobra.Command{
 		}
 		fmt.Println("minepkg CLI was updated successfully")
 
+		return err
 	},
 }
 
