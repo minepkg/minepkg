@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"strings"
 
 	"github.com/fiws/minepkg/internals/globals"
 	"github.com/fiws/minepkg/internals/mojang"
@@ -15,11 +14,6 @@ import (
 type MinepkgMapping struct {
 	Platform string `json:"platform"`
 	Modpack  string `json:"modpack"`
-}
-
-func splitPackageName(id string) (string, string) {
-	arr := strings.Split(id, "@")
-	return arr[0], arr[1]
 }
 
 // HumanUint32 returns the number in a human readable format
