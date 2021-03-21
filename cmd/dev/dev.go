@@ -6,5 +6,5 @@ import (
 
 var SubCmd = &cobra.Command{
 	Use:   "dev",
-	Short: "Advanced package dev related tasks (eg. build, bump)",
+	Short: "Advanced package dev related tasks (eg. build)",
 }

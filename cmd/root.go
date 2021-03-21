@@ -40,6 +40,8 @@ var rootCmd = &cobra.Command{
   minepkg init -l fabric
   minepkg install modmenu@latest
   minepkg join demo.minepkg.host`,
+	// SilenceUsage: true,
+	SilenceErrors: true,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

@@ -15,7 +15,7 @@ func init() {
 	cmd := commands.New(&cobra.Command{
 		Use:    "info [name/url/id]",
 		Short:  "returns information on a single package",
-		Hidden: true,
+		Hidden: false,
 	}, &infoRunner{})
 
 	cmd.Flags().String("minecraft", "*", "Overwrite the required Minecraft version")
