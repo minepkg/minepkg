@@ -3,6 +3,7 @@ package launch
 import (
 	"io/ioutil"
 	"path/filepath"
+	"runtime"
 
 	"github.com/fiws/minepkg/internals/instances"
 )
@@ -25,9 +26,11 @@ func (c *CLILauncher) Launch(opts *instances.LaunchOptions) error {
 	c.Cmd = cmd
 
 	err = func() error {
+		runtime.GC()
 		if err := cmd.Start(); err != nil {
 			return err
 		}
+
 		// we wait for the output to finish (the lines following this one usually are reached after ctrl-c was pressed)
 		if err := cmd.Wait(); err != nil {
 			return err
