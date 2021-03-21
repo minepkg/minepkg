@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -13,10 +12,10 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/Masterminds/semver/v3"
-	"github.com/fiws/minepkg/internals/api"
 	"github.com/fiws/minepkg/internals/commands"
-	"github.com/fiws/minepkg/internals/globals"
+	"github.com/fiws/minepkg/internals/fabric"
 	"github.com/fiws/minepkg/pkg/manifest"
+	"github.com/magiconair/properties"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -45,54 +44,44 @@ type initRunner struct {
 }
 
 func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
-	apiClient := globals.ApiClient
 	if _, err := ioutil.ReadFile("./minepkg.toml"); err == nil && !i.force {
 		logger.Fail("This directory already contains a minepkg.toml. Use --force to overwrite it")
 	}
 
-	man := manifest.Manifest{}
-
-	chForgeVersions := make(chan *api.ForgeVersionResponse)
-	go func(ch chan *api.ForgeVersionResponse) {
-		res, err := apiClient.GetForgeVersions(context.TODO())
-		if err != nil {
-			logger.Fail(err.Error())
-		}
-		ch <- res
-	}(chForgeVersions)
-
-	wd, _ := os.Getwd()
-	defaultName := strcase.KebabCase(filepath.Base(wd))
-	hasGradle := checkGradle()
+	man := defaultManifest()
 
 	if i.yes || viper.GetBool("nonInteractive") {
-		man.Package.Name = defaultName
-		man.Package.Type = "modpack"
-		man.Package.Platform = "fabric"
-		man.Package.Version = "0.1.0"
-
-		man.Requirements.Fabric = "*"
-		man.Requirements.Minecraft = "1.15"
-		// generate toml
-		writeManifest(&man)
+		// generate toml with defaults
+		writeManifest(man)
 		logger.Info(" ✓ Created minepkg.toml")
 		return nil
 	}
 
 	logger.Info("[package]")
+	cursorPos := 0
+	if man.Package.Type == "mod" {
+		cursorPos = 1
+	}
 	man.Package.Type = selectPrompt(&promptui.Select{
-		Label: "Type",
-		Items: []string{"modpack", "mod"},
+		Label:     "Type",
+		Items:     []string{"modpack", "mod"},
+		CursorPos: cursorPos,
+		// Default: man.Package.Type,
 	})
 
+	cursorPos = 0
+	if man.Package.Type == "forge" {
+		cursorPos = 1
+	}
 	man.Package.Platform = selectPrompt(&promptui.Select{
-		Label: "Platform",
-		Items: []string{"fabric", "forge"},
+		Label:     "Platform",
+		Items:     []string{"fabric", "forge"},
+		CursorPos: cursorPos,
 	})
 
 	man.Package.Name = stringPrompt(&promptui.Prompt{
 		Label:   "Name",
-		Default: defaultName,
+		Default: man.Package.Name,
 		Validate: func(s string) error {
 			switch {
 			case strings.ToLower(s) != s:
@@ -109,19 +98,22 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 	})
 
 	man.Package.Description = stringPrompt(&promptui.Prompt{
-		Label:   "Description",
-		Default: "",
+		Label:     "Description",
+		Default:   man.Package.Description,
+		AllowEdit: true,
 	})
 
 	// TODO: maybe check local "LICENCE" file for popular licences
 	man.Package.License = stringPrompt(&promptui.Prompt{
-		Label:   "License",
-		Default: "MIT",
+		Label:     "License",
+		Default:   man.Package.License,
+		AllowEdit: true,
 	})
 
 	man.Package.Version = stringPrompt(&promptui.Prompt{
-		Label:   "Version",
-		Default: "0.1.0",
+		Label:     "Version",
+		Default:   man.Package.Version,
+		AllowEdit: true,
 		Validate: func(s string) error {
 			switch {
 			case s == "":
@@ -141,43 +133,49 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 	fmt.Println("")
 	logger.Info("[requirements]")
 
-	fmt.Println(man.PlatformString())
-
 	switch man.Package.Platform {
 	case "fabric":
 		fmt.Println("Leaving * here is usually fine")
 		man.Requirements.Fabric = stringPrompt(&promptui.Prompt{
-			Label:   "Minimum Fabric version",
-			Default: "*",
+			Label:     "Minimum Fabric version",
+			Default:   man.Requirements.Fabric,
+			AllowEdit: true,
 			// TODO: validation
 		})
 		man.Requirements.Minecraft = stringPrompt(&promptui.Prompt{
-			Label:   "Supported Minecraft version",
-			Default: "1.16",
+			Label:     "Supported Minecraft version",
+			Default:   man.Requirements.Minecraft,
+			AllowEdit: true,
 			// TODO: validation
 		})
 	case "forge":
-		forgeReleases := <-chForgeVersions
+		man.Requirements.Fabric = ""
 		man.Requirements.Forge = stringPrompt(&promptui.Prompt{
-			Label:   "Minimum Forge version",
-			Default: forgeReleases.Versions[0].Version,
+			Label:     "Minimum Forge version",
+			Default:   "*",
+			AllowEdit: true,
 			// TODO: validation
 		})
 
 		man.Requirements.Minecraft = stringPrompt(&promptui.Prompt{
-			Label:   "Supported Minecraft version",
-			Default: forgeReleases.Versions[0].McVersion,
+			Label:     "Supported Minecraft version",
+			Default:   "1.16",
+			AllowEdit: true,
 			// TODO: validation
 		})
 	default:
+		man.Requirements.Fabric = ""
+		man.Requirements.Forge = ""
 		man.Requirements.Minecraft = stringPrompt(&promptui.Prompt{
-			Label:   "Supported Minecraft version",
-			Default: "1.14",
+			Label:     "Supported Minecraft version",
+			Default:   "1.16",
+			AllowEdit: true,
 			// TODO: validation
 		})
 	}
 
 	// generate hooks section for mods
+	hasGradle := checkGradle()
 	if man.Package.Type == manifest.TypeMod && hasGradle {
 		useHook := boolPrompt(&promptui.Prompt{
 			Label:     "Do you want to use \"./gradlew build\" as your build command",
@@ -190,10 +188,90 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	// generate toml
-	writeManifest(&man)
+	writeManifest(man)
 	logger.Info(" ✓ Created minepkg.toml")
 
 	return nil
+}
+
+func defaultManifest() *manifest.Manifest {
+	fabricMan := &fabric.Manifest{}
+	man := manifest.New()
+
+	err := readJSON("./src/main/resources/fabric.mod.json", fabricMan)
+	if err == nil {
+		fmt.Println("Detected Fabric mod! Using fabric.mod.json for default values")
+		if fabricMan.ID != "" {
+			man.Package.Name = fabricMan.ID
+		}
+		man.Package.Type = "mod"
+		man.Package.Platform = "fabric"
+		// TODO: check for placeholder!
+		man.Package.Version = defaultVersion(fabricMan)
+		if fabricMan.License != "" {
+			man.Package.License = fabricMan.License
+		}
+		man.Package.Description = fabricMan.Description
+
+		if mcDep, ok := fabricMan.Depends["minecraft"]; ok {
+			man.Requirements.Minecraft = mcDep
+		}
+
+		if fabricReq, ok := fabricMan.Depends["fabricloader"]; ok {
+			man.Requirements.Fabric = fabricReq
+		} else {
+			man.Requirements.Fabric = "*"
+		}
+
+		if fabricDep, ok := fabricMan.Depends["fabric"]; ok {
+			man.Dependencies["fabric"] = fabricDep
+		} else {
+			man.Dependencies["fabric"] = "*"
+		}
+		return man
+	}
+
+	wd, _ := os.Getwd()
+	defaultName := strcase.KebabCase(filepath.Base(wd))
+
+	// manifest with some defaults
+
+	man.Package.Name = defaultName
+	man.Package.Type = "modpack"
+	man.Package.Platform = "fabric"
+	man.Package.Version = "0.1.0"
+	man.Package.License = "MIT"
+
+	man.Requirements.Fabric = "*"
+	man.Requirements.Minecraft = "1.16"
+
+	return man
+}
+
+var fallbackVersion = "0.1.0"
+
+func defaultVersion(fm *fabric.Manifest) string {
+	fabricIsValid := func() bool {
+		// is not set or palceholder?
+		if fm == nil || fm.Version == "" || fm.Version == "${version}" {
+			return false
+		}
+
+		// is valid semver?
+		_, err := semver.NewVersion(fm.Version)
+		return err == nil
+	}()
+
+	if fabricIsValid {
+		return fm.Version
+	}
+
+	gradleProps, err := properties.LoadFile("./gradle.properties", properties.UTF8)
+	if err != nil {
+		return fallbackVersion
+	}
+
+	return gradleProps.GetString("mod_version", fallbackVersion)
 }
 
 func checkGradle() bool {
