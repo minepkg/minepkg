@@ -108,7 +108,7 @@ func (c *CLILauncher) Prepare() error {
 		}
 
 		for _, asset := range missingAssets {
-			target := filepath.Join(instance.GlobalDir, "assets/objects", asset.UnixPath())
+			target := filepath.Join(instance.CacheDir, "assets/objects", asset.UnixPath())
 			mgr.Add(downloadmgr.NewHTTPItem(asset.DownloadURL(), target))
 		}
 	}
@@ -119,7 +119,7 @@ func (c *CLILauncher) Prepare() error {
 	}
 
 	for _, lib := range missingLibs {
-		target := filepath.Join(instance.GlobalDir, "libraries", lib.Filepath())
+		target := filepath.Join(instance.CacheDir, "libraries", lib.Filepath())
 		mgr.Add(downloadmgr.NewHTTPItem(lib.DownloadURL(), target))
 	}
 

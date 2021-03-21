@@ -40,8 +40,7 @@ func (i *Instance) javaBin() string {
 	if i.javaBinary != "" {
 		return i.javaBinary
 	}
-	javaPath := filepath.Join(i.GlobalDir, "java")
-	localJava, err := ioutil.ReadDir(javaPath)
+	localJava, err := ioutil.ReadDir(i.JavaDir())
 
 	if err == nil && len(localJava) != 0 {
 		bin := "bin/java" // linux. somehow also works with windows
@@ -51,7 +50,7 @@ func (i *Instance) javaBin() string {
 		case "darwin": // macOS
 			bin = "Contents/Home/bin/java"
 		}
-		i.javaBinary = filepath.Join(javaPath, localJava[0].Name(), bin)
+		i.javaBinary = filepath.Join(i.JavaDir(), localJava[0].Name(), bin)
 		return i.javaBinary
 	}
 
@@ -64,8 +63,7 @@ func (i *Instance) downloadJava() (string, error) {
 	url := ""
 	ext := ".tar.gz"
 
-	localJava := filepath.Join(i.GlobalDir, "java")
-	os.MkdirAll(localJava, os.ModePerm)
+	os.MkdirAll(i.JavaDir(), os.ModePerm)
 	switch runtime.GOOS {
 	case "linux":
 		url = "https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u212-b03/OpenJDK8U-jre_x64_linux_hotspot_8u212b03.tar.gz"
@@ -92,14 +90,14 @@ func (i *Instance) downloadJava() (string, error) {
 		return "", err
 	}
 
-	err = archiver.Unarchive(target.Name(), localJava)
+	err = archiver.Unarchive(target.Name(), i.JavaDir())
 	if err != nil {
 		return "", err
 	}
 
 	// macos tar contains some uneeded stuff that we need to remove
 	if runtime.GOOS == "darwin" {
-		os.Remove(filepath.Join(localJava, "._jdk8u212-b03-jre"))
+		os.Remove(filepath.Join(i.JavaDir(), "._jdk8u212-b03-jre"))
 	}
 
 	return i.javaBin(), nil

@@ -62,7 +62,7 @@ func (i *Instance) FindMissingDependencies() ([]*manifest.DependencyLock, error)
 			continue // skip dependencies without download url
 		}
 		p := filepath.Join(dep.Name, dep.Version+dep.FileExt())
-		if _, err := os.Stat(filepath.Join(i.CacheDir(), p)); os.IsNotExist(err) {
+		if _, err := os.Stat(filepath.Join(i.PackageCacheDir(), p)); os.IsNotExist(err) {
 			missing = append(missing, dep)
 		}
 	}
@@ -92,7 +92,7 @@ func (i *Instance) LinkDependencies() error {
 		if dep.URL == "" {
 			continue
 		}
-		from := filepath.Join(i.CacheDir(), dep.Name, dep.Version+dep.FileExt())
+		from := filepath.Join(i.PackageCacheDir(), dep.Name, dep.Version+dep.FileExt())
 		to := filepath.Join(i.ModsDir(), dep.Filename())
 
 		// extract modpack content and stuff, don't symlink them into the mods folder
@@ -120,7 +120,7 @@ func (i *Instance) LinkDependencies() error {
 
 func (i *Instance) handleModpackDependencyCopy(dep *manifest.DependencyLock) error {
 
-	modpackPath := filepath.Join(i.CacheDir(), dep.Name, dep.Version+".zip")
+	modpackPath := filepath.Join(i.PackageCacheDir(), dep.Name, dep.Version+".zip")
 	pkg, err := pack.Open(modpackPath)
 	if err != nil {
 		return err
@@ -138,7 +138,7 @@ func (i *Instance) EnsureDependencies(ctx context.Context) error {
 
 	mgr := downloadmgr.New()
 	for _, m := range missingFiles {
-		p := filepath.Join(i.CacheDir(), m.Name, m.Version+m.FileExt())
+		p := filepath.Join(i.PackageCacheDir(), m.Name, m.Version+m.FileExt())
 		mgr.Add(downloadmgr.NewHTTPItem(m.URL, p))
 	}
 

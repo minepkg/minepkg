@@ -87,6 +87,10 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 			logger.Fail("No release found")
 		}
 
+		if release.Package.Type == "mod" {
+			logger.Fail("can only launch modpacks")
+		}
+
 		instanceDir = filepath.Join(instance.InstancesDir(), release.Package.Name+"_"+release.Package.Platform)
 		os.MkdirAll(instanceDir, os.ModePerm)
 

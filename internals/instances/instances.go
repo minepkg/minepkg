@@ -40,10 +40,13 @@ var (
 // Instance describes a locally installed minecraft instance
 type Instance struct {
 	IsServer bool
-	// GlobalDir is the directory containing everything required to run minecraft.
-	// this includes the libraries, assets, versions & mod cache folder
-	// it defaults to $HOME/.minepkg
+	// GlobalDir contains persistent instance data
+	// on linux this usually is $HOME/.config/minepkg
 	GlobalDir string
+	// CacheDir is similar to cache dir but only contains data that can easily be redownloaded
+	// like java binaries, libraries, assets, versions & mod cache
+	// on linux this usually is $HOME/.cache/minepkg
+	CacheDir string
 	// Directory is the path of the instance. defaults to current working directory
 	Directory         string
 	Manifest          *manifest.Manifest
@@ -62,17 +65,17 @@ func (i *Instance) LaunchCmd() string {
 
 // VersionsDir returns the path to the versions directory
 func (i *Instance) VersionsDir() string {
-	return filepath.Join(i.GlobalDir, "versions")
+	return filepath.Join(i.CacheDir, "versions")
 }
 
 // AssetsDir returns the path to the assets directory
 func (i *Instance) AssetsDir() string {
-	return filepath.Join(i.GlobalDir, "assets")
+	return filepath.Join(i.CacheDir, "assets")
 }
 
 // LibrariesDir returns the path to the libraries directory
 func (i *Instance) LibrariesDir() string {
-	return filepath.Join(i.GlobalDir, "libraries")
+	return filepath.Join(i.CacheDir, "libraries")
 }
 
 // InstancesDir returns the path to the instances directory
@@ -80,9 +83,14 @@ func (i *Instance) InstancesDir() string {
 	return filepath.Join(i.GlobalDir, "instances")
 }
 
-// CacheDir returns the path to the cache directory. contains downloaded packages (mods & modpacks)
-func (i *Instance) CacheDir() string {
-	return filepath.Join(i.GlobalDir, "cache")
+// PackageCacheDir returns the path to the cache directory. contains downloaded packages (mods & modpacks)
+func (i *Instance) PackageCacheDir() string {
+	return filepath.Join(i.CacheDir, "cache")
+}
+
+// JavaDir returns the path for local java binaries
+func (i *Instance) JavaDir() string {
+	return filepath.Join(i.CacheDir, "java")
 }
 
 // McDir is the path where the actual minecraft instance is living. This is the `minecraft` subfolder
@@ -136,16 +144,20 @@ func (i *Instance) Desc() string {
 }
 
 // NewEmptyInstance returns a new instance with the default settings
-// panics if user homedir can not be determined
+// panics if user config or cache directory can not be determined
 func NewEmptyInstance() *Instance {
-	home, err := os.UserHomeDir()
+	userConfig, err := os.UserConfigDir()
 	if err != nil {
 		panic(err)
 	}
-	globalDir := filepath.Join(home, ".minepkg")
+	userCache, err := os.UserCacheDir()
+	if err != nil {
+		panic(err)
+	}
 
 	return &Instance{
-		GlobalDir: globalDir,
+		GlobalDir: filepath.Join(userConfig, "minepkg"),
+		CacheDir:  filepath.Join(userCache, "minepkg"),
 	}
 }
 
@@ -180,13 +192,20 @@ func NewInstanceFromWd() (*Instance, error) {
 		return nil, ErrNoInstance
 	}
 
-	home, _ := os.UserHomeDir()
-	globalDir := filepath.Join(home, ".minepkg")
+	userConfig, err := os.UserConfigDir()
+	if err != nil {
+		return nil, err
+	}
+	userCache, err := os.UserCacheDir()
+	if err != nil {
+		return nil, err
+	}
 
 	instance := &Instance{
 		IsServer:  isServer,
 		Directory: dir,
-		GlobalDir: globalDir,
+		GlobalDir: filepath.Join(userConfig, "minepkg"),
+		CacheDir:  filepath.Join(userCache, "minepkg"),
 	}
 
 	// initialize manifest

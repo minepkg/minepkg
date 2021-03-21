@@ -19,7 +19,7 @@ var defaultClient = http.Client{
 			KeepAlive: 30 * time.Second,
 		}).Dial,
 		TLSHandshakeTimeout:   10 * time.Second,
-		ResponseHeaderTimeout: 10 * time.Second,
+		ResponseHeaderTimeout: 15 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 	},
 }
@@ -67,7 +67,7 @@ func (i *HTTPItem) Download(ctx context.Context) error {
 	}
 
 	if fileRes.StatusCode != 200 {
-		return ErrInvalidStatusCode
+		return fmt.Errorf("invalid status code: %s from %s", fileRes.Status, fileRes.Request.URL)
 	}
 
 	dest, err := os.Create(i.Target)

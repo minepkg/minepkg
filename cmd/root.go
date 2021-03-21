@@ -60,12 +60,12 @@ func initRoot() {
 	if rootCmd.Version == "" {
 		rootCmd.Version = nextVersion
 	}
-	home, err := os.UserHomeDir()
+	homeConfigs, err := os.UserConfigDir()
 	if err != nil {
 		panic(err)
 	}
 	token := os.Getenv("MINEPKG_API_TOKEN")
-	globalDir = filepath.Join(home, ".minepkg")
+	globalDir = filepath.Join(homeConfigs, "minepkg")
 	credStore, err := credentials.New(globalDir, globals.ApiClient.APIUrl)
 	if err != nil {
 		if token != "" {
@@ -117,19 +117,17 @@ func initConfig() {
 		viper.SetConfigFile(cfgFile)
 	} else {
 		// Find home directory.
-		home, err := os.UserHomeDir()
+		configDir, err := os.UserConfigDir()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		// Search config in home directory with name ".minepkg" (without extension).
-		viper.AddConfigPath(home)
 		viper.SetConfigName("config")
 		viper.SetConfigType("toml")
-		viper.AddConfigPath("/etc/minepkg/")  // path to look for the config file in
-		viper.AddConfigPath("$HOME/.minepkg") // call multiple times to add many search paths
-		viper.AddConfigPath(".")              // optionally look for config in the working directory
+		viper.AddConfigPath("/etc/minepkg/")                     // path to look for the config file in
+		viper.AddConfigPath(filepath.Join(configDir, "minepkg")) // call multiple times to add many search paths
+		viper.AddConfigPath(".")                                 // optionally look for config in the working directory
 	}
 
 	viper.SetEnvPrefix("MINEPKG")
