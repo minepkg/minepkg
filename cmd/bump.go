@@ -151,7 +151,7 @@ func (i *bumpRunner) RunE(cmd *cobra.Command, args []string) error {
 
 		if !i.noTag {
 			fmt.Println(" creating tag")
-			_, err = simpleGitExec("tag v" + targetVersion + " -m " + targetVersion)
+			_, err = simpleGitExec("tag v" + targetVersion + " -m v" + targetVersion)
 			if err != nil {
 				return err
 			}
