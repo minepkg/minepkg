@@ -95,7 +95,7 @@ Use "minepkg [command] --help" for more information about a command.
 ## Demo
 
 <p align="center">
-  <img width="720" src="https://i.imgur.com/BRfIa9b.gif" alt="minepkg install preview" />
+  <img width="720" src="https://i.imgur.com/Sbwlre9.gif" alt="minepkg install preview" />
 </p>
 
 ## Building
