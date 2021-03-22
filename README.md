@@ -11,6 +11,9 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/74d43859d907238c4836/maintainability)](https://codeclimate.com/github/fiws/minepkg/maintainability)
 [![Discord](https://img.shields.io/discord/517070108191883266.svg?logo=discord)](https://discord.gg/6tjBR5t)
 
+**This project is not ready for use yet! Please join our discord if you are interested in testing**
+
+**[List of current limitations](https://preview.minepkg.io/docs/current-state#current-limitations#:~:text=Current%20limitations)**
 
 ## Features
 
@@ -27,7 +30,7 @@ You can read the [installation docs here](https://preview.minepkg.io/docs/instal
 
 ### Linux & MacOS
 
-Run this in your favourite shell.
+Run this in your favorite shell.
 
 ```bash
 curl -s https://preview.minepkg.io/install.sh | bash
@@ -82,7 +85,7 @@ Flags:
   -h, --help                    help for minepkg
       --no-color                disable color output
       --system-java             Use system java instead […]
-      --verbose                 More verbose logging. Not really implented yet
+      --verbose                 More verbose logging. Not really implemented yet
   -v, --version                 version for minepkg
 
 Use "minepkg [command] --help" for more information about a command.

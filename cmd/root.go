@@ -92,7 +92,7 @@ func initRoot() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.minepkg/config.toml)")
 	rootCmd.PersistentFlags().BoolP("accept-minecraft-eula", "a", false, "Accept Minecraft's eula. See https://www.minecraft.net/en-us/eula/")
 	rootCmd.PersistentFlags().BoolP("system-java", "", false, "Use system java instead of internal installation for launching Minecraft server or client")
-	rootCmd.PersistentFlags().BoolP("verbose", "", false, "More verbose logging. Not really implented yet")
+	rootCmd.PersistentFlags().BoolP("verbose", "", false, "More verbose logging. Not really implemented yet")
 	rootCmd.PersistentFlags().BoolP("non-interactive", "", false, "Use default answer for all prompts")
 
 	viper.BindPFlag("noColor", rootCmd.PersistentFlags().Lookup("no-color"))
