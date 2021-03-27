@@ -56,12 +56,18 @@ func (i *HTTPItem) Download(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
 	req, err := http.NewRequestWithContext(ctx, "GET", i.URL, nil)
 	if err != nil {
 		return err
 	}
 
-	fileRes, err := i.Client.Do(req)
+	client := i.Client
+	if client == nil {
+		client = &defaultClient
+	}
+
+	fileRes, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("Error while fetching %s: %w", i.URL, err)
 	}
