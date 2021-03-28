@@ -100,6 +100,8 @@ type DependencyLock struct {
 	URL      string `toml:"url" json:"url"`
 	// Provider usually is minepkg but can also be https
 	Provider string `toml:"provider" json:"provider"`
+	// Dependend is the package that requires this mod. can be _root if top package
+	Dependend string `toml:"dependend" json:"dependend"`
 }
 
 // FileExt returns ".jar" for mods and ".zip" for modpacks

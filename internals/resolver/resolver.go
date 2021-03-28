@@ -82,7 +82,7 @@ func (r *Resolver) ResolveManifest(man *manifest.Manifest) error {
 		if err != nil {
 			return err
 		}
-		err = r.Resolve(release)
+		err = r.Resolve(release, "_root")
 		if err != nil {
 			return err
 		}
@@ -92,9 +92,9 @@ func (r *Resolver) ResolveManifest(man *manifest.Manifest) error {
 }
 
 // Resolve resolves all dependencies of a single package
-func (r *Resolver) Resolve(release *api.Release) error {
+func (r *Resolver) Resolve(release *api.Release, dependend string) error {
 
-	r.addResolvedRelease(release)
+	r.addResolvedRelease(release, dependend)
 	resolveNext := release.InterpretedDependencies()
 
 	for len(resolveNext) != 0 {
@@ -113,7 +113,7 @@ func (r *Resolver) Resolve(release *api.Release) error {
 			if err != nil {
 				return err
 			}
-			r.addResolvedRelease(resolvedDep)
+			r.addResolvedRelease(resolvedDep, release.Package.Name)
 			resolveNext = append(resolveNext, resolvedDep.InterpretedDependencies()...)
 		}
 	}
@@ -121,14 +121,15 @@ func (r *Resolver) Resolve(release *api.Release) error {
 	return nil
 }
 
-func (r *Resolver) addResolvedRelease(release *api.Release) {
+func (r *Resolver) addResolvedRelease(release *api.Release, dependend string) {
 	r.Resolved[release.Package.Name] = &manifest.DependencyLock{
-		Name:     release.Package.Name,
-		Version:  release.Package.Version,
-		Type:     release.Package.Type,
-		IPFSHash: release.Meta.IPFSHash,
-		Sha256:   release.Meta.Sha256,
-		URL:      release.DownloadURL(),
+		Name:      release.Package.Name,
+		Version:   release.Package.Version,
+		Type:      release.Package.Type,
+		IPFSHash:  release.Meta.IPFSHash,
+		Sha256:    release.Meta.Sha256,
+		URL:       release.DownloadURL(),
+		Dependend: dependend,
 	}
 }
 
