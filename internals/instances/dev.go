@@ -30,7 +30,7 @@ func (i *Instance) BuildMod() *exec.Cmd {
 	// TODO: test this … weird thing
 	if runtime.GOOS == "windows" {
 		// TODO: maybe less hardcoded version of this
-		if buildScript == "./gradlew.sh build" {
+		if buildScript == "./gradlew build" {
 			buildScript = "gradlew.bat build"
 		}
 		build = exec.Command("cmd", []string{"/C", buildScript}...)
