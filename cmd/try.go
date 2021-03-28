@@ -65,12 +65,10 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	instance := instances.Instance{
-		GlobalDir:  globalDir,
-		Directory:  tempDir,
-		Lockfile:   manifest.NewLockfile(),
-		MinepkgAPI: apiClient,
-	}
+	instance := instances.NewEmptyInstance()
+	instance.Directory = tempDir
+	instance.Lockfile = manifest.NewLockfile()
+	instance.MinepkgAPI = apiClient
 
 	creds, err := ensureMojangAuth()
 	if err != nil {
@@ -120,7 +118,7 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 	fmt.Println("Creating temporary modpack with " + release.Identifier())
 
 	// overwrite some instance launch options with flags
-	launch.ApplyInstanceOverwrites(&instance, t.overwrites)
+	launch.ApplyInstanceOverwrites(instance, t.overwrites)
 
 	if t.overwrites.McVersion == "" {
 		fmt.Println("mc * resolved to: " + release.LatestTestedMinecraftVersion())
@@ -144,7 +142,7 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	cliLauncher := launch.CLILauncher{
-		Instance:       &instance,
+		Instance:       instance,
 		ServerMode:     t.serverMode,
 		OfflineMode:    t.offlineMode,
 		NonInteractive: viper.GetBool("nonInteractive"),
