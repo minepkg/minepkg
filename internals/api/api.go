@@ -50,6 +50,11 @@ func NewWithClient(client *http.Client) *MinepkgAPI {
 	}
 }
 
+// HasCredentials returns true if a jwt or api is set
+func (m *MinepkgAPI) HasCredentials() bool {
+	return m.JWT != "" && m.APIKey != ""
+}
+
 // GetAccount gets the account information
 func (m *MinepkgAPI) GetAccount(ctx context.Context) (*User, error) {
 	res, err := m.get(ctx, m.APIUrl+"/account")

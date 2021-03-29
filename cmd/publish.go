@@ -69,7 +69,7 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	tasks.Log("Checking Authentication")
-	if globals.ApiClient.JWT == "" {
+	if !globals.ApiClient.HasCredentials() {
 		logger.Warn("You need to login to minepkg.io first")
 		runner := &mpkgLoginRunner{}
 		runner.RunE(cmd, args)
