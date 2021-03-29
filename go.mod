@@ -15,6 +15,7 @@ require (
 	github.com/google/uuid v1.2.0 // indirect
 	github.com/gookit/color v1.3.8
 	github.com/gopherjs/gopherjs v0.0.0-20210202160940-bed99a852dfe // indirect
+	github.com/jwalton/gchalk v1.0.3 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/lunixbochs/vtclean v1.0.0 // indirect
 	github.com/magiconair/properties v1.8.4
