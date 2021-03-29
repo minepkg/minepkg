@@ -210,7 +210,7 @@ func (m *MinepkgAPI) decorate(req *http.Request) {
 	case m.JWT != "":
 		req.Header.Set("Authorization", "Bearer "+m.JWT)
 	case m.APIKey != "":
-		req.Header.Set("API-KEY", m.APIKey)
+		req.Header.Set("Authorization", "api-key "+m.APIKey)
 	}
 }
 

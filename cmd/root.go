@@ -64,11 +64,11 @@ func initRoot() {
 	if err != nil {
 		panic(err)
 	}
-	token := os.Getenv("MINEPKG_API_TOKEN")
+	apiKey := os.Getenv("MINEPKG_API_KEY")
 	globalDir = filepath.Join(homeConfigs, "minepkg")
 	credStore, err := credentials.New(globalDir, globals.ApiClient.APIUrl)
 	if err != nil {
-		if token != "" {
+		if apiKey != "" {
 			logger.Warn("Could not initialize credential store: " + err.Error())
 		} else {
 			logger.Fail("Could not initialize credential store: " + err.Error())
@@ -80,9 +80,9 @@ func initRoot() {
 		globals.ApiClient.JWT = credStore.MinepkgAuth.AccessToken
 	}
 
-	if token != "" {
-		globals.ApiClient.JWT = token
-		fmt.Println("Using MINEPKG_API_TOKEN for authentication")
+	if apiKey != "" {
+		globals.ApiClient.APIKey = apiKey
+		fmt.Println("Using MINEPKG_API_KEY for authentication")
 	}
 
 	cobra.OnInitialize(initConfig)
