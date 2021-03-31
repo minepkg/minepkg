@@ -65,10 +65,10 @@ gcs release:
 
 .docker:
   stage: docker_release
-  image: docker:19.03.8
+  image: docker:19.03.15
   needs: ["gcs release"]
   services:
-    - docker:19.03.8-dind
+    - docker:19.03.15-dind
   variables:
     # Use TLS https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#tls-enabled
     DOCKER_HOST: tcp://docker:2376
