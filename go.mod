@@ -21,7 +21,7 @@ require (
 	github.com/magiconair/properties v1.8.5
 	github.com/manifoldco/promptui v0.8.0
 	github.com/mattn/go-isatty v0.0.12
-	github.com/mholt/archiver v3.1.1+incompatible
+	github.com/mholt/archiver v3.5.0+incompatible
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/nwaples/rardecode v1.1.0 // indirect
 	github.com/pelletier/go-toml v1.8.1 // indirect
