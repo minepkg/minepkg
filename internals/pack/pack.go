@@ -160,7 +160,7 @@ func Open(filePath string) (*PackageFile, error) {
 	}, nil
 }
 
-// stolen from https://github.com/mholt/archiver/blob/e4ef56d48eb029648b0e895bb0b6a393ef0829c3/archiver.go#L110-L119
+// stolen from https://github.com/mholt/archiver/v3/blob/e4ef56d48eb029648b0e895bb0b6a393ef0829c3/archiver.go#L110-L119
 func sanitizeExtractPath(filePath string, destination string) error {
 	// to avoid zip slip (writing outside of the destination), we resolve
 	// the target path, and make sure it's nested in the intended

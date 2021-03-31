@@ -9,7 +9,6 @@ import (
 	"github.com/fiws/minepkg/internals/cmdlog"
 	"github.com/fiws/minepkg/internals/credentials"
 	"github.com/fiws/minepkg/internals/globals"
-	"github.com/gookit/color"
 	"github.com/jwalton/gchalk"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -109,7 +108,6 @@ func initRoot() {
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
 	if viper.GetBool("noColor") || os.Getenv("CI") != "" {
-		color.Disable()
 		gchalk.ForceLevel(gchalk.LevelNone)
 		viper.Set("nonInteractive", true)
 	}

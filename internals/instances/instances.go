@@ -8,12 +8,12 @@ import (
 	"strings"
 
 	"github.com/fiws/minepkg/internals/merrors"
+	"github.com/jwalton/gchalk"
 
 	"github.com/BurntSushi/toml"
 	"github.com/fiws/minepkg/internals/api"
 	"github.com/fiws/minepkg/internals/mojang"
 	"github.com/fiws/minepkg/pkg/manifest"
-	"github.com/gookit/color"
 	strcase "github.com/stoewer/go-strcase"
 )
 
@@ -137,8 +137,8 @@ func (i *Instance) Desc() string {
 	depCount := fmt.Sprintf(" %d deps ", len(manifest.Dependencies))
 	name := fmt.Sprintf(" 📦 %s ", manifest.Package.Name)
 	build := []string{
-		color.BgBlue.Sprint(name),
-		color.BgGray.Sprint(depCount),
+		gchalk.BgBlue(name),
+		gchalk.BgGray(depCount),
 	}
 	return strings.Join(build, "")
 }

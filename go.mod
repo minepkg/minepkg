@@ -6,9 +6,7 @@ require (
 	github.com/Tnze/go-mc v1.16.1
 	github.com/briandowns/spinner v1.12.0
 	github.com/dchest/uniuri v0.0.0-20200228104902-7aecb25e1fe5
-	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/fatih/color v1.10.0 // indirect
-	github.com/frankban/quicktest v1.11.3 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
@@ -21,11 +19,9 @@ require (
 	github.com/magiconair/properties v1.8.5
 	github.com/manifoldco/promptui v0.8.0
 	github.com/mattn/go-isatty v0.0.12
-	github.com/mholt/archiver v3.5.0+incompatible
+	github.com/mholt/archiver/v3 v3.5.0
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
-	github.com/nwaples/rardecode v1.1.0 // indirect
 	github.com/pelletier/go-toml v1.8.1 // indirect
-	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
 	github.com/smartystreets/assertions v1.2.0 // indirect
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
@@ -36,7 +32,6 @@ require (
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
-	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/zalando/go-keyring v0.1.1
 	golang.org/x/net v0.0.0-20210331060903-cb1fcc7394e5 // indirect
 	golang.org/x/oauth2 v0.0.0-20210323180902-22b0adad7558

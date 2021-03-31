@@ -6,13 +6,12 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/gookit/color"
+	"github.com/jwalton/gchalk"
 )
 
 // Logger loggs pretty stuff to the console
 type Logger struct {
 	emojis    bool
-	color     bool
 	indention int
 }
 
@@ -23,13 +22,13 @@ func (l *Logger) println(a string) {
 
 // pritEmoji prints string e only when emojis are enabled
 func (l *Logger) printEmoji(e string) {
-	if l.emojis == true {
+	if l.emojis {
 		fmt.Print(e + " ")
 	}
 }
 
 func (l *Logger) sprintEmoji(e string) string {
-	if l.emojis == true {
+	if l.emojis {
 		return e
 	}
 	return ""
@@ -37,7 +36,7 @@ func (l *Logger) sprintEmoji(e string) string {
 
 // Headline prints a blue line
 func (l *Logger) Headline(s string) {
-	color.Style{color.FgCyan, color.OpBold}.Println(s)
+	fmt.Println(gchalk.WithCyan().Bold(s))
 }
 
 // Info prints a "normal" line
@@ -47,20 +46,20 @@ func (l *Logger) Info(s string) {
 
 // Log prints a black line
 func (l *Logger) Log(s string) {
-	color.LightWhite.Println(s)
+	fmt.Println(gchalk.Gray(s))
 }
 
 // Warn will print a warning
 func (l *Logger) Warn(s string) {
 	l.printEmoji("⚠️ ")
-	color.Style{color.FgYellow, color.OpBold}.Println(s)
+	fmt.Println(gchalk.WithYellow().Bold(s))
 }
 
 // Fail will print the given message with PrintLn and then exit 1
 func (l *Logger) Fail(s string) {
 	l.printEmoji("💣")
-	color.Style{color.FgRed, color.OpBold}.Print("Error: ")
-	color.Style{color.FgWhite, color.OpBold}.Println(s)
+	fmt.Print(gchalk.WithRed().Bold("Error: "))
+	fmt.Println(gchalk.WithWhite().Bold(s))
 	os.Exit(1)
 }
 
@@ -76,15 +75,12 @@ func (l *Logger) NewTask(end int) *Task {
 // New returns a new Logger
 func New() *Logger {
 	emojis := runtime.GOOS != "windows"
-	colorToggle := true
 
 	// disable color for CI
 	if os.Getenv("CI") != "" {
 		emojis = false
-		colorToggle = false
-		color.Disable()
 	}
-	return &Logger{emojis: emojis, color: colorToggle}
+	return &Logger{emojis: emojis}
 }
 
 // Task logs but with progress
@@ -97,7 +93,7 @@ type Task struct {
 // Step prints progress
 func (l *Task) Step(e string, s string) {
 	l.current++
-	text := color.Cyan.Sprintf(
+	text := fmt.Sprintf(
 		"[%d / %d] %s %s",
 		l.current,
 		l.end,
@@ -105,8 +101,7 @@ func (l *Task) Step(e string, s string) {
 		s,
 	)
 
-	// we don't use l.println here, because step headlines should have no indentation
-	fmt.Println(text)
+	fmt.Println(gchalk.Cyan(text))
 }
 
 // HumanUint32 returns the number in a human readable format
@@ -133,16 +128,4 @@ func HumanFloat32(num float32) string {
 		return fmt.Sprintf("%v K", num/1000)
 	}
 	return fmt.Sprintf("%v", num)
-}
-
-// Fail will print the given message with PrintLn and then exit 1
-func Fail(a ...interface{}) {
-	fmt.Println(a...)
-	os.Exit(1)
-}
-
-// Failf will print the given message with Printf and then exit 1
-func Failf(format string, a ...interface{}) {
-	fmt.Printf(format, a...)
-	os.Exit(1)
 }
