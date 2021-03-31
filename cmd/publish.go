@@ -128,13 +128,13 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	// check if version exists
-	logger.Log("Checking if release exists")
+	logger.Log("Checking if release exists: ")
 
 	// TODO: static fabric is bad!
 	release, err := apiClient.GetRelease(context.TODO(), "fabric", m.Package.Name+"@"+m.Package.Version)
 
 	switch {
-	case err == nil && !release.Meta.Published:
+	case err == nil && release.Meta.Published:
 		logger.Fail("Release already published!")
 	case err != nil && err != api.ErrorNotFound:
 		// unknown error
