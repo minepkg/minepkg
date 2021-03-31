@@ -11,7 +11,6 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/google/uuid v1.2.0 // indirect
-	github.com/gookit/color v1.3.8
 	github.com/gopherjs/gopherjs v0.0.0-20210202160940-bed99a852dfe // indirect
 	github.com/jwalton/gchalk v1.0.3
 	github.com/kr/text v0.2.0 // indirect
