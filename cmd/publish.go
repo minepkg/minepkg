@@ -27,23 +27,23 @@ func init() {
 	runner := &publishRunner{}
 	cmd := commands.New(&cobra.Command{
 		Use:     "publish",
-		Short:   "Publishes the local package in the current directory",
-		Aliases: []string{"run", "start", "play"},
+		Short:   "Publishes the local package in the current directory to minepkg.io",
+		Aliases: []string{"ship", "push"},
 		Args:    cobra.MaximumNArgs(1),
 	}, runner)
 
 	cmd.Flags().BoolVarP(&runner.dry, "dry", "", false, "Dry run without publishing")
-	cmd.Flags().BoolVarP(&runner.skipBuild, "skip-build", "", false, "Skips building the package")
-	cmd.Flags().StringVarP(&runner.release, "release", "r", "", "The release version number to publish")
+	cmd.Flags().BoolVarP(&runner.noBuild, "no-build", "", false, "Skips building the package")
+	cmd.Flags().StringVarP(&runner.release, "release", "r", "", "Release version number to publish (overwrites version in manifest)")
 
 	rootCmd.AddCommand(cmd.Command)
 }
 
 type publishRunner struct {
-	dry       bool
-	skipBuild bool
-	release   string
-	file      string
+	dry     bool
+	noBuild bool
+	release string
+	file    string
 }
 
 func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
@@ -145,10 +145,10 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	buildCmd := m.Dev.BuildCommand
 	if (buildCmd == "" && m.Package.Type == manifest.TypeModpack) || p.file != "" {
-		p.skipBuild = true
+		p.noBuild = true
 	}
 
-	if !p.skipBuild {
+	if !p.noBuild {
 		build := instance.BuildMod()
 		cmdTerminalOutput(build)
 		build.Start()

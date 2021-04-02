@@ -177,12 +177,14 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 	// generate hooks section for mods
 	if man.Package.Type == manifest.TypeMod {
 		useHook := boolPrompt(&promptui.Prompt{
-			Label:     "Do you want to use \"./gradlew build\" as your build command (also works on windows)",
+			Label:     "Do you want to use gradlew to build?",
 			Default:   "Y",
 			IsConfirm: true,
 		})
 		if useHook {
 			man.Dev.BuildCommand = "./gradlew build"
+		} else {
+			logger.Warn(`Please set the "dev.buildCommand" field in the minepkg.toml file by hand.`)
 		}
 	}
 
