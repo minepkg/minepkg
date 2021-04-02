@@ -175,10 +175,9 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	// generate hooks section for mods
-	hasGradle := checkGradle()
-	if man.Package.Type == manifest.TypeMod && hasGradle {
+	if man.Package.Type == manifest.TypeMod {
 		useHook := boolPrompt(&promptui.Prompt{
-			Label:     "Do you want to use \"./gradlew build\" as your build command",
+			Label:     "Do you want to use \"./gradlew build\" as your build command (also works on windows)",
 			Default:   "Y",
 			IsConfirm: true,
 		})

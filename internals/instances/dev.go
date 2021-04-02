@@ -27,13 +27,12 @@ func (i *Instance) BuildMod() *exec.Cmd {
 	build := exec.Command("sh", []string{"-c", buildScript}...)
 	build.Env = os.Environ()
 
-	// TODO: test this … weird thing
 	if runtime.GOOS == "windows" {
-		// TODO: maybe less hardcoded version of this
-		if buildScript == "./gradlew build" {
-			buildScript = "gradlew.bat build"
+		// hack windows compatibility – space after gradlew ensures that this does not have .bat there anyway
+		if strings.Contains(buildScript, "gradlew ") {
+			buildScript = strings.Replace(buildScript, "gradlew ", "gradlew.bat ", 1)
 		}
-		build = exec.Command("cmd", []string{"/C", buildScript}...)
+		build = exec.Command("powershell", []string{"-Command", buildScript}...)
 	}
 
 	return build
