@@ -65,11 +65,9 @@ func (i *joinRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	// looks like we can join this server, so we start initializing the instance stuff here
-	instance := instances.Instance{
-		GlobalDir:  globalDir,
-		Lockfile:   manifest.NewLockfile(),
-		MinepkgAPI: globals.ApiClient,
-	}
+	instance := instances.NewEmptyInstance()
+	instance.Lockfile = manifest.NewLockfile()
+	instance.MinepkgAPI = globals.ApiClient
 
 	instanceDir := filepath.Join(instance.InstancesDir(), "server."+ip+"."+resolvedModpack.Package.Name+"."+resolvedModpack.Package.Platform)
 	os.MkdirAll(instanceDir, os.ModePerm)
@@ -95,7 +93,7 @@ func (i *joinRunner) RunE(cmd *cobra.Command, args []string) error {
 	instance.Manifest = resolvedModpack.Manifest
 	fmt.Println("Using modpack " + resolvedModpack.Identifier())
 
-	cliLauncher := launch.CLILauncher{Instance: &instance, ServerMode: false}
+	cliLauncher := launch.CLILauncher{Instance: instance, ServerMode: false}
 	cliLauncher.Prepare()
 
 	if viper.GetBool("useSystemJava") {

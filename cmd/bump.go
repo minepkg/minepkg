@@ -243,7 +243,7 @@ func (i *bumpRunner) RunE(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		match := remoteGitHubSSH.FindStringSubmatch(origin)
-		if len(match) != 1 {
+		if len(match) == 2 {
 			fmt.Println(gchalk.Bold("\nYou should now create a new release here:"))
 			v := url.Values{}
 			v.Add("tag", targetTag)
