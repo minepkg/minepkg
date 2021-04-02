@@ -36,7 +36,7 @@ func init() {
 	cmd.Flags().BoolVarP(&runner.offlineMode, "offline", "", false, "Start the server in offline mode (server only)")
 	cmd.Flags().BoolVarP(&runner.onlyPrepare, "only-prepare", "", false, "Only prepare, skip launching")
 	cmd.Flags().BoolVarP(&runner.crashTest, "crashtest", "", false, "Stop server after it's online (can be used for testing)")
-	cmd.Flags().BoolVarP(&runner.skipBuild, "skip-build", "", false, "Skip build (if any)")
+	cmd.Flags().BoolVarP(&runner.noBuild, "no-build", "", false, "Skip build (if any)")
 	runner.overwrites = launch.CmdOverwriteFlags(cmd.Command)
 
 	rootCmd.AddCommand(cmd.Command)
@@ -48,7 +48,7 @@ type launchRunner struct {
 	offlineMode bool
 	onlyPrepare bool
 	crashTest   bool
-	skipBuild   bool
+	noBuild     bool
 
 	overwrites *launch.OverwriteFlags
 }
@@ -162,7 +162,7 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	// build and add the local jar
 	if instance.Manifest.Package.Type == manifest.TypeMod {
-		if !l.skipBuild {
+		if !l.noBuild {
 			build := instance.BuildMod()
 			cmdTerminalOutput(build)
 			build.Start()
