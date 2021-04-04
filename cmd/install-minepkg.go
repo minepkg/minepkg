@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
-	"github.com/fiws/minepkg/internals/api"
-	"github.com/fiws/minepkg/internals/downloadmgr"
-	"github.com/fiws/minepkg/internals/globals"
-	"github.com/fiws/minepkg/internals/instances"
 	"github.com/manifoldco/promptui"
+	"github.com/minepkg/minepkg/internals/api"
+	"github.com/minepkg/minepkg/internals/downloadmgr"
+	"github.com/minepkg/minepkg/internals/globals"
+	"github.com/minepkg/minepkg/internals/instances"
 )
 
 func installFromMinepkg(mods []string, instance *instances.Instance) error {

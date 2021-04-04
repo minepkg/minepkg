@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fiws/minepkg/internals/globals"
-	"github.com/fiws/minepkg/internals/mojang"
 	"github.com/manifoldco/promptui"
+	"github.com/minepkg/minepkg/internals/globals"
+	"github.com/minepkg/minepkg/internals/mojang"
 	"github.com/spf13/cobra"
 )
 

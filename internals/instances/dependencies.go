@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/fiws/minepkg/internals/downloadmgr"
-	"github.com/fiws/minepkg/internals/pack"
-	"github.com/fiws/minepkg/internals/resolver"
-	"github.com/fiws/minepkg/pkg/manifest"
+	"github.com/minepkg/minepkg/internals/downloadmgr"
+	"github.com/minepkg/minepkg/internals/pack"
+	"github.com/minepkg/minepkg/internals/resolver"
+	"github.com/minepkg/minepkg/pkg/manifest"
 )
 
 // UpdateLockfileDependencies resolves all dependencies

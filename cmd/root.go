@@ -5,11 +5,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/fiws/minepkg/cmd/dev"
-	"github.com/fiws/minepkg/internals/cmdlog"
-	"github.com/fiws/minepkg/internals/credentials"
-	"github.com/fiws/minepkg/internals/globals"
 	"github.com/jwalton/gchalk"
+	"github.com/minepkg/minepkg/cmd/dev"
+	"github.com/minepkg/minepkg/internals/cmdlog"
+	"github.com/minepkg/minepkg/internals/credentials"
+	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

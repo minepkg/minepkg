@@ -7,8 +7,8 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/fiws/minepkg/internals/globals"
-	"github.com/fiws/minepkg/internals/mojang"
+	"github.com/minepkg/minepkg/internals/globals"
+	"github.com/minepkg/minepkg/internals/mojang"
 )
 
 // MinepkgMapping is a server mapping (very unfinished)

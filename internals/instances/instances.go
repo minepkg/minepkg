@@ -7,13 +7,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fiws/minepkg/internals/merrors"
 	"github.com/jwalton/gchalk"
+	"github.com/minepkg/minepkg/internals/merrors"
 
 	"github.com/BurntSushi/toml"
-	"github.com/fiws/minepkg/internals/api"
-	"github.com/fiws/minepkg/internals/mojang"
-	"github.com/fiws/minepkg/pkg/manifest"
+	"github.com/minepkg/minepkg/internals/api"
+	"github.com/minepkg/minepkg/internals/mojang"
+	"github.com/minepkg/minepkg/pkg/manifest"
 	strcase "github.com/stoewer/go-strcase"
 )
 

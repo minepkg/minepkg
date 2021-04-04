@@ -18,9 +18,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/fiws/minepkg/internals/minecraft"
-	"github.com/fiws/minepkg/internals/mojang"
-	"github.com/fiws/minepkg/pkg/manifest"
+	"github.com/minepkg/minepkg/internals/minecraft"
+	"github.com/minepkg/minepkg/internals/mojang"
+	"github.com/minepkg/minepkg/pkg/manifest"
 )
 
 var (

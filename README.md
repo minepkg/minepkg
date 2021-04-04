@@ -104,7 +104,7 @@ Requires go ~ 1.16+. Could also work with older go versions.
 Just `go run main.go [commands]` or `go build -o out/minepkg`
 
 ```
-git clone https://github.com/fiws/minepkg.git
+git clone https://github.com/minepkg/minepkg.git
 cd minepkg
 go run main.go --help
 ```

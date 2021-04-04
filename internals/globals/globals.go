@@ -1,9 +1,9 @@
 package globals
 
 import (
-	"github.com/fiws/minepkg/internals/api"
-	"github.com/fiws/minepkg/internals/credentials"
-	"github.com/fiws/minepkg/internals/mojang"
+	"github.com/minepkg/minepkg/internals/api"
+	"github.com/minepkg/minepkg/internals/credentials"
+	"github.com/minepkg/minepkg/internals/mojang"
 )
 
 var (

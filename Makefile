@@ -15,7 +15,7 @@ run-docker:
 		-v ${PWD}/.tmp/docker-configs:/root/.minepkg \
 		golang:latest bash
 
-MOD=github.com/fiws/minepkg
+MOD=github.com/minepkg/minepkg
 
 godoc:
 	docker run \

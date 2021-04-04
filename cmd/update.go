@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
-	"github.com/fiws/minepkg/internals/downloadmgr"
-	"github.com/fiws/minepkg/internals/globals"
-	"github.com/fiws/minepkg/internals/instances"
+	"github.com/minepkg/minepkg/internals/downloadmgr"
+	"github.com/minepkg/minepkg/internals/globals"
+	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/spf13/cobra"
 )
 

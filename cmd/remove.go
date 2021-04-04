@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/fiws/minepkg/internals/globals"
-	"github.com/fiws/minepkg/internals/instances"
+	"github.com/minepkg/minepkg/internals/globals"
+	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/spf13/cobra"
 )
 

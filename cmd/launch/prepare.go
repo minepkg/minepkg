@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fiws/minepkg/internals/downloadmgr"
-	"github.com/fiws/minepkg/internals/instances"
-	"github.com/fiws/minepkg/internals/minecraft"
+	"github.com/minepkg/minepkg/internals/downloadmgr"
+	"github.com/minepkg/minepkg/internals/instances"
+	"github.com/minepkg/minepkg/internals/minecraft"
 	"github.com/spf13/viper"
 )
 

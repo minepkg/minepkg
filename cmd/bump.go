@@ -11,11 +11,11 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/fiws/minepkg/internals/commands"
-	"github.com/fiws/minepkg/internals/instances"
 	"github.com/jwalton/gchalk"
 	"github.com/magiconair/properties"
 	"github.com/manifoldco/promptui"
+	"github.com/minepkg/minepkg/internals/commands"
+	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

@@ -4,8 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/fiws/minepkg/internals/downloadmgr"
-	"github.com/fiws/minepkg/pkg/manifest"
+	"github.com/minepkg/minepkg/internals/downloadmgr"
+	"github.com/minepkg/minepkg/pkg/manifest"
 )
 
 // type Cacher interface {

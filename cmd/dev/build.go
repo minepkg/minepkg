@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/fiws/minepkg/internals/commands"
-	"github.com/fiws/minepkg/internals/instances"
-	"github.com/fiws/minepkg/pkg/manifest"
+	"github.com/minepkg/minepkg/internals/commands"
+	"github.com/minepkg/minepkg/internals/instances"
+	"github.com/minepkg/minepkg/pkg/manifest"
 	"github.com/spf13/cobra"
 )
 

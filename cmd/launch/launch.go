@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/fiws/minepkg/internals/instances"
+	"github.com/minepkg/minepkg/internals/instances"
 )
 
 // Launch will launch the instance with the provided launchOptions

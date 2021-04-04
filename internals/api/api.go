@@ -207,7 +207,7 @@ func checkResponse(res *http.Response) error {
 
 // decorate decorates a request with the User-Agent header and a auth header if set
 func (m *MinepkgAPI) decorate(req *http.Request) {
-	req.Header.Set("User-Agent", "minepkg (https://github.com/fiws/minepkg)")
+	req.Header.Set("User-Agent", "minepkg (https://github.com/minepkg/minepkg)")
 	if req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", "application/json")
 	}

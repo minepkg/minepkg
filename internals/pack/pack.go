@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
-	"github.com/fiws/minepkg/pkg/manifest"
+	"github.com/minepkg/minepkg/pkg/manifest"
 )
 
 // Reader for a zip (or jar) file that may contain a minepkg.toml

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fiws/minepkg/internals/api"
-	"github.com/fiws/minepkg/internals/commands"
-	"github.com/fiws/minepkg/internals/globals"
+	"github.com/minepkg/minepkg/internals/api"
+	"github.com/minepkg/minepkg/internals/commands"
+	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/spf13/cobra"
 )
 

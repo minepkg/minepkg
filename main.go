@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/fiws/minepkg/cmd"
+	"github.com/minepkg/minepkg/cmd"
 )
 
 // set by goreleaser

@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/fiws/minepkg/internals/mojang"
+	"github.com/minepkg/minepkg/internals/mojang"
 	"github.com/zalando/go-keyring"
 	"golang.org/x/oauth2"
 )

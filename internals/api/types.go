@@ -2,7 +2,7 @@ package api
 
 import (
 	"github.com/Masterminds/semver/v3"
-	"github.com/fiws/minepkg/pkg/manifest"
+	"github.com/minepkg/minepkg/pkg/manifest"
 )
 
 const (

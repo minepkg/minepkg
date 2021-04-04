@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/BurntSushi/toml"
-	"github.com/fiws/minepkg/pkg/manifest"
+	"github.com/minepkg/minepkg/pkg/manifest"
 )
 
 // Unmarshal a toml to a manifest struct

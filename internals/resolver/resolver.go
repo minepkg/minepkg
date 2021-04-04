@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/fiws/minepkg/internals/api"
-	"github.com/fiws/minepkg/pkg/manifest"
+	"github.com/minepkg/minepkg/internals/api"
+	"github.com/minepkg/minepkg/pkg/manifest"
 )
 
 var (

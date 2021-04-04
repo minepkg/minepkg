@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/fiws/minepkg/internals/minecraft"
+	"github.com/minepkg/minepkg/internals/minecraft"
 )
 
 func extractNative(jar string, target string) error {

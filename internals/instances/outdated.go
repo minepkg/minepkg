@@ -2,7 +2,7 @@ package instances
 
 import (
 	"github.com/Masterminds/semver/v3"
-	"github.com/fiws/minepkg/pkg/manifest"
+	"github.com/minepkg/minepkg/pkg/manifest"
 )
 
 // AreRequirementsOutdated returns true if the requirements of this instance do not

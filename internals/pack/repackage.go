@@ -1,7 +1,7 @@
 package pack
 
 import (
-	"github.com/fiws/minepkg/pkg/manifest"
+	"github.com/minepkg/minepkg/pkg/manifest"
 )
 
 // RepackageFile takes the given zip file, recreates it without compression

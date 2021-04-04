@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/fiws/minepkg/internals/logparser"
+	"github.com/minepkg/minepkg/internals/logparser"
 )
 
 // ErrorUnknown is returned if the error could not be parsed
