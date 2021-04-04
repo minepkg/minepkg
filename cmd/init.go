@@ -279,19 +279,6 @@ func defaultVersion(fm *fabric.Manifest) string {
 	return gradleProps.GetString("mod_version", fallbackVersion)
 }
 
-func checkGradle() bool {
-	files, err := ioutil.ReadDir("./")
-	if err != nil {
-		logger.Fail(err.Error())
-	}
-	for _, f := range files {
-		if f.Name() == "gradlew" {
-			return true
-		}
-	}
-	return false
-}
-
 func writeManifest(man *manifest.Manifest) {
 	// generate toml
 	buf := bytes.Buffer{}

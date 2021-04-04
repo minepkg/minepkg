@@ -45,7 +45,7 @@ var installCmd = &cobra.Command{
 				}
 				return
 			}
-			logger.Fail("Sorry. Don't know what to do with that url")
+			logger.Fail("Sorry. Don't know what to do with that url (yet)")
 		}
 
 		// fallback to minepkg

@@ -17,7 +17,7 @@ type RequirementQuery struct {
 	// any semver string is NOT allowed here
 	Minecraft string
 	// Platform can bei either fabric or forge
-	Plattform string
+	Platform string
 }
 
 // ErrInvalidMinecraftRequirement is returned if an invalid minecraft requirement was passed
@@ -50,7 +50,7 @@ func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *Requ
 
 	wantedVersion := reqs.Version
 
-	releases, err := p.GetReleases(ctx, reqs.Plattform)
+	releases, err := p.GetReleases(ctx, reqs.Platform)
 	if err != nil {
 		return nil, err
 	}

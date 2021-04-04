@@ -53,7 +53,7 @@ func installFromMinepkg(mods []string, instance *instances.Instance) error {
 		reqs := &api.RequirementQuery{
 			Version:   version,
 			Minecraft: instance.Lockfile.MinecraftVersion(),
-			Plattform: instance.Manifest.PlatformString(),
+			Platform:  instance.Manifest.PlatformString(),
 		}
 
 		release, err := apiClient.FindRelease(context.TODO(), name, reqs)
@@ -101,7 +101,7 @@ func installFromMinepkg(mods []string, instance *instances.Instance) error {
 
 	task.Step("🔎", "Resolving Dependencies")
 	for _, release := range releases {
-		instance.Manifest.AddDependency(release.Package.Name, release.Package.Version)
+		instance.Manifest.AddDependency(release.Package.Name, "^"+release.Package.Version)
 	}
 	instance.UpdateLockfileDependencies(context.TODO())
 	for _, dep := range instance.Lockfile.Dependencies {

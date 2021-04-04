@@ -73,7 +73,7 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 	} else {
 		instance = instances.NewEmptyInstance()
 		reqs := &api.RequirementQuery{
-			Plattform: "fabric", // TODO: not static!
+			Platform:  "fabric", // TODO: not static!
 			Minecraft: "*",
 			Version:   "latest", // TODO: get from id
 		}

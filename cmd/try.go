@@ -91,7 +91,7 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 	reqs := &api.RequirementQuery{
 		Version:   version,
 		Minecraft: mcVersion,
-		Plattform: "fabric", // TODO!!!
+		Platform:  "fabric", // TODO!!!
 	}
 	release, err := apiClient.FindRelease(context.TODO(), name, reqs)
 	var e *api.ErrNoMatchingRelease

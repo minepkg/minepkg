@@ -32,7 +32,7 @@ func (e *ErrNoMatchingRelease) Error() string {
 	return fmt.Sprintf(
 		"No Release found for %s. Details: \n\tPlattform: %s\n\tPackage: %s\n\tVersion: %s\n\tMinecraft Version: %s\n\tDependency of: %s",
 		e.Package,
-		e.Requirements.Plattform,
+		e.Requirements.Platform,
 		e.Package,
 		e.Requirements.Version,
 		e.Requirements.Minecraft,
@@ -71,7 +71,7 @@ func (r *Resolver) ResolveManifest(man *manifest.Manifest) error {
 		reqs := &api.RequirementQuery{
 			Version:   version,
 			Minecraft: r.GlobalReqs.MinecraftVersion(),
-			Plattform: man.PlatformString(),
+			Platform:  man.PlatformString(),
 		}
 
 		if r.IgnoreVersion {
@@ -137,7 +137,7 @@ func (r *Resolver) resolveMinepkg(dep *manifest.InterpretedDependency) (*api.Rel
 	reqs := &api.RequirementQuery{
 		Minecraft: r.GlobalReqs.MinecraftVersion(),
 		Version:   dep.Source,
-		Plattform: r.GlobalReqs.PlatformName(),
+		Platform:  r.GlobalReqs.PlatformName(),
 	}
 
 	if r.IgnoreVersion {

@@ -48,7 +48,7 @@ func (i *infoRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	r, err := apiClient.FindRelease(context.TODO(), name, &api.RequirementQuery{
 		Minecraft: reqsMinecraft,
-		Plattform: platform,
+		Platform:  platform,
 		Version:   version,
 	})
 

@@ -150,8 +150,8 @@ func resolveViaSLP(ip string, port string) *api.Release {
 	fmt.Println("minepkg compatible server detected. Modpack: " + data.MinepkgModpack.Name)
 
 	reqs := &api.RequirementQuery{
-		Version:   data.MinepkgModpack.Version,
-		Plattform: data.MinepkgModpack.Platform,
+		Version:  data.MinepkgModpack.Version,
+		Platform: data.MinepkgModpack.Platform,
 		// raw version from minecraft slp.. might need to check that
 		Minecraft: data.Version.Name,
 	}
