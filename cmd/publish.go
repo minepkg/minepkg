@@ -116,7 +116,7 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 	switch {
 	case p.release != "":
 		tasks.Log("Using supplied release version number: " + p.release)
-		m.Package.Version = p.release
+		m.Package.Version = strings.TrimPrefix(p.release, "v")
 	case m.Package.Version != "":
 		tasks.Log("Using version number in minepkg.toml: " + m.Package.Version)
 	default:
