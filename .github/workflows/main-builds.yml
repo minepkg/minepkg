@@ -1,13 +1,11 @@
-name: dev builds
+name: main builds
 
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 jobs:
-  devBuild:
+  mainBuilds:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
