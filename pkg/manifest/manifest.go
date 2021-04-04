@@ -112,18 +112,18 @@ type Manifest struct {
 		// This field is REQUIRED
 		Name        string `toml:"name" json:"name"`
 		Description string `toml:"description" json:"description"`
-		// Version is the version number of this package. A preceeding `v` (like `v2.1.1`) is NOT
+		// Version is the version number of this package. A proceeding `v` (like `v2.1.1`) is NOT
 		// allowed to preserve consistency
 		// The version may include prerelease information like `1.2.2-beta.0` or build
 		// related information `1.2.1+B7382-2018`.
-		// The version can be omited. Publishing will require a version number as flag in that case
+		// The version can be omitted. Publishing will require a version number as flag in that case
 		Version string `toml:"version,omitempty" json:"version,omitempty"`
-		// Platform incidates the supported playform of this package. can be `fabric`, `forge` or `vanilla`
+		// Platform indicates the supported playform of this package. can be `fabric`, `forge` or `vanilla`
 		Platform string   `toml:"platform,omitempty" json:"platform,omitempty"`
 		License  string   `toml:"license,omitempty" json:"license,omitempty"`
 		Provides []string `toml:"provides,omitempty" json:"provides,omitempty"`
 		// BasedOn can be a another package that this one is based on.
-		// Most notabily, this field is used for instances to determine what modpack is actually running
+		// Most notably, this field is used for instances to determine what modpack is actually running
 		// This field is striped when publishing the package to the minepkg api
 		BasedOn string `toml:"basedOn,omitempty" json:"basedOn,omitempty"`
 		// Savegame can be the name of the primary savegame on this modpack. Not applicable for other package types.
@@ -135,7 +135,7 @@ type Manifest struct {
 		// Minecraft is a semver version string describing the required Minecraft version
 		// The Minecraft version is binding and implementers should not install
 		// Mods for non-matching Minecraft versions.
-		// Modpack & Mod Authors are encuraged to use semver to allow a broader install range.
+		// Modpack & Mod Authors are encouraged to use semver to allow a broader install range.
 		// This field is REQUIRED
 		Minecraft string `toml:"minecraft" json:"minecraft"`
 		// Fabric is a semver version string describing the required Fabric version
@@ -146,7 +146,7 @@ type Manifest struct {
 		Forge string `toml:"forge,omitempty" json:"forge,omitempty"`
 		// MinepkgCompanion is the version of the minepkg companion plugin that is going to be added to modpacks.
 		// This has no effect on other types of packages
-		// `latest` is assumed if this field is omited. `none` can be used to exclude the companion
+		// `latest` is assumed if this field is omitted. `none` can be used to exclude the companion
 		// plugin from a modpack – but this is not recommended
 		MinepkgCompanion string `toml:"minepkgCompanion,omitempty" json:"minepkgCompanion,omitempty"`
 	} `toml:"requirements" json:"requirements"`
@@ -195,7 +195,7 @@ func (m *Manifest) AddDependency(name string, version string) {
 	m.Dependencies[name] = version
 }
 
-// RemoveDependency removes a dependecy from the manifest
+// RemoveDependency removes a dependency from the manifest
 func (m *Manifest) RemoveDependency(name string) {
 	if m.Dependencies == nil {
 		m.Dependencies = make(map[string]string)

@@ -15,7 +15,7 @@ const LockfileVersion = 1
 
 var (
 	// ErrDependencyConflicts is returned when trying to add a dependency that is already present
-	ErrDependencyConflicts = errors.New("A dependency with that name is already present")
+	ErrDependencyConflicts = errors.New("a dependency with that name is already present")
 
 	// DependencyLockTypeMod describes a mod dependency
 	DependencyLockTypeMod = "mod"
@@ -27,7 +27,7 @@ var (
 	PlatformVanilla = "vanilla"
 )
 
-// PlatformLock describes a quierable platform (fabric, forge)
+// PlatformLock describes a queryable platform (fabric, forge)
 type PlatformLock interface {
 	PlatformName() string
 	MinecraftVersion() string

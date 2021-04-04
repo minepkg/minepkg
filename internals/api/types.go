@@ -18,7 +18,7 @@ type User struct {
 	Email       string `json:"email"`
 }
 
-// Project is a project … realy
+// Project is a project
 type Project struct {
 	client      *MinepkgAPI
 	Name        string        `json:"name"`
@@ -107,14 +107,6 @@ type ForgeVersion struct {
 	Modified    int        `json:"modified"`
 	Version     string     `json:"version"`
 	Recommended bool       `json:"recommended"`
-}
-
-// ForgeVersionResponse is the response from the /meta/forge-versions endpoint
-type ForgeVersionResponse struct {
-	Versions []ForgeVersion `json:"versions"`
-	Webpath  string         `json:"webpath"`
-	Homepage string         `json:"homepage"`
-	Adfocus  string         `json:"adfocus"`
 }
 
 // MinepkgError is the json response if the response

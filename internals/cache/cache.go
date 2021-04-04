@@ -12,7 +12,7 @@ import (
 // 	Set()
 // }
 
-// Cache is a helper to cache/store files localy
+// Cache is a helper to cache/store files locally
 type Cache struct {
 	location   string
 	downloader *downloadmgr.DownloadManager

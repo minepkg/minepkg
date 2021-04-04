@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	// ErrorNotFound gets returned when a 404 occured
+	// ErrorNotFound gets returned when a 404 occurred
 	ErrorNotFound = errors.New("resource not found")
-	// ErrorBadRequest gets returned when a 400 occured
+	// ErrorBadRequest gets returned when a 400 occurred
 	ErrorBadRequest = errors.New("bad Request")
 )
 
@@ -32,14 +32,14 @@ func New() *Client {
 }
 
 // NewWithClient returns a new MojangAPI instance using a custom http client
-// supplied as a first paramter
+// supplied as a first parameter
 func NewWithClient(client *http.Client) *Client {
 	return &Client{
 		HTTP: client,
 	}
 }
 
-// Login is a convinient method that uses username/password credentials
+// Login is a convenient method that uses username/password credentials
 // to fetch a token from Mojangs Authentication Server. It then uses (only) that token
 // to login to minepkg
 func (m *Client) Login(username string, password string) (*AuthResponse, error) {

@@ -257,7 +257,7 @@ var fallbackVersion = "0.1.0"
 
 func defaultVersion(fm *fabric.Manifest) string {
 	fabricIsValid := func() bool {
-		// is not set or palceholder?
+		// is not set or placeholder?
 		if fm == nil || fm.Version == "" || fm.Version == "${version}" {
 			return false
 		}

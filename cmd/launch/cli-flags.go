@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// OverwriteFlags are cli flags used to overwrite launch behaviour
+// OverwriteFlags are cli flags used to overwrite launch behavior
 type OverwriteFlags struct {
 	McVersion        string
 	FabricVersion    string

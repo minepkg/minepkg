@@ -13,9 +13,9 @@ import (
 )
 
 var (
-	// ErrorNotFound gets returned when a 404 occured
+	// ErrorNotFound gets returned when a 404 occurred
 	ErrorNotFound = errors.New("resource not found")
-	// ErrorBadRequest gets returned when a 400 occured
+	// ErrorBadRequest gets returned when a 400 occurred
 	ErrorBadRequest = errors.New("bad Request")
 	// DefaultURL is "https://api.preview.minepkg.io/v1"
 	DefaultURL = "https://api.preview.minepkg.io/v1"
@@ -42,7 +42,7 @@ func New() *MinepkgAPI {
 }
 
 // NewWithClient returns a new MinepkgAPI instance using a custom http client
-// supplied as a first paramter
+// supplied as a first parameter
 func NewWithClient(client *http.Client) *MinepkgAPI {
 	return &MinepkgAPI{
 		HTTP:   client,
@@ -71,25 +71,6 @@ func (m *MinepkgAPI) GetAccount(ctx context.Context) (*User, error) {
 	}
 
 	return &user, nil
-}
-
-// GetForgeVersions gets all available forge versions
-// This currently does not work!
-func (m *MinepkgAPI) GetForgeVersions(ctx context.Context) (*ForgeVersionResponse, error) {
-	res, err := m.get(ctx, m.APIUrl+"/meta/forge-versions")
-	if err != nil {
-		return nil, err
-	}
-	if err := checkResponse(res); err != nil {
-		return nil, err
-	}
-
-	fRes := ForgeVersionResponse{}
-	if err := parseJSON(res, &fRes); err != nil {
-		return nil, err
-	}
-
-	return &fRes, nil
 }
 
 // PutRelease uploads a new release

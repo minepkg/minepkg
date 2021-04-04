@@ -9,7 +9,7 @@ import (
 	"github.com/jwalton/gchalk"
 )
 
-// Logger loggs pretty stuff to the console
+// Logger logs pretty stuff to the console
 type Logger struct {
 	emojis    bool
 	indention int
@@ -20,7 +20,7 @@ func (l *Logger) println(a string) {
 	fmt.Println(strings.Repeat(" ", l.indention) + a)
 }
 
-// pritEmoji prints string e only when emojis are enabled
+// printEmoji prints string e only when emojis are enabled
 func (l *Logger) printEmoji(e string) {
 	if l.emojis {
 		fmt.Print(e + " ")
