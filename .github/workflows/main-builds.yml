@@ -43,4 +43,4 @@ jobs:
         with:
           credentials: ${{ secrets.gcp_credentials }}
           path: dist
-          destination: minepkg-client/dev/
+          destination: minepkg-client/dev
