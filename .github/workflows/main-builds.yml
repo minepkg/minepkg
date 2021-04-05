@@ -38,9 +38,11 @@ jobs:
               "linux": "https://get.minepkg.io/dev/minepkg_linux_amd64/minepkg"
             }
           }' > dist/latest-version.json
-      - id: upload-files
-        uses: google-github-actions/upload-cloud-storage@main
-        with:
-          credentials: ${{ secrets.gcp_credentials }}
-          path: dist/
-          destination: minepkg-client/dev
+      - name: setup gcloud sdk
+        uses: google-github-actions/setup-gcloud@master
+          with:
+            service_account_key: ${{ secrets.gcp_credentials }}
+            export_default_credentials: true
+      - name: upload dev binaries to get.minepkg.io
+        run: gsutil cp -r dist/* gs://minepkg-client/dev
+
