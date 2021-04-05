@@ -26,3 +26,21 @@ jobs:
         with:
           name: binaries
           path: dist
+      - runs: |
+          VERSION="$(git describe --abbrev=0)-next"
+          echo -e '{
+            "channel": "dev",
+            "version": "'$VERSION'",
+            "gitHash": "${{ github.sha }}",
+            "binaries": {
+              "win": "https://get.minepkg.io/dev/minepkg_windows_amd64/minepkg.exe",
+              "macos": "https://get.minepkg.io/dev/minepkg_darwin_amd64/minepkg",
+              "linux": "https://get.minepkg.io/dev/minepkg_linux_amd64/minepkg"
+            }
+          }' > dist/latest-version.json
+      - id: upload-files
+        uses: google-github-actions/upload-cloud-storage@main
+        with:
+          credentials: ${{ secrets.gcp_credentials }}
+          path: dist
+          destination: minepkg-client/dev/
