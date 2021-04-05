@@ -40,9 +40,9 @@ jobs:
           }' > dist/latest-version.json
       - name: setup gcloud sdk
         uses: google-github-actions/setup-gcloud@master
-          with:
-            service_account_key: ${{ secrets.gcp_credentials }}
-            export_default_credentials: true
+        with:
+          service_account_key: ${{ secrets.gcp_credentials }}
+          export_default_credentials: true
       - name: upload dev binaries to get.minepkg.io
         run: gsutil cp -r dist/* gs://minepkg-client/dev
 
