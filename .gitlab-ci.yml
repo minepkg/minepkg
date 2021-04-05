@@ -55,10 +55,11 @@ gcs release:
     # generate and upload latest version manifest
     echo -e '{
       "version": "'$VERSION'",
+      "channel": "stable",
       "binaries": {
-        "win": "https://storage.googleapis.com/minepkg-client/'$VERSION'/minepkg-windows-amd64.exe",
-        "macos": "https://storage.googleapis.com/minepkg-client/'$VERSION'/minepkg-macos-amd64",
-        "linux": "https://storage.googleapis.com/minepkg-client/'$VERSION'/minepkg-linux-amd64"
+        "win": "https://get.minepkg.io/'$VERSION'/minepkg-windows-amd64.exe",
+        "macos": "https://get.minepkg.io/'$VERSION'/minepkg-macos-amd64",
+        "linux": "https://get.minepkg.io/'$VERSION'/minepkg-linux-amd64"
       }
     }' > latest-version.json
     gsutil -m cp latest-version.json gs://minepkg-client
