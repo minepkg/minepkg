@@ -87,9 +87,16 @@ func initRoot() {
 
 	cobra.OnInitialize(initConfig)
 
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	configPath := filepath.Join(configDir, "minepkg")
+
 	// Global flags
 	rootCmd.PersistentFlags().BoolVarP(&disableColors, "no-color", "", false, "disable color output")
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.minepkg/config.toml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf("config file (default is %s/config.toml)", configPath))
 	rootCmd.PersistentFlags().BoolP("accept-minecraft-eula", "a", false, "Accept Minecraft's eula. See https://www.minecraft.net/en-us/eula/")
 	rootCmd.PersistentFlags().BoolP("system-java", "", false, "Use system java instead of internal installation for launching Minecraft server or client")
 	rootCmd.PersistentFlags().BoolP("verbose", "", false, "More verbose logging. Not really implemented yet")
@@ -116,7 +123,6 @@ func initConfig() {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
 	} else {
-		// Find home directory.
 		configDir, err := os.UserConfigDir()
 		if err != nil {
 			fmt.Println(err)

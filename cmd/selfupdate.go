@@ -12,6 +12,7 @@ import (
 	"runtime"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 func init() {
@@ -57,8 +58,22 @@ var selfupdateCmd = &cobra.Command{
 			logger.Fail(err.Error())
 		}
 
+		updateChannel := viper.GetString("updateChannel")
+		pathPrefix := ""
+		switch updateChannel {
+		case "":
+			fallthrough
+		case "stable":
+			fmt.Println("Using stable update channel")
+		case "dev":
+			fmt.Println("Using dev update channel")
+			pathPrefix = "dev/"
+		default:
+			fmt.Printf("Unsupported update channel \"%s\". Falling back to stable\n", updateChannel)
+		}
+
 		fmt.Println("Checking for new version")
-		res, err := http.Get("https://storage.googleapis.com/minepkg-client/latest-version.json")
+		res, err := http.Get(fmt.Sprintf("https://get.minepkg.io/%slatest-version.json", pathPrefix))
 		if err != nil {
 			logger.Fail(err.Error())
 		}
