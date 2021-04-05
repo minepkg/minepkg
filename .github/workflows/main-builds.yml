@@ -26,7 +26,7 @@ jobs:
         with:
           name: binaries
           path: dist
-      - runs: |
+      - run: |
           VERSION="$(git describe --abbrev=0)-next"
           echo -e '{
             "channel": "dev",
