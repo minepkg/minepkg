@@ -42,5 +42,5 @@ jobs:
         uses: google-github-actions/upload-cloud-storage@main
         with:
           credentials: ${{ secrets.gcp_credentials }}
-          path: dist/*
+          path: dist/
           destination: minepkg-client/dev
