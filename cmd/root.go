@@ -40,7 +40,6 @@ var rootCmd = &cobra.Command{
   minepkg init -l fabric
   minepkg install modmenu@latest
   minepkg join demo.minepkg.host`,
-	// SilenceUsage: true,
 	SilenceErrors: true,
 }
 

@@ -1,6 +1,11 @@
 package commands
 
-import "github.com/spf13/cobra"
+import (
+	"fmt"
+	"os"
+
+	"github.com/spf13/cobra"
+)
 
 type Command struct {
 	*cobra.Command
@@ -16,7 +21,13 @@ func New(cmd *cobra.Command, run Runner) *Command {
 		cmd,
 		run,
 	}
-	build.Command.RunE = run.RunE
+	build.Command.Run = func(cmd *cobra.Command, args []string) {
+		err := run.RunE(cmd, args)
+		if err != nil {
+			fmt.Println(err.Error() + "\n")
+			os.Exit(1)
+		}
+	}
 
 	return build
 }

@@ -48,7 +48,7 @@ func (i *bumpRunner) RunE(cmd *cobra.Command, args []string) error {
 	instance, err := instances.NewInstanceFromWd()
 
 	if err != nil {
-		return fmt.Errorf("invalid package: %w", err)
+		return err
 	}
 	currentVersion, err := semver.NewVersion(instance.Manifest.Package.Version)
 	if err != nil {
