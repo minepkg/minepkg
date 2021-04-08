@@ -7,8 +7,8 @@
 
 ---
 
-[![pipeline status](https://gitlab.com/fiws/minepkg/badges/master/pipeline.svg)](https://gitlab.com/fiws/minepkg/commits/master)
-[![Maintainability](https://api.codeclimate.com/v1/badges/74d43859d907238c4836/maintainability)](https://codeclimate.com/github/fiws/minepkg/maintainability)
+[![main builds](https://github.com/minepkg/minepkg/actions/workflows/main-builds.yml/badge.svg)](https://github.com/minepkg/minepkg/actions/workflows/main-builds.yml)
+[![Maintainability](https://api.codeclimate.com/v1/badges/cd2f11d2dd41dee1fcbc/maintainability)](https://codeclimate.com/github/minepkg/minepkg/maintainability)
 [![Discord](https://img.shields.io/discord/517070108191883266.svg?logo=discord)](https://discord.gg/6tjBR5t)
 
 **This project is not ready for use yet! Please join our discord if you are interested in testing**
