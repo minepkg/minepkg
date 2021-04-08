@@ -29,10 +29,20 @@ type ErrNoMatchingRelease struct {
 	Package string
 	// Requirements are the requirements for this package to resolve (eg. minecraft version)
 	Requirements *RequirementQuery
+	// Err is the underlying error that describes why there is no matching release
+	Err error
 }
 
+var (
+	ErrNoReleasesForPlatform        = errors.New("project has no releases for this platform")
+	ErrProjectDoesNotExist          = errors.New("project does not exist")
+	ErrNoReleaseForMinecraftVersion = errors.New("no release exists for the wanted Minecraft version")
+	ErrNoReleaseForVersion          = errors.New("no release exists for the wanted Version")
+	ErrNoReleaseWithConstrains      = errors.New("no release exists for the given version/minecraft requirement")
+)
+
 func (e *ErrNoMatchingRelease) Error() string {
-	return fmt.Sprintf("No release found for package \"%s\" with requirements: %s", e.Package, e.Requirements)
+	return fmt.Sprintf("No release found for package \"%s\" with given requirements", e.Package)
 }
 
 // FindRelease gets the latest release matching the passed requirements via `RequirementQuery`
@@ -52,12 +62,15 @@ func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *Requ
 
 	releases, err := p.GetReleases(ctx, reqs.Platform)
 	if err != nil {
+		if err == ErrNotFound {
+			return nil, &ErrNoMatchingRelease{Package: project, Requirements: reqs, Err: ErrProjectDoesNotExist}
+		}
 		return nil, err
 	}
 
 	// found nothing
 	if len(releases) == 0 {
-		return nil, &ErrNoMatchingRelease{Package: project, Requirements: reqs}
+		return nil, &ErrNoMatchingRelease{Package: project, Requirements: reqs, Err: ErrNoReleasesForPlatform}
 	}
 
 	testedReleases := make([]*Release, 0, len(releases))
@@ -87,8 +100,8 @@ func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *Requ
 				return release, nil
 			}
 		}
-		return nil, &ErrNoMatchingRelease{Package: project, Requirements: reqs}
-		// return releases[0], nil
+
+		return nil, &ErrNoMatchingRelease{Package: project, Requirements: reqs, Err: ErrNoReleaseForMinecraftVersion}
 	}
 
 	versionConstraint, err := semver.NewConstraint(wantedVersion)
@@ -96,22 +109,49 @@ func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *Requ
 		return nil, err
 	}
 
-	// seach for tested releases first
+	// search for tested releases first
 	for _, release := range testedReleases {
 		if versionConstraint.Check(release.SemverVersion()) {
 			return release, nil
 		}
 	}
 
+	mcCompatCount := 0
+	versionCompatCount := 0
+
 	// fallback to search all releases
 	for _, release := range releases {
-		if release.compatWith(wantedMCSemver) && versionConstraint.Check(release.SemverVersion()) {
+		mcCompatible := release.compatWith(wantedMCSemver)
+		versionCompatible := release.compatWith(wantedMCSemver)
+
+		if mcCompatible && versionCompatible {
 			return release, nil
+		}
+
+		// version is no compatible, but maybe parts of it?
+		if mcCompatible {
+			mcCompatCount += 1
+		}
+		if versionCompatible {
+			versionCompatCount += 1
 		}
 	}
 
+	err = ErrNoReleaseWithConstrains
+	// no compatible mc releases, but compatible versions
+	if mcCompatCount == 0 && versionCompatCount != 0 {
+		// wanted mc version is the problem
+		err = ErrNoReleaseForMinecraftVersion
+	}
+
+	// compatible mc releases, but version does not match
+	if mcCompatCount != 0 && versionCompatCount == 0 {
+		// wanted mc version is the problem
+		err = ErrNoReleaseForVersion
+	}
+
 	// found nothing
-	return nil, &ErrNoMatchingRelease{Package: project, Requirements: reqs}
+	return nil, &ErrNoMatchingRelease{Package: project, Requirements: reqs, Err: err}
 }
 
 // testedFor returns true if this release was tested worked for the given minecraft version
@@ -130,7 +170,7 @@ func (r *Release) testedFor(mcVersion *semver.Version) bool {
 	return false
 }
 
-// compatWith returns true if this release requirement is comtaible with the given minecraft version
+// compatWith returns true if this release requirement is compatible with the given minecraft version
 func (r *Release) compatWith(mcVersion *semver.Version) bool {
 	modMcConstraint, err := semver.NewConstraint(r.Requirements.Minecraft)
 	if err != nil {

@@ -80,7 +80,7 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 	defer cancel()
 	project, err := apiClient.GetProject(timeout, m.Package.Name)
 
-	if err == api.ErrorNotFound {
+	if err == api.ErrNotFound {
 		if !nonInteractive {
 			create := boolPrompt(&promptui.Prompt{
 				Label:     "Project " + m.Package.Name + " does not exists yet. Do you want to create it",
@@ -136,7 +136,7 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 	switch {
 	case err == nil && release.Meta.Published:
 		logger.Fail("Release already published!")
-	case err != nil && err != api.ErrorNotFound:
+	case err != nil && err != api.ErrNotFound:
 		// unknown error
 		return err
 	}

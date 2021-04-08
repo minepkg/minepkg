@@ -13,10 +13,10 @@ import (
 )
 
 var (
-	// ErrorNotFound gets returned when a 404 occurred
-	ErrorNotFound = errors.New("resource not found")
-	// ErrorBadRequest gets returned when a 400 occurred
-	ErrorBadRequest = errors.New("bad Request")
+	// ErrNotFound gets returned when a 404 occurred
+	ErrNotFound = errors.New("resource not found")
+	// ErrBadRequest gets returned when a 400 occurred
+	ErrBadRequest = errors.New("bad Request")
 	// DefaultURL is "https://api.preview.minepkg.io/v1"
 	DefaultURL = "https://api.preview.minepkg.io/v1"
 )
@@ -170,7 +170,7 @@ func (m *MinepkgAPI) postJSON(ctx context.Context, url string, data interface{})
 func checkResponse(res *http.Response) error {
 	switch {
 	case res.StatusCode == http.StatusNotFound:
-		return ErrorNotFound
+		return ErrNotFound
 	// case res.StatusCode == http.StatusBadRequest:
 	// 	return ErrorBadRequest
 	case res.StatusCode >= 200 && res.StatusCode < 400:
