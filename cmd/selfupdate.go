@@ -11,17 +11,37 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/charmbracelet/lipgloss"
+	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
+var styleWarnBox = lipgloss.NewStyle().
+	Border(lipgloss.RoundedBorder()).
+	BorderForeground(lipgloss.Color("#b37400")).
+	Foreground(lipgloss.Color("orange")).
+	Padding(0, 1)
+
 func init() {
-	rootCmd.AddCommand(selfupdateCmd)
+	runner := &selfupdateRunner{}
+
+	cmd := commands.New(&cobra.Command{
+		Use:   "selfupdate",
+		Short: "Updates minepkg to the latest version",
+		Args:  cobra.ExactArgs(0),
+	}, runner)
+
+	cmd.Flags().BoolVar(&runner.force, "force", false, "Force update")
+
+	rootCmd.AddCommand(cmd.Command)
 	rootCmd.AddCommand(selftestCmd)
 }
 
 type minepkgClientVersions struct {
 	Version  string `json:"version"`
+	Channel  string `json:"channel"`
+	Info     string `json:"info"`
 	Binaries struct {
 		Win   string `json:"win"`
 		MacOS string `json:"macos"`
@@ -42,99 +62,114 @@ func (m *minepkgClientVersions) PlatformBinary() string {
 	}
 }
 
-var selfupdateCmd = &cobra.Command{
-	Use:   "selfupdate",
-	Short: "Updates minepkg to the latest version",
-	Args:  cobra.ExactArgs(0),
-	RunE: func(cmd *cobra.Command, args []string) error {
+type selfupdateRunner struct {
+	force bool
+}
 
-		toUpdate, err := os.Executable()
-		if err != nil {
-			logger.Fail(err.Error())
-		}
+func (s *selfupdateRunner) RunE(cmd *cobra.Command, args []string) error {
+	toUpdate, err := os.Executable()
+	if err != nil {
+		logger.Fail(err.Error())
+	}
 
-		toUpdate, err = filepath.EvalSymlinks(toUpdate)
-		if err != nil {
-			logger.Fail(err.Error())
-		}
+	toUpdate, err = filepath.EvalSymlinks(toUpdate)
+	if err != nil {
+		logger.Fail(err.Error())
+	}
 
-		updateChannel := viper.GetString("updateChannel")
-		pathPrefix := ""
-		switch updateChannel {
-		case "":
-			fallthrough
-		case "stable":
-			fmt.Println("Using stable update channel")
-		case "dev":
-			fmt.Println("Using dev update channel")
-			pathPrefix = "dev/"
-		default:
-			fmt.Printf("Unsupported update channel \"%s\". Falling back to stable\n", updateChannel)
-		}
-
-		fmt.Println("Checking for new version")
-		res, err := http.Get(fmt.Sprintf("https://get.minepkg.io/%slatest-version.json", pathPrefix))
-		if err != nil {
-			logger.Fail(err.Error())
-		}
-
-		buf, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			logger.Fail(err.Error())
-		}
-		parsed := minepkgClientVersions{}
-		if err := json.Unmarshal(buf, &parsed); err != nil {
-			logger.Fail(err.Error())
-		}
-
-		fmt.Println("Downloading new version")
-		// TODO: if this version is newer
-		newCli, err := ioutil.TempFile(os.TempDir(), parsed.Version)
-		if err != nil {
-			return err
-		}
-		newCli.Chmod(0700)
-		download, err := http.Get(parsed.PlatformBinary())
-		if err != nil {
-			return err
-		}
-		_, err = io.Copy(newCli, download.Body)
-		if err != nil {
-			logger.Fail(err.Error())
-		}
-
-		newCli.Close()
-
-		fmt.Println("Testing new version")
-		test := exec.Command(newCli.Name(), "selftest")
-		out, err := test.Output()
-		if err != nil {
-			logger.Fail("Update aborted. Self test of new update failed:\n " + err.Error())
-		}
-		if string(out) != "Selftest OK\n" {
-			logger.Fail("Update aborted. Self test of new update failed:\nInvalid output. Please open a bug report")
-		}
-
-		if runtime.GOOS == "windows" {
-			if err := os.Rename(toUpdate, toUpdate+".old"); err != nil {
-				logger.Fail(err.Error())
-			}
-		}
-
-		if err := os.Rename(newCli.Name(), toUpdate); err != nil {
-			if runtime.GOOS == "windows" {
-				// revert to old version
-				if err := os.Rename(toUpdate+".old", toUpdate); err != nil {
-					panic("This is bad... You might have to install minepkg manually again. Sorry")
-				}
-				logger.Fail("Upgrade failed. Reverted to old version. Please open a bug report")
-			}
-			logger.Fail(err.Error())
-		}
-		fmt.Println("minepkg CLI was updated successfully")
-
+	fmt.Println("Checking for new version")
+	parsed, err := s.fetchVersionInfo()
+	if err != nil {
 		return err
-	},
+	}
+
+	if parsed.Version == rootCmd.Version {
+		fmt.Println("Already up to date! :)")
+		os.Exit(0)
+	}
+
+	if parsed.Info != "" {
+		fmt.Println(styleWarnBox.Render(parsed.Info))
+	}
+
+	// TODO: if this version is newer
+	newCli, err := ioutil.TempFile(os.TempDir(), parsed.Version)
+	if err != nil {
+		return err
+	}
+	newCli.Chmod(0700)
+	download, err := http.Get(parsed.PlatformBinary())
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(newCli, download.Body)
+	if err != nil {
+		logger.Fail(err.Error())
+	}
+
+	newCli.Close()
+
+	fmt.Println("Testing new version")
+	test := exec.Command(newCli.Name(), "selftest")
+	out, err := test.Output()
+	if err != nil {
+		logger.Fail("Update aborted. Self test of new update failed:\n " + err.Error())
+	}
+	if string(out) != "Selftest OK\n" {
+		logger.Fail("Update aborted. Self test of new update failed:\nInvalid output. Please open a bug report")
+	}
+
+	if runtime.GOOS == "windows" {
+		if err := os.Rename(toUpdate, toUpdate+".old"); err != nil {
+			logger.Fail(err.Error())
+		}
+	}
+
+	if err := os.Rename(newCli.Name(), toUpdate); err != nil {
+		if runtime.GOOS == "windows" {
+			// revert to old version
+			if err := os.Rename(toUpdate+".old", toUpdate); err != nil {
+				panic("This is bad... You might have to install minepkg manually again. Sorry")
+			}
+			logger.Fail("Upgrade failed. Reverted to old version. Please open a bug report")
+		}
+		logger.Fail(err.Error())
+	}
+	fmt.Println("minepkg CLI was updated successfully")
+
+	return err
+}
+
+func (s *selfupdateRunner) fetchVersionInfo() (*minepkgClientVersions, error) {
+	updateChannel := viper.GetString("updateChannel")
+	pathPrefix := ""
+	switch updateChannel {
+	case "":
+		fallthrough
+	case "stable":
+		fmt.Println("Using stable update channel")
+	case "dev":
+		fmt.Println("Using dev update channel")
+		pathPrefix = "dev/"
+	default:
+		fmt.Printf("Unsupported update channel \"%s\". Falling back to stable\n", updateChannel)
+	}
+
+	res, err := http.Get(fmt.Sprintf("https://get.minepkg.io/%slatest-version.json", pathPrefix))
+	if err != nil {
+		return nil, err
+	}
+
+	buf, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	parsed := minepkgClientVersions{}
+	if err := json.Unmarshal(buf, &parsed); err != nil {
+		return nil, err
+	}
+
+	return &parsed, nil
 }
 
 var selftestCmd = &cobra.Command{

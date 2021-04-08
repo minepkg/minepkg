@@ -27,7 +27,7 @@ func init() {
 		Use:   "launch [modpack]",
 		Short: "Launch the given or local modpack.",
 		Long: `If a modpack name or URL is supplied, that modpack will be launched.
-	Alternatively: Can be used in directories containing a minepkg.toml manifest to launch that modpack.
+Alternatively: Can be used in directories containing a minepkg.toml manifest to launch that modpack.
 		`,
 		Aliases: []string{"run", "start", "play"},
 		Args:    cobra.MaximumNArgs(1),
@@ -261,7 +261,7 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 	stopAfterCrashtest := func() {
 		p, err := os.FindProcess(cliLauncher.Cmd.Process.Pid)
 		if err != nil {
-			fmt.Println("Could not stop minecraft after crashtest. Its'probably already stopped … which is not good")
+			fmt.Println("Could not stop minecraft after crashtest. It's probably already stopped … which is not good")
 			os.Exit(1)
 		}
 		if err := p.Signal(syscall.SIGTERM); err != nil {
@@ -311,7 +311,7 @@ func (l *launchRunner) formatApiError(err error) error {
 				Text: fmt.Sprintf("%s does not exist", notFoundErr.Package),
 				Suggestions: []string{
 					"Check if your have a typo in the packagename",
-					"Make sure the wanted Package is published",
+					"Make sure the wanted package is published",
 				},
 			}
 		case api.ErrNoReleasesForPlatform:
