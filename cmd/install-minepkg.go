@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,8 +10,10 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
+	"github.com/jwalton/gchalk"
 	"github.com/manifoldco/promptui"
 	"github.com/minepkg/minepkg/internals/api"
+	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/downloadmgr"
 	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/instances"
@@ -72,7 +75,7 @@ func installFromMinepkg(mods []string, instance *instances.Instance) error {
 			}
 			release, err = apiClient.FindRelease(context.TODO(), mod.Name, reqs)
 			if err != nil {
-				return err
+				return prettyApiError(err)
 			}
 		}
 		if release == nil {
@@ -183,4 +186,64 @@ func searchFallback(ctx context.Context, name string) *api.Project {
 		os.Exit(0)
 	}
 	return &filtered[i]
+}
+
+func prettyApiError(err error) error {
+	var notFoundErr *api.ErrNoMatchingRelease
+	if errors.As(err, &notFoundErr) {
+		switch notFoundErr.Err {
+		case api.ErrProjectDoesNotExist:
+			return &commands.CliError{
+				Text: fmt.Sprintf("Project %s does not exist", notFoundErr.Package),
+				Suggestions: []string{
+					"Check if your have a typo in the packagename",
+					"Make sure the wanted Project is published",
+				},
+			}
+		case api.ErrNoReleasesForPlatform:
+			return &commands.CliError{
+				Text: fmt.Sprintf(
+					"Project %s has no releases for %s",
+					notFoundErr.Package,
+					notFoundErr.Requirements.Platform,
+				),
+			}
+		case api.ErrNoReleaseForMinecraftVersion:
+			return &commands.CliError{
+				Text: fmt.Sprintf(
+					"Project %s is not compatible with Minecraft %s",
+					notFoundErr.Package,
+					notFoundErr.Requirements.Minecraft,
+				),
+				Suggestions: []string{
+					fmt.Sprintf("Change the %s field in your minepkg.toml", gchalk.Bold("requirements.minecraft")),
+					"Wait until the Author publishes a release for this version",
+				},
+			}
+		case api.ErrNoReleaseForVersion:
+			return &commands.CliError{
+				Text: fmt.Sprintf(
+					"Project %s with version requirement %s not found",
+					notFoundErr.Package,
+					notFoundErr.Requirements.Version,
+				),
+				Suggestions: []string{
+					fmt.Sprintf("Install a different version of this package (%s)", gchalk.Bold("minepkg install "+notFoundErr.Package+"@version")),
+				},
+			}
+		case api.ErrNoReleaseForVersion:
+			return &commands.CliError{
+				Text: fmt.Sprintf(
+					"Project %s not compatible with current requirements",
+					notFoundErr.Package,
+				),
+				Suggestions: []string{
+					fmt.Sprintf("Install a different version of this package (%s)", gchalk.Bold("minepkg install "+notFoundErr.Package+"@version")),
+					fmt.Sprintf("Change the %s field in your minepkg.toml", gchalk.Bold("requirements.minecraft")),
+				},
+			}
+		}
+	}
+
+	return err
 }

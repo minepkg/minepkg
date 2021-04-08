@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/jwalton/gchalk"
-	"github.com/minepkg/minepkg/internals/merrors"
+	"github.com/minepkg/minepkg/internals/commands"
 
 	"github.com/BurntSushi/toml"
 	"github.com/minepkg/minepkg/internals/api"
@@ -26,14 +26,19 @@ var (
 	PlatformForge uint8 = 3
 
 	// ErrNoInstance is returned if no mc instance was found
-	ErrNoInstance = &merrors.CliError{
-		Text: "No minepkg.toml file was found in this directory",
-		Help: "Create a new modpack with \"minepkg init\" or move into a folder containing a minepkg.toml file",
+	ErrNoInstance = &commands.CliError{
+		Text: "no minepkg.toml file was found in this directory",
+		Suggestions: []string{
+			fmt.Sprintf("Create it with %s", gchalk.Bold("minepkg init")),
+			"Move into a folder containing a minepkg.toml file",
+		},
 	}
 	// ErrMissingRequirementMinecraft is returned if requirements.minecraft is not set
-	ErrMissingRequirementMinecraft = &merrors.CliError{
-		Text: "The manifest is missing the required requirements.minecraft field",
-		Help: "Add the field as documented on https://test-www.minepkg.io/docs/manifest#requirements",
+	ErrMissingRequirementMinecraft = &commands.CliError{
+		Text: "the manifest is missing the required requirements.minecraft field",
+		Suggestions: []string{
+			"Add the field as documented here https://preview.minepkg.io/docs/manifest#requirements",
+		},
 	}
 )
 

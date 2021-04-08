@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -24,7 +25,14 @@ func New(cmd *cobra.Command, run Runner) *Command {
 	build.Command.Run = func(cmd *cobra.Command, args []string) {
 		err := run.RunE(cmd, args)
 		if err != nil {
-			fmt.Println(err.Error() + "\n")
+			var asCliErr *CliError
+			if errors.As(err, &asCliErr) {
+				fmt.Println(asCliErr.RichError() + "\n")
+			} else {
+				fmt.Println(
+					ErrorBox(err.Error(), ""),
+				)
+			}
 			os.Exit(1)
 		}
 	}

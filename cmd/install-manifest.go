@@ -12,7 +12,7 @@ import (
 )
 
 // installManifest installs dependencies from the minepkg.toml
-func installManifest(instance *instances.Instance) {
+func installManifest(instance *instances.Instance) error {
 	cacheDir := filepath.Join(globalDir, "cache")
 
 	task := logger.NewTask(2)
@@ -29,14 +29,14 @@ func installManifest(instance *instances.Instance) {
 	task.Step("🔎", "Resolving Dependencies")
 	err := instance.UpdateLockfileDependencies(context.TODO())
 	if err != nil {
-		logger.Fail(err.Error())
+		return err
 	}
 	for _, dep := range instance.Lockfile.Dependencies {
 		fmt.Printf(" - %s@%s\n", dep.Name, dep.Version)
 	}
 	missingFiles, err := instance.FindMissingDependencies()
 	if err != nil {
-		logger.Fail(err.Error())
+		return err
 	}
 
 	task.Step("🚚", fmt.Sprintf("Downloading %d Packages", len(missingFiles)))
@@ -48,7 +48,7 @@ func installManifest(instance *instances.Instance) {
 
 	s.Start()
 	if err := mgr.Start(context.TODO()); err != nil {
-		logger.Fail(err.Error())
+		return err
 	}
 
 	instance.LinkDependencies()
@@ -56,4 +56,5 @@ func installManifest(instance *instances.Instance) {
 	s.Stop()
 	instance.SaveLockfile()
 	fmt.Println("You can now launch Minecraft using \"minepkg launch\"")
+	return nil
 }

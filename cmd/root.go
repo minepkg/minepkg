@@ -8,6 +8,7 @@ import (
 	"github.com/jwalton/gchalk"
 	"github.com/minepkg/minepkg/cmd/dev"
 	"github.com/minepkg/minepkg/internals/cmdlog"
+	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/credentials"
 	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/spf13/cobra"
@@ -49,7 +50,7 @@ func Execute() {
 	initRoot()
 
 	if err := rootCmd.Execute(); err != nil {
-		logger.Fail(err.Error())
+		fmt.Println(commands.ErrorBox(err.Error(), ""))
 		os.Exit(1)
 	}
 }

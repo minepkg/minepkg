@@ -5,20 +5,28 @@ import (
 	"fmt"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/minepkg/minepkg/internals/merrors"
+	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/pkg/manifest"
 )
 
 var (
 	// ErrNoFabricLoader is returned if the wanted fabric version was not found
-	ErrNoFabricLoader = &merrors.CliError{
-		Text: "Could not find fabric loader for wanted minecraft version",
-		Help: "Your minecraft version might not be supported by fabric or their API currently is unavailable",
+	ErrNoFabricLoader = &commands.CliError{
+		Text: "Could not find fabric loader for wanted Minecraft version",
+		Suggestions: []string{
+			"Check if fabric is compatible with the Minecraft version in your minepkg.toml",
+			"Check your requirements.fabric field",
+			"Try again later",
+		},
 	}
 	// ErrNoFabricMapping is returned if the wanted fabric mapping was not found
-	ErrNoFabricMapping = &merrors.CliError{
-		Text: "Could not find fabric mapping for wanted minecraft version",
-		Help: "Your minecraft version might not be supported by fabric or their API currently is unavailable",
+	ErrNoFabricMapping = &commands.CliError{
+		Text: "Could not find fabric mapping for wanted Minecraft version",
+		Suggestions: []string{
+			"Check if fabric is compatible with the Minecraft version in your minepkg.toml",
+			"Check your requirements.fabric field",
+			"Try again later",
+		},
 	}
 )
 

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jwalton/gchalk"
 	"github.com/minepkg/minepkg/cmd/launch"
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/commands"
@@ -25,7 +27,7 @@ func init() {
 		Use:   "launch [modpack]",
 		Short: "Launch the given or local modpack.",
 		Long: `If a modpack name or URL is supplied, that modpack will be launched.
-	Alternativly: Can be used in directories containing a minepkg.toml manifest to launch that modpack.
+	Alternatively: Can be used in directories containing a minepkg.toml manifest to launch that modpack.
 		`,
 		Aliases: []string{"run", "start", "play"},
 		Args:    cobra.MaximumNArgs(1),
@@ -53,6 +55,15 @@ type launchRunner struct {
 	overwrites *launch.OverwriteFlags
 }
 
+var (
+	errCanOnlyLaunchModpacks = &commands.CliError{
+		Text: "can only launch modpacks",
+		Suggestions: []string{
+			fmt.Sprintf("use %s to test mods", gchalk.Bold("minepkg try <modname>")),
+		},
+	}
+)
+
 func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 	apiClient := globals.ApiClient
 
@@ -66,7 +77,7 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 		instanceDir = wd
 
 		if err != nil {
-			logger.Fail(err.Error())
+			return err
 		}
 		instance.MinepkgAPI = apiClient
 		launch.ApplyInstanceOverwrites(instance, l.overwrites)
@@ -83,14 +94,11 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 
 		release, err := apiClient.FindRelease(context.TODO(), args[0], reqs)
 		if err != nil {
-			logger.Fail(err.Error())
-		}
-		if release == nil {
-			logger.Fail("No release found")
+			return l.formatApiError(err)
 		}
 
 		if release.Package.Type == "mod" {
-			logger.Fail("can only launch modpacks")
+			return errCanOnlyLaunchModpacks
 		}
 
 		instanceDir = filepath.Join(instance.InstancesDir(), release.Package.Name+"_"+release.Package.Platform)
@@ -292,4 +300,63 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+func (l *launchRunner) formatApiError(err error) error {
+	var notFoundErr *api.ErrNoMatchingRelease
+	if errors.As(err, &notFoundErr) {
+		switch notFoundErr.Err {
+		case api.ErrProjectDoesNotExist:
+			return &commands.CliError{
+				Text: fmt.Sprintf("%s does not exist", notFoundErr.Package),
+				Suggestions: []string{
+					"Check if your have a typo in the packagename",
+					"Make sure the wanted Package is published",
+				},
+			}
+		case api.ErrNoReleasesForPlatform:
+			return &commands.CliError{
+				Text: fmt.Sprintf(
+					"%s has no releases for %s",
+					notFoundErr.Package,
+					notFoundErr.Requirements.Platform,
+				),
+			}
+		case api.ErrNoReleaseForMinecraftVersion:
+			return &commands.CliError{
+				Text: fmt.Sprintf(
+					"%s is not compatible with Minecraft %s",
+					notFoundErr.Package,
+					notFoundErr.Requirements.Minecraft,
+				),
+				Suggestions: []string{
+					fmt.Sprintf("Supply a different minecraft version with %s", gchalk.Bold("--minecraft")),
+					fmt.Sprintf("Wait until the author publishes a release for Minecraft %s", notFoundErr.Requirements.Minecraft),
+				},
+			}
+		case api.ErrNoReleaseForVersion:
+			return &commands.CliError{
+				Text: fmt.Sprintf(
+					"%s with version requirement %s not found",
+					notFoundErr.Package,
+					notFoundErr.Requirements.Version,
+				),
+				Suggestions: []string{
+					"Use a different version of this package",
+				},
+			}
+		case api.ErrNoReleaseForVersion:
+			return &commands.CliError{
+				Text: fmt.Sprintf(
+					"%s is not compatible with the current requirements",
+					notFoundErr.Package,
+				),
+				Suggestions: []string{
+					"Use a different version of this package",
+					fmt.Sprintf("Supply a different minecraft version with %s", gchalk.Bold("--minecraft")),
+				},
+			}
+		}
+	}
+	return err
 }

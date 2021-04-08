@@ -4,54 +4,51 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/spf13/cobra"
 )
 
 func init() {
-	rootCmd.AddCommand(installCmd)
+	runner := &installRunner{}
+	cmd := commands.New(&cobra.Command{
+		Use:     "install [name/url/id]",
+		Short:   "Installs one or more packages in your current modpack or mod",
+		Long:    `Adds package(s) to your local modpack or mod. Launch the modpack with minepkg launch`,
+		Aliases: []string{"isntall", "i", "add"},
+	}, runner)
+
+	rootCmd.AddCommand(cmd.Command)
 }
 
-var installCmd = &cobra.Command{
-	Use:     "install [name/url/id]",
-	Short:   "Installs one or more packages in your current modpack or mod",
-	Long:    `Adds package(s) to your local modpack or mod. Launch the modpack with minepkg launch`,
-	Aliases: []string{"isntall", "i", "add"},
-	Run: func(cmd *cobra.Command, args []string) {
-		instance, err := instances.NewInstanceFromWd()
-		if err != nil {
-			logger.Fail("Instance problem: " + err.Error())
-		}
-		instance.MinepkgAPI = globals.ApiClient
-		fmt.Printf("Installing to %s\n", instance.Desc())
-		fmt.Println() // empty line
+type installRunner struct{}
 
-		// no args: installing minepkg.toml dependencies
-		if len(args) == 0 {
-			installManifest(instance)
-			return
-		}
+func (i *installRunner) RunE(cmd *cobra.Command, args []string) error {
+	instance, err := instances.NewInstanceFromWd()
+	if err != nil {
+		return err
+	}
+	instance.MinepkgAPI = globals.ApiClient
+	fmt.Printf("Installing to %s\n", instance.Desc())
+	fmt.Println() // empty line
 
-		firstArg := args[0]
-		if strings.HasPrefix(firstArg, "https://") {
-			switch {
-			// got a minepkg url
-			case strings.HasPrefix(firstArg, "https://minepkg.io/projects/"):
-				projectname := firstArg[28:] // url minus first bits (just the name)
-				err = installFromMinepkg([]string{projectname}, instance)
-				if err != nil {
-					logger.Fail(err.Error())
-				}
-				return
-			}
-			logger.Fail("Sorry. Don't know what to do with that url (yet)")
-		}
+	// no args: installing minepkg.toml dependencies
+	if len(args) == 0 {
+		return installManifest(instance)
+	}
 
-		// fallback to minepkg
-		err = installFromMinepkg(args, instance)
-		if err != nil {
-			logger.Fail(err.Error())
+	firstArg := args[0]
+	if strings.HasPrefix(firstArg, "https://") {
+		switch {
+		// got a minepkg url
+		case strings.HasPrefix(firstArg, "https://minepkg.io/projects/"):
+			projectname := firstArg[28:] // url minus first bits (just the name)
+			return installFromMinepkg([]string{projectname}, instance)
 		}
-	},
+		return fmt.Errorf("sorry. Don't know what to do with that url (yet)")
+	}
+
+	// fallback to minepkg
+	return installFromMinepkg(args, instance)
 }
