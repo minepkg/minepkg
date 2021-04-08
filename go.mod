@@ -5,14 +5,14 @@ require (
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/Tnze/go-mc v1.16.1
 	github.com/briandowns/spinner v1.12.0
-	github.com/charmbracelet/lipgloss v0.1.2 // indirect
+	github.com/charmbracelet/lipgloss v0.1.2
 	github.com/dchest/uniuri v0.0.0-20200228104902-7aecb25e1fe5
 	github.com/fatih/color v1.10.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/google/uuid v1.2.0 // indirect
-	github.com/gopherjs/gopherjs v0.0.0-20210202160940-bed99a852dfe // indirect
+	github.com/gopherjs/gopherjs v0.0.0-20210406100015-1e088ea4ee04 // indirect
 	github.com/jwalton/gchalk v1.0.3
 	github.com/kr/text v0.2.0 // indirect
 	github.com/lunixbochs/vtclean v1.0.0 // indirect
@@ -21,7 +21,7 @@ require (
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mholt/archiver/v3 v3.5.0
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
-	github.com/pelletier/go-toml v1.8.1 // indirect
+	github.com/pelletier/go-toml v1.9.0 // indirect
 	github.com/smartystreets/assertions v1.2.0 // indirect
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
@@ -33,7 +33,7 @@ require (
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/zalando/go-keyring v0.1.1
-	golang.org/x/net v0.0.0-20210331212208-0fccb6fa2b5c // indirect
+	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4 // indirect
 	golang.org/x/oauth2 v0.0.0-20210402161424-2e8d93401602
 	golang.org/x/text v0.3.6 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
