@@ -39,11 +39,15 @@ type bumpRunner struct {
 	noGit  bool
 	noTag  bool
 	noPush bool
+
+	targetVersion string
+	targetTag     string
+	upstreamPair  []string
 }
 
 var remoteGitHubSSH = regexp.MustCompile(`^git@github.com:(.+)\.git`)
 
-func (i *bumpRunner) RunE(cmd *cobra.Command, args []string) error {
+func (b *bumpRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	instance, err := instances.NewInstanceFromWd()
 
@@ -58,52 +62,9 @@ func (i *bumpRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	var userInput string
 	if len(args) == 0 {
-		if viper.GetBool("nonInteractive") {
-			return errors.New("you need to pass a version in non interactive mode")
-		}
-		prompt := &promptui.Select{
-			Label: "Bump",
-			Items: []string{
-				fmt.Sprintf("patch %s → %s", gchalk.Dim(currentVersion.String()), gchalk.Bold(currentVersion.IncPatch().String())),
-				fmt.Sprintf("minor %s → %s", gchalk.Dim(currentVersion.String()), gchalk.Bold(currentVersion.IncMinor().String())),
-				fmt.Sprintf("major %s → %s", gchalk.Dim(currentVersion.String()), gchalk.Bold(currentVersion.IncMajor().String())),
-				"custom version",
-			},
-			CursorPos: 0,
-		}
-		sel, _, err := prompt.Run()
+		userInput, err = b.interactiveVersionInput(currentVersion)
 		if err != nil {
-			fmt.Println("Aborting")
-			os.Exit(1)
-		}
-
-		switch sel {
-		case 0:
-			userInput = "patch"
-		case 1:
-			userInput = "minor"
-		case 2:
-			userInput = "major"
-		case 3:
-			userInput = stringPrompt(&promptui.Prompt{
-				Label:     "New Version",
-				Default:   currentVersion.String(),
-				AllowEdit: true,
-				Validate: func(s string) error {
-					switch {
-					case s == "":
-						return nil
-					case s == currentVersion.String():
-						return errors.New("can not be the current version")
-					}
-
-					if _, err := semver.NewVersion(s); err != nil {
-						return errors.New("not a valid semver version (major.minor.patch)")
-					}
-
-					return nil
-				},
-			})
+			return err
 		}
 	} else {
 		userInput = args[0]
@@ -128,60 +89,17 @@ func (i *bumpRunner) RunE(cmd *cobra.Command, args []string) error {
 		targetVersion = v.String()
 	}
 
-	targetTag := "v" + targetVersion
+	b.targetVersion = targetVersion
+	b.targetTag = "v" + targetVersion
 
 	fmt.Printf(" ✓ Target version %s is valid\n", targetVersion)
 
-	var upstreamPair []string
-
 	fmt.Println("\nGit checks")
-	if !i.noGit && isGit() {
-		dirty, err := simpleGitExec("status --porcelain")
-		if err != nil {
+	if !b.noGit && isGit() {
+		// run git checks (this also sets b.upstreamPair)
+		if err := b.gitChecks(); err != nil {
 			return err
 		}
-		if dirty != "" {
-			return fmt.Errorf("uncommitted files in git directory. Please commit them first")
-		}
-
-		fmt.Println(" ✓ Directory is not dirty")
-
-		_, err = simpleGitExec("rev-parse --verify --quiet " + targetTag)
-		if err == nil {
-			return fmt.Errorf("git tag %s already exists", targetTag)
-		}
-
-		fmt.Println(" ✓ Git tag does not already exist")
-
-		upstream, err := simpleGitExec("rev-parse --symbolic-full-name --abbrev-ref @{upstream}")
-		if err != nil {
-			return err
-		}
-		upstreamPair = strings.Split(upstream, "/")
-		if len(upstreamPair) != 2 {
-			return fmt.Errorf("invalid upstream git output. please report this")
-		}
-
-		// fetch from remote
-		if _, err = simpleGitExec("fetch --no-tags --quiet --recurse-submodules=no -v " + strings.Join(upstreamPair, " ")); err != nil {
-			return err
-		}
-
-		fmt.Println(" ✓ Valid upstream")
-
-		upstreamCommitsStr, err := simpleGitExec("rev-list --count HEAD..HEAD@{upstream}")
-		if err != nil {
-			return err
-		}
-		upstreamCommits, err := strconv.Atoi(upstreamCommitsStr)
-		if err != nil {
-			return fmt.Errorf("invalid git output. please report this error: %w", err)
-		}
-		if upstreamCommits != 0 {
-			return fmt.Errorf("there are %d unsynced commits upstream! Please run something like \"git pull --rebase\" first", upstreamCommits)
-		}
-
-		fmt.Println(" ✓ No missing commits from upstream")
 	} else {
 		fmt.Println("  Not in git directory. Skipping checks")
 	}
@@ -209,47 +127,162 @@ func (i *bumpRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 	props.WriteComment(f, "# ", properties.UTF8)
 
-	if !i.noGit {
-		// commit changes
-		fmt.Println("► commiting changes")
-		_, err = simpleGitExec("commit -am " + targetVersion)
+	if !b.noGit {
+		if err := b.gitActions(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (b *bumpRunner) interactiveVersionInput(currentVersion *semver.Version) (string, error) {
+	if viper.GetBool("nonInteractive") {
+		return "", errors.New("you need to pass a version in non interactive mode")
+	}
+	prompt := &promptui.Select{
+		Label: "Bump",
+		Items: []string{
+			fmt.Sprintf("patch %s → %s", gchalk.Dim(currentVersion.String()), gchalk.Bold(currentVersion.IncPatch().String())),
+			fmt.Sprintf("minor %s → %s", gchalk.Dim(currentVersion.String()), gchalk.Bold(currentVersion.IncMinor().String())),
+			fmt.Sprintf("major %s → %s", gchalk.Dim(currentVersion.String()), gchalk.Bold(currentVersion.IncMajor().String())),
+			"custom version",
+		},
+		CursorPos: 0,
+	}
+	sel, _, err := prompt.Run()
+	if err != nil {
+		fmt.Println("Aborting")
+		os.Exit(1)
+	}
+
+	userInput := ""
+
+	switch sel {
+	case 0:
+		userInput = "patch"
+	case 1:
+		userInput = "minor"
+	case 2:
+		userInput = "major"
+	case 3:
+		userInput = stringPrompt(&promptui.Prompt{
+			Label:     "New Version",
+			Default:   currentVersion.String(),
+			AllowEdit: true,
+			Validate: func(s string) error {
+				switch {
+				case s == "":
+					return nil
+				case s == currentVersion.String():
+					return errors.New("can not be the current version")
+				}
+
+				if _, err := semver.NewVersion(s); err != nil {
+					return errors.New("not a valid semver version (major.minor.patch)")
+				}
+
+				return nil
+			},
+		})
+	}
+
+	return userInput, nil
+}
+
+func (b *bumpRunner) gitChecks() error {
+	dirty, err := simpleGitExec("status --porcelain")
+	if err != nil {
+		return err
+	}
+	if dirty != "" {
+		return fmt.Errorf("uncommitted files in git directory. Please commit them first")
+	}
+
+	fmt.Println(" ✓ Directory is not dirty")
+
+	_, err = simpleGitExec("rev-parse --verify --quiet " + b.targetTag)
+	if err == nil {
+		return fmt.Errorf("git tag %s already exists", b.targetTag)
+	}
+
+	fmt.Println(" ✓ Git tag does not already exist")
+
+	upstream, err := simpleGitExec("rev-parse --symbolic-full-name --abbrev-ref @{upstream}")
+	if err != nil {
+		return err
+	}
+	upstreamPair := strings.Split(upstream, "/")
+	if len(upstreamPair) != 2 {
+		return fmt.Errorf("invalid upstream git output. please report this")
+	}
+
+	// fetch from remote
+	if _, err = simpleGitExec("fetch --no-tags --quiet --recurse-submodules=no -v " + strings.Join(upstreamPair, " ")); err != nil {
+		return err
+	}
+
+	fmt.Println(" ✓ Valid upstream")
+
+	upstreamCommitsStr, err := simpleGitExec("rev-list --count HEAD..HEAD@{upstream}")
+	if err != nil {
+		return err
+	}
+	upstreamCommits, err := strconv.Atoi(upstreamCommitsStr)
+	if err != nil {
+		return fmt.Errorf("invalid git output. please report this error: %w", err)
+	}
+	if upstreamCommits != 0 {
+		return fmt.Errorf("there are %d unsynced commits upstream! Please run something like \"git pull --rebase\" first", upstreamCommits)
+	}
+
+	fmt.Println(" ✓ No missing commits from upstream")
+	b.upstreamPair = upstreamPair
+
+	return nil
+}
+
+func (b *bumpRunner) gitActions() error {
+	var err error
+	// commit changes
+	fmt.Println("► commiting changes")
+	_, err = simpleGitExec("commit -am " + b.targetVersion)
+	if err != nil {
+		return err
+	}
+
+	if !b.noTag {
+		fmt.Println("► creating tag")
+		_, err = simpleGitExec("tag v" + b.targetVersion + " -m " + b.targetTag)
 		if err != nil {
 			return err
 		}
+	}
 
-		if !i.noTag {
-			fmt.Println("► creating tag")
-			_, err = simpleGitExec("tag v" + targetVersion + " -m " + targetTag)
-			if err != nil {
-				return err
-			}
-		}
-
-		if !i.noPush {
-			fmt.Println("► pushing commits")
-			_, err = simpleGitExec("push")
-			if err != nil {
-				return err
-			}
-			fmt.Println("► pushing tag")
-			_, err = simpleGitExec("push " + upstreamPair[0] + " " + targetTag)
-			if err != nil {
-				return err
-			}
-		}
-
-		origin, err := simpleGitExec("config --get remote.origin.url")
+	if !b.noPush {
+		fmt.Println("► pushing commits")
+		_, err = simpleGitExec("push")
 		if err != nil {
 			return err
 		}
-		match := remoteGitHubSSH.FindStringSubmatch(origin)
-		if len(match) == 2 {
-			fmt.Println(gchalk.Bold("\nYou should now create a new release here:"))
-			v := url.Values{}
-			v.Add("tag", targetTag)
-			v.Add("title", targetVersion)
-			fmt.Printf("  https://github.com/%s/releases/new?%s\n", match[1], v.Encode())
+		fmt.Println("► pushing tag")
+		_, err = simpleGitExec("push " + b.upstreamPair[0] + " " + b.targetTag)
+		if err != nil {
+			return err
 		}
+	}
+
+	origin, err := simpleGitExec("config --get remote.origin.url")
+	if err != nil {
+		return err
+	}
+	match := remoteGitHubSSH.FindStringSubmatch(origin)
+	if len(match) == 2 {
+		fmt.Println(gchalk.Bold("\nYou can now create a new GitHub release here:"))
+		v := url.Values{}
+		v.Add("tag", b.targetTag)
+		v.Add("title", b.targetVersion)
+		fmt.Printf("  https://github.com/%s/releases/new?%s\n", match[1], v.Encode())
 	}
 
 	return nil
