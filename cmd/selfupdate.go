@@ -83,7 +83,7 @@ func (s *selfupdateRunner) RunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if parsed.Version == rootCmd.Version {
+	if parsed.Version == rootCmd.Version && !s.force {
 		fmt.Println("Already up to date! :)")
 		os.Exit(0)
 	}
