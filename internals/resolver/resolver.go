@@ -16,7 +16,7 @@ var (
 
 // ErrNoMatchingRelease is returned if a wanted releaseendency (package) could not be resolved given the requirements
 type ErrNoMatchingRelease struct {
-	// Package is the name of the pacakge that can not be resolved
+	// Package is the name of the package that can not be resolved
 	Package string
 	// Requirements are the requirements for this package to resolve (eg. minecraft version)
 	Requirements *api.RequirementQuery
@@ -30,7 +30,7 @@ func (e *ErrNoMatchingRelease) Error() string {
 		parent = e.Parent.Package.Name
 	}
 	return fmt.Sprintf(
-		"No Release found for %s. Details: \n\tPlattform: %s\n\tPackage: %s\n\tVersion: %s\n\tMinecraft Version: %s\n\tDependency of: %s",
+		"No Release found for %s. Details: \n\tPlatform: %s\n\tPackage: %s\n\tVersion: %s\n\tMinecraft Version: %s\n\tDependency of: %s",
 		e.Package,
 		e.Requirements.Platform,
 		e.Package,
@@ -47,6 +47,8 @@ type Resolver struct {
 	GlobalReqs manifest.PlatformLock
 	// IgnoreVersion will make the resolver ignore all version requirements and just fetch the latest version for everything
 	IgnoreVersion bool
+	// IncludeDev includes dev.dependencies
+	IncludeDev bool
 }
 
 // New returns a new resolver
@@ -56,6 +58,7 @@ func New(client *api.MinepkgAPI, reqs manifest.PlatformLock) *Resolver {
 		client:        client,
 		GlobalReqs:    reqs,
 		IgnoreVersion: false,
+		IncludeDev:    true,
 	}
 }
 
@@ -66,25 +69,27 @@ func (r *Resolver) ResolveManifest(man *manifest.Manifest) error {
 		return ErrNoGlobalReqs
 	}
 
-	for name, version := range man.Dependencies {
-
-		reqs := &api.RequirementQuery{
-			Version:   version,
-			Minecraft: r.GlobalReqs.MinecraftVersion(),
-			Platform:  man.PlatformString(),
-		}
-
-		if r.IgnoreVersion {
-			reqs.Version = "*"
-		}
-
-		release, err := r.client.FindRelease(context.TODO(), name, reqs)
+	for _, dependency := range man.InterpretedDependencies() {
+		release, err := r.resolveMinepkg(dependency)
 		if err != nil {
 			return err
 		}
-		err = r.Resolve(release, "_root")
+		err = r.Resolve(release, nil, false)
 		if err != nil {
 			return err
+		}
+	}
+
+	if r.IncludeDev {
+		for _, dependency := range man.InterpretedDevDependencies() {
+			release, err := r.resolveMinepkg(dependency)
+			if err != nil {
+				return err
+			}
+			err = r.Resolve(release, nil, true)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -92,9 +97,10 @@ func (r *Resolver) ResolveManifest(man *manifest.Manifest) error {
 }
 
 // Resolve resolves all dependencies of a single package
-func (r *Resolver) Resolve(release *api.Release, dependend string) error {
+func (r *Resolver) Resolve(release *api.Release, dependend *manifest.Manifest, isDev bool) error {
 
-	r.addResolvedRelease(release, dependend)
+	// add this release
+	r.Resolved[release.Package.Name] = r.lockFromRelease(release, dependend)
 	resolveNext := release.InterpretedDependencies()
 
 	for len(resolveNext) != 0 {
@@ -113,7 +119,11 @@ func (r *Resolver) Resolve(release *api.Release, dependend string) error {
 			if err != nil {
 				return err
 			}
-			r.addResolvedRelease(resolvedDep, release.Package.Name)
+			lock := r.lockFromRelease(resolvedDep, release.Manifest)
+			if isDev {
+				lock.IsDev = true
+			}
+			r.Resolved[resolvedDep.Package.Name] = lock
 			resolveNext = append(resolveNext, resolvedDep.InterpretedDependencies()...)
 		}
 	}
@@ -121,16 +131,23 @@ func (r *Resolver) Resolve(release *api.Release, dependend string) error {
 	return nil
 }
 
-func (r *Resolver) addResolvedRelease(release *api.Release, dependend string) {
-	r.Resolved[release.Package.Name] = &manifest.DependencyLock{
-		Name:      release.Package.Name,
-		Version:   release.Package.Version,
-		Type:      release.Package.Type,
-		IPFSHash:  release.Meta.IPFSHash,
-		Sha256:    release.Meta.Sha256,
-		URL:       release.DownloadURL(),
-		Dependend: dependend,
+func (r *Resolver) lockFromRelease(release *api.Release, dependend *manifest.Manifest) *manifest.DependencyLock {
+	lock := &manifest.DependencyLock{
+		Name:     release.Package.Name,
+		Version:  release.Package.Version,
+		Type:     release.Package.Type,
+		IPFSHash: release.Meta.IPFSHash,
+		Sha256:   release.Meta.Sha256,
+		URL:      release.DownloadURL(),
 	}
+
+	if dependend != nil {
+		lock.Dependend = dependend.Package.Name
+	} else {
+		lock.Dependend = "_root"
+	}
+
+	return lock
 }
 
 func (r *Resolver) resolveMinepkg(dep *manifest.InterpretedDependency) (*api.Release, error) {

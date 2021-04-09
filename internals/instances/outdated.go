@@ -74,7 +74,7 @@ func (i *Instance) AreDependenciesOutdated() (bool, error) {
 		if !ok {
 			return true, nil
 		}
-		// Version does not mactch
+		// Version does not match
 		if !packageDep.Check(semver.MustParse(lockEntry.Version)) {
 			return true, nil
 		}
@@ -82,7 +82,7 @@ func (i *Instance) AreDependenciesOutdated() (bool, error) {
 
 	// check for removed dependencies
 	for _, lock := range lock.Dependencies {
-		if lock.Dependend == "_root" {
+		if lock.Dependend == "_root" || lock.Dependend == i.Manifest.Package.Name {
 			if _, ok := mani.Dependencies[lock.Name]; !ok {
 				return true, nil
 			}

@@ -16,10 +16,10 @@ import (
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/downloadmgr"
 	"github.com/minepkg/minepkg/internals/globals"
-	"github.com/minepkg/minepkg/internals/instances"
 )
 
-func installFromMinepkg(mods []string, instance *instances.Instance) error {
+func (i *installRunner) installFromMinepkg(mods []string) error {
+	instance := i.instance
 	apiClient := globals.ApiClient
 
 	cacheDir := filepath.Join(globalDir, "cache")
@@ -104,7 +104,12 @@ func installFromMinepkg(mods []string, instance *instances.Instance) error {
 
 	task.Step("🔎", "Resolving Dependencies")
 	for _, release := range releases {
-		instance.Manifest.AddDependency(release.Package.Name, "^"+release.Package.Version)
+		if !i.dev {
+			instance.Manifest.AddDependency(release.Package.Name, "^"+release.Package.Version)
+		} else {
+			fmt.Println("Adding as dev dependency!")
+			instance.Manifest.AddDevDependency(release.Package.Name, "^"+release.Package.Version)
+		}
 	}
 	instance.UpdateLockfileDependencies(context.TODO())
 	for _, dep := range instance.Lockfile.Dependencies {

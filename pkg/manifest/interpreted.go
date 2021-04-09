@@ -14,6 +14,8 @@ type InterpretedDependency struct {
 	// In practice this is a version number for `Provider === "minepkg"` and
 	// a https url for `Provider === "https"`
 	Source string
+	// IsDev is true if this is a dev dependency
+	IsDev bool
 }
 
 // InterpretedDependencies returns the dependencies in a `[]*InterpretedDependency` slice.
@@ -23,14 +25,33 @@ func (m *Manifest) InterpretedDependencies() []*InterpretedDependency {
 
 	i := 0
 	for name, source := range m.Dependencies {
-		switch {
-		case strings.HasPrefix(source, "https://"):
-			interpreted[i] = &InterpretedDependency{Name: name, Provider: "https", Source: source}
-		default:
-			interpreted[i] = &InterpretedDependency{Name: name, Provider: "minepkg", Source: source}
-		}
+		interpreted[i] = interpretSingleDependency(name, source)
 		i++
 	}
 
 	return interpreted
+}
+
+// InterpretedDevDependencies returns the dev.dependencies in a `[]*InterpretedDependency` slice.
+// See `InterpretedDependency` for details
+func (m *Manifest) InterpretedDevDependencies() []*InterpretedDependency {
+	interpreted := make([]*InterpretedDependency, len(m.Dev.Dependencies))
+
+	i := 0
+	for name, source := range m.Dev.Dependencies {
+		interpreted[i] = interpretSingleDependency(name, source)
+		interpreted[i].IsDev = true
+		i++
+	}
+
+	return interpreted
+}
+
+func interpretSingleDependency(name string, source string) *InterpretedDependency {
+	switch {
+	case strings.HasPrefix(source, "https://"):
+		return &InterpretedDependency{Name: name, Provider: "https", Source: source}
+	default:
+		return &InterpretedDependency{Name: name, Provider: "minepkg", Source: source}
+	}
 }

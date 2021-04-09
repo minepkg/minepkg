@@ -1,6 +1,6 @@
 /*
 Package manifest defines the file format that describes a mod or modpack.
-The `minepkg.toml` manifest is the way minepkg defines packages. Packages can be mods or modpacks.
+The "minepkg.toml" manifest is the way minepkg defines packages. Packages can be mods or modpacks.
 
 Structure
 
@@ -55,6 +55,8 @@ https://github.com/npm/node-semver#ranges provides a good explanation of the ope
 Other sources may be specified by using the `source:` syntax in the "value" like this: `raw:https://example.com/package.zip`.
 The "key" will still be the package name when using the source syntax.
 
+Learn More
+
 For more details visit https://minepkg.io/docs/manifest
 */
 package manifest
@@ -63,33 +65,8 @@ import (
 	"bytes"
 	"log"
 
-	"github.com/BurntSushi/toml"
+	"github.com/pelletier/go-toml"
 )
-
-// TODO: get those comments to be in the initial toml written to disk
-const newPackageTemplate = `
-# WARNING: This package might not work with future versions
-#   of minepkg and might need to be updated then.
-# This is a preview version of the minepkg.toml format!
-manifestVersion = 0
-
-[package]
-type = "modpack"
-
-# This is the name of your modpack (in case you want to publish it)
-# Please choose a unique name without spaces or special characters (- and _ are allowed)
-name = "example-pack"
-description = ""
-version = "0.0.1"
-
-# These are global requirements
-[requirements]
-minecraft-version = "1.12.x"
-
-# All packages included in your modpack
-[dependencies]
-
-`
 
 const (
 	// TypeMod indicates a package containing a single mod
@@ -102,7 +79,7 @@ const (
 type Manifest struct {
 	// ManifestVersion specifies the format version
 	// This field is REQUIRED
-	ManifestVersion int `toml:"manifestVersion" json:"manifestVersion"`
+	ManifestVersion int `toml:"manifestVersion" comment:"Preview of the minepkg.toml format! Could break anytime!" json:"manifestVersion"`
 	Package         struct {
 		// Type should be one of `TypeMod` ("mod") or `TypeModpack` ("modpack")
 		Type string `toml:"type" json:"type"`
@@ -149,7 +126,7 @@ type Manifest struct {
 		// `latest` is assumed if this field is omitted. `none` can be used to exclude the companion
 		// plugin from a modpack – but this is not recommended
 		MinepkgCompanion string `toml:"minepkgCompanion,omitempty" json:"minepkgCompanion,omitempty"`
-	} `toml:"requirements" json:"requirements"`
+	} `toml:"requirements" comment:"These are global requirements" json:"requirements"`
 	// Dependencies lists runtime dependencies of this package
 	// this list can contain mods and modpacks
 	Dependencies `toml:"dependencies" json:"dependencies,omitempty"`
@@ -157,6 +134,11 @@ type Manifest struct {
 	Dev struct {
 		// BuildCommand is the command used for building this package (usually "./gradlew build")
 		BuildCommand string `toml:"buildCommand,omitempty" json:"buildCommand,omitempty"`
+		// Jar defines the target location glob to the built jar file for mods. Can be empty. Example: "lib/builds/my-mod-v*.jar"
+		Jar string `toml:"jar,omitempty" json:"jar,omitempty"`
+		// Dependencies inside the dev struct should only be installed if this package is defined locally.
+		// They should never be installed for published packages
+		Dependencies `toml:"dependencies,omitempty" json:"dependencies,omitempty"`
 	} `toml:"dev" json:"dev"`
 }
 
@@ -189,6 +171,8 @@ func (m *Manifest) PlatformVersion() string {
 
 // AddDependency adds a new dependency to the manifest
 func (m *Manifest) AddDependency(name string, version string) {
+	// remove from dev dependencies
+	m.RemoveDevDependency(name)
 	if m.Dependencies == nil {
 		m.Dependencies = make(map[string]string)
 	}
@@ -203,10 +187,28 @@ func (m *Manifest) RemoveDependency(name string) {
 	delete(m.Dependencies, name)
 }
 
+// AddDevDependency adds a new dev dependency to the manifest
+func (m *Manifest) AddDevDependency(name string, version string) {
+	// remove from normal dependencies
+	m.RemoveDependency(name)
+	if m.Dev.Dependencies == nil {
+		m.Dev.Dependencies = make(map[string]string)
+	}
+	m.Dev.Dependencies[name] = version
+}
+
+// RemoveDevDependency removes a dev dependency from the manifest
+func (m *Manifest) RemoveDevDependency(name string) {
+	if m.Dev.Dependencies == nil {
+		m.Dev.Dependencies = make(map[string]string)
+	}
+	delete(m.Dependencies, name)
+}
+
 // Buffer returns the manifest as toml in Buffer form
 func (m *Manifest) Buffer() *bytes.Buffer {
 	buf := new(bytes.Buffer)
-	if err := toml.NewEncoder(buf).Encode(m); err != nil {
+	if err := toml.NewEncoder(buf).Order(toml.OrderPreserve).Encode(m); err != nil {
 		log.Fatal(err)
 	}
 	return buf
@@ -219,7 +221,7 @@ func (m *Manifest) String() string {
 // New returns a new manifest
 func New() *Manifest {
 	manifest := Manifest{}
-	toml.Decode(newPackageTemplate, &manifest)
+	manifest.Dependencies = make(Dependencies)
 	return &manifest
 }
 

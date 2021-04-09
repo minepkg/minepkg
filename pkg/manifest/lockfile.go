@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/BurntSushi/toml"
+	"github.com/pelletier/go-toml"
 )
 
 // LockfileVersion is the current version of the lockfile template
@@ -102,6 +102,8 @@ type DependencyLock struct {
 	Provider string `toml:"provider" json:"provider"`
 	// Dependend is the package that requires this mod. can be _root if top package
 	Dependend string `toml:"dependend" json:"dependend"`
+	// IsDev is true if this is a dev dependency
+	IsDev bool `toml:"isDev,omitempty" json:"isDev,omitempty"`
 }
 
 // FileExt returns ".jar" for mods and ".zip" for modpacks

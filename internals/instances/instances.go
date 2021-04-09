@@ -10,10 +10,10 @@ import (
 	"github.com/jwalton/gchalk"
 	"github.com/minepkg/minepkg/internals/commands"
 
-	"github.com/BurntSushi/toml"
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/mojang"
 	"github.com/minepkg/minepkg/pkg/manifest"
+	"github.com/pelletier/go-toml"
 	strcase "github.com/stoewer/go-strcase"
 )
 
@@ -44,7 +44,6 @@ var (
 
 // Instance describes a locally installed minecraft instance
 type Instance struct {
-	IsServer bool
 	// GlobalDir contains persistent instance data
 	// on linux this usually is $HOME/.config/minepkg
 	GlobalDir string
@@ -59,6 +58,7 @@ type Instance struct {
 	MojangCredentials *mojang.AuthResponse
 	MinepkgAPI        *api.MinepkgAPI
 
+	isFromWd   bool
 	launchCmd  string
 	javaBinary string
 }
@@ -167,7 +167,7 @@ func NewEmptyInstance() *Instance {
 }
 
 // NewInstanceFromWd tries to detect a minecraft instance in the current working directory
-// returning it, if succesfull
+// returning it, if successful
 func NewInstanceFromWd() (*Instance, error) {
 	dir, err := os.Getwd()
 	if err != nil {
@@ -176,17 +176,6 @@ func NewInstanceFromWd() (*Instance, error) {
 
 	hasManifest := func() bool {
 		info, err := os.Stat("./minepkg.toml")
-		if err != nil {
-			return false
-		}
-		return !info.IsDir()
-	}()
-
-	// TODO: maybe add this to the minepkg toml.
-	// detection is not very meaningful as this file is here even if the server was only started once
-	// property should reflect if LAST launch was server
-	isServer := func() bool {
-		info, err := os.Stat("./minecraft/server.properties")
 		if err != nil {
 			return false
 		}
@@ -207,10 +196,10 @@ func NewInstanceFromWd() (*Instance, error) {
 	}
 
 	instance := &Instance{
-		IsServer:  isServer,
 		Directory: dir,
 		GlobalDir: filepath.Join(userConfig, "minepkg"),
 		CacheDir:  filepath.Join(userCache, "minepkg"),
+		isFromWd:  true,
 	}
 
 	// initialize manifest
@@ -247,7 +236,7 @@ func (i *Instance) initManifest() error {
 	}
 
 	manifest := manifest.Manifest{}
-	_, err = toml.Decode(string(minepkg), &manifest)
+	err = toml.Unmarshal(minepkg, &manifest)
 	if err != nil {
 		return err
 	}
@@ -273,7 +262,7 @@ func (i *Instance) initLockfile() error {
 	}
 
 	lockfile := manifest.Lockfile{}
-	_, err = toml.Decode(string(rawLockfile), &lockfile)
+	err = toml.Unmarshal(rawLockfile, &lockfile)
 	if err != nil {
 		return err
 	}

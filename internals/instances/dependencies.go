@@ -35,6 +35,10 @@ func (i *Instance) UpdateLockfileDependencies(ctx context.Context) error {
 	}
 
 	res := resolver.New(i.MinepkgAPI, i.Lockfile.PlatformLock())
+	// only include dev dependencies if this instance was created from a working directory
+	// (eg. typing "minepkg launch" in a directory with a minepkg.toml)
+	res.IncludeDev = i.isFromWd
+
 	err := res.ResolveManifest(i.Manifest)
 
 	if err != nil {

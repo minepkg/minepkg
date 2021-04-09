@@ -34,6 +34,7 @@ var removeCmd = &cobra.Command{
 
 		fmt.Printf("Removing %s\n", args[0])
 		instance.Manifest.RemoveDependency(args[0])
+		instance.Manifest.RemoveDevDependency(args[0])
 		instance.UpdateLockfileDependencies(context.TODO())
 		instance.SaveManifest()
 		instance.SaveLockfile()

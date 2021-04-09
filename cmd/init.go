@@ -10,13 +10,13 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/BurntSushi/toml"
 	"github.com/Masterminds/semver/v3"
 	"github.com/magiconair/properties"
 	"github.com/manifoldco/promptui"
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/fabric"
 	"github.com/minepkg/minepkg/pkg/manifest"
+	"github.com/pelletier/go-toml"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/stoewer/go-strcase"
@@ -186,6 +186,10 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 		} else {
 			logger.Warn(`Please set the "dev.buildCommand" field in the minepkg.toml file by hand.`)
 		}
+
+		// add test-mansion as dev dependency to ease testing
+		// maybe ask for this?
+		man.AddDevDependency("test-mansion", "*")
 	}
 
 	// generate toml

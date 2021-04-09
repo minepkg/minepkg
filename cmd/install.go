@@ -19,10 +19,17 @@ func init() {
 		Aliases: []string{"isntall", "i", "add"},
 	}, runner)
 
+	cmd.Flags().BoolVarP(&runner.dev, "dev", "D", false, "Install as a dev dependency only.")
+	cmd.Flags().BoolVar(&runner.dev, "save-dev", false, "Same as --dev (for you node devs)")
+
 	rootCmd.AddCommand(cmd.Command)
 }
 
-type installRunner struct{}
+type installRunner struct {
+	dev bool
+
+	instance *instances.Instance
+}
 
 func (i *installRunner) RunE(cmd *cobra.Command, args []string) error {
 	instance, err := instances.NewInstanceFromWd()
@@ -30,8 +37,8 @@ func (i *installRunner) RunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	instance.MinepkgAPI = globals.ApiClient
-	fmt.Printf("Installing to %s\n", instance.Desc())
-	fmt.Println() // empty line
+	i.instance = instance
+	fmt.Printf("Installing to %s\n\n", instance.Desc())
 
 	// no args: installing minepkg.toml dependencies
 	if len(args) == 0 {
@@ -44,11 +51,11 @@ func (i *installRunner) RunE(cmd *cobra.Command, args []string) error {
 		// got a minepkg url
 		case strings.HasPrefix(firstArg, "https://minepkg.io/projects/"):
 			projectname := firstArg[28:] // url minus first bits (just the name)
-			return installFromMinepkg([]string{projectname}, instance)
+			return i.installFromMinepkg([]string{projectname})
 		}
 		return fmt.Errorf("sorry. Don't know what to do with that url (yet)")
 	}
 
 	// fallback to minepkg
-	return installFromMinepkg(args, instance)
+	return i.installFromMinepkg(args)
 }
