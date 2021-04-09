@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/pelletier/go-toml"
+	"github.com/BurntSushi/toml"
 )
 
 // LockfileVersion is the current version of the lockfile template

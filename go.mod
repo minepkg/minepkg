@@ -1,6 +1,7 @@
 module github.com/minepkg/minepkg
 
 require (
+	github.com/BurntSushi/toml v0.3.1
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/Tnze/go-mc v1.16.1
 	github.com/briandowns/spinner v1.12.0
@@ -20,7 +21,7 @@ require (
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mholt/archiver/v3 v3.5.0
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
-	github.com/pelletier/go-toml v1.9.0
+	github.com/pelletier/go-toml v1.9.0 // indirect
 	github.com/smartystreets/assertions v1.2.0 // indirect
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/cast v1.3.1 // indirect

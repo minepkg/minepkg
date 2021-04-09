@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -16,7 +15,6 @@ import (
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/fabric"
 	"github.com/minepkg/minepkg/pkg/manifest"
-	"github.com/pelletier/go-toml"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/stoewer/go-strcase"
@@ -284,12 +282,7 @@ func defaultVersion(fm *fabric.Manifest) string {
 }
 
 func writeManifest(man *manifest.Manifest) {
-	// generate toml
-	buf := bytes.Buffer{}
-	if err := toml.NewEncoder(&buf).Encode(man); err != nil {
-		logger.Fail(err.Error())
-	}
-	if err := ioutil.WriteFile("minepkg.toml", buf.Bytes(), 0755); err != nil {
+	if err := ioutil.WriteFile("minepkg.toml", man.Buffer().Bytes(), 0755); err != nil {
 		logger.Fail(err.Error())
 	}
 }
