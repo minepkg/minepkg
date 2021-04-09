@@ -175,7 +175,7 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 	// generate hooks section for mods
 	if man.Package.Type == manifest.TypeMod {
 		useHook := boolPrompt(&promptui.Prompt{
-			Label:     "Do you want to use gradlew to build?",
+			Label:     "Do you want to use gradlew to build",
 			Default:   "Y",
 			IsConfirm: true,
 		})
