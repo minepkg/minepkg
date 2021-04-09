@@ -1,6 +1,7 @@
 package launch
 
 import (
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"runtime"
@@ -39,15 +40,16 @@ func (c *CLILauncher) Launch(opts *instances.LaunchOptions) error {
 		return nil
 	}()
 
+	// minecraft server will always return code 130 when
+	// stop was successful, so we ignore the error here
+	if cmd.ProcessState.ExitCode() == 130 || cmd.ProcessState.ExitCode() == 0 {
+		fmt.Println("\nMinecraft was stopped normally")
+		return nil
+	}
+
 	// TODO: what kind of errors are here?
 	if err != nil {
 		return err
-	}
-
-	// minecraft server will always return code 130 when
-	// stop was succesfull, so we ignore the error here
-	if cmd.ProcessState.ExitCode() == 130 || cmd.ProcessState.ExitCode() == 0 {
-		return nil
 	}
 
 	if len(c.originalServerProps) != 0 {

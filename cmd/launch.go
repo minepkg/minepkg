@@ -216,46 +216,13 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 	if l.crashTest {
 
 		go func() {
-			tries := 0
-
-			// server takes at least 500ms to startup
-			time.Sleep(500 * time.Millisecond)
-
-			// try to connect every 3 seconds for 30 times (1.5 minutes to start server)
-			for {
-				tries++
-				// TODO: no hardcoded port
-				// 10 seconds to connect to socket (usually does not take that long)
-				conn, err := net.DialTimeout("tcp", ":25565", time.Duration(10)*time.Second)
-
-				// no error, close connection and send nil in err channel
-				if err == nil {
-					// sleeping to let the server finish some initial setup after port was opened
-					// TODO: do not sleep, check if server responds here
-					time.Sleep(3 * time.Second)
-					defer conn.Close()
-					crashErr <- nil
-					break
-				}
-
-				// could not connect, can we try again? send error in channel otherwise
-				if tries >= 30 {
-					crashErr <- err
-					break
-				}
-
-				// wait 3 seconds before retrying
-				time.Sleep(3 * time.Second)
-			}
+			crashErr <- crashTest()
 		}()
 	}
 
 	go func() {
 		// finally, start the instance
-		if err := cliLauncher.Launch(opts); err != nil {
-			launchErr <- err
-		}
-		launchErr <- nil
+		launchErr <- cliLauncher.Launch(opts)
 	}()
 
 	stopAfterCrashtest := func() {
@@ -283,8 +250,7 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 	// normal launch & minecraft was stopped
 	case err := <-launchErr:
 		if err != nil {
-			// TODO: this stops any defer from running !!!
-			logger.Fail(err.Error())
+			return err
 		}
 	// crashtest and we got a response from the crash go routine
 	case err := <-crashErr:
@@ -300,6 +266,38 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+func crashTest() error {
+	tries := 0
+
+	// server takes at least 500ms to startup
+	time.Sleep(500 * time.Millisecond)
+
+	// try to connect every 3 seconds for 30 times (1.5 minutes to start server)
+	for {
+		tries++
+		// TODO: no hardcoded port
+		// 10 seconds to connect to socket (usually does not take that long)
+		conn, err := net.DialTimeout("tcp", ":25565", time.Duration(10)*time.Second)
+
+		// no error, close connection and send nil in err channel
+		if err == nil {
+			// sleeping to let the server finish some initial setup after port was opened
+			// TODO: do not sleep, check if server responds here
+			time.Sleep(3 * time.Second)
+			defer conn.Close()
+			return nil
+		}
+
+		// could not connect, can we try again? send error in channel otherwise
+		if tries >= 30 {
+			return err
+		}
+
+		// wait 3 seconds before retrying
+		time.Sleep(3 * time.Second)
+	}
 }
 
 func (l *launchRunner) formatApiError(err error) error {

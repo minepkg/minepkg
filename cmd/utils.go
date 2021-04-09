@@ -38,19 +38,6 @@ func HumanUint32(num uint32) string {
 	return fmt.Sprintf("%v", num)
 }
 
-// HumanFloat32 returns the number in a human readable format
-func HumanFloat32(num float32) string {
-	switch {
-	case num >= 1000000000:
-		return fmt.Sprintf("%v B", num/1000000000)
-	case num >= 1000000:
-		return fmt.Sprintf("%v M", num/1000000)
-	case num >= 1000:
-		return fmt.Sprintf("%v K", num/1000)
-	}
-	return fmt.Sprintf("%v", num)
-}
-
 func ensureMojangAuth() (*mojang.AuthResponse, error) {
 	var loginData = &mojang.AuthResponse{}
 	credStore := globals.CredStore
@@ -88,7 +75,7 @@ func ensureMojangAuth() (*mojang.AuthResponse, error) {
 }
 
 // CopyFile copies a file from src to dst. If src and dst files exist, and are
-// the same, then return success. Otherise, attempt to create a hard link
+// the same, then return success. Otherwise, attempt to create a hard link
 // between the two files. If that fail, copy the file contents from src to dst.
 func CopyFile(src, dst string) (err error) {
 	sfi, err := os.Stat(src)
