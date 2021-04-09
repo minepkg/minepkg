@@ -53,6 +53,8 @@ type launchRunner struct {
 	noBuild     bool
 
 	overwrites *launch.OverwriteFlags
+
+	instance *instances.Instance
 }
 
 var (
@@ -65,71 +67,21 @@ var (
 )
 
 func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
-	apiClient := globals.ApiClient
-
+	var err error
 	var instance *instances.Instance
-	var instanceDir string
+	l.instance = instance
 
 	if len(args) == 0 {
-		var err error
-		wd, _ := os.Getwd()
-		instance, err = instances.NewInstanceFromWd()
-		instanceDir = wd
-
+		instance, err = l.instanceFromWd()
 		if err != nil {
 			return err
 		}
-		instance.MinepkgAPI = apiClient
 		launch.ApplyInstanceOverwrites(instance, l.overwrites)
 	} else {
-		instance = instances.NewEmptyInstance()
-		reqs := &api.RequirementQuery{
-			Platform:  "fabric", // TODO: not static!
-			Minecraft: "*",
-			Version:   "latest", // TODO: get from id
-		}
-		if l.overwrites.McVersion != "" {
-			reqs.Minecraft = l.overwrites.McVersion
-		}
-
-		release, err := apiClient.FindRelease(context.TODO(), args[0], reqs)
+		instance, err = l.instanceFromModpack(args[0])
 		if err != nil {
-			return l.formatApiError(err)
+			return err
 		}
-
-		if release.Package.Type == "mod" {
-			return errCanOnlyLaunchModpacks
-		}
-
-		instanceDir = filepath.Join(instance.InstancesDir(), release.Package.Name+"_"+release.Package.Platform)
-		os.MkdirAll(instanceDir, os.ModePerm)
-
-		// set instance details
-		instance.Manifest = manifest.NewInstanceLike(release.Manifest)
-
-		instance.MinepkgAPI = apiClient
-		instance.Directory = instanceDir
-
-		// overwrite some instance launch options with flags
-		launch.ApplyInstanceOverwrites(instance, l.overwrites)
-
-		if l.overwrites.McVersion == "" {
-			fmt.Println("Minecraft version '*' resolved to: " + release.LatestTestedMinecraftVersion())
-			instance.Manifest.Requirements.Minecraft = release.LatestTestedMinecraftVersion()
-		}
-
-		// TODO: only show when there actually is a update. ask user?
-		logger.Headline("Updating instance")
-		// maybe not update requirements every time
-		if err := instance.UpdateLockfileRequirements(context.TODO()); err != nil {
-			logger.Fail(err.Error())
-		}
-		if err := instance.UpdateLockfileDependencies(context.TODO()); err != nil {
-			logger.Fail(err.Error())
-		}
-
-		instance.SaveManifest()
-		instance.SaveLockfile()
 	}
 
 	switch {
@@ -145,7 +97,7 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	// launch instance
 	fmt.Printf("Launching %s\n", instance.Desc())
-	fmt.Printf("Instance location: %s\n", instanceDir)
+	fmt.Printf("Instance location: %s\n", instance.Directory)
 
 	// we need login credentials to launch the client
 	// the server needs no creds
@@ -170,28 +122,8 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	// build and add the local jar
 	if instance.Manifest.Package.Type == manifest.TypeMod {
-		if !l.noBuild {
-			build := instance.BuildMod()
-			cmdTerminalOutput(build)
-			build.Start()
-			err := build.Wait()
-			if err != nil {
-				// TODO: output logs or something
-				fmt.Println(err)
-				logger.Fail("Build step failed. Aborting")
-			}
-		}
-		// copy jar
-		jar, err := instance.FindModJar()
-		if err != nil {
-			logger.Fail(err.Error())
-		}
-		_, targetName := filepath.Split(jar)
-		fmt.Printf("adding %s to temporary modpack\n", jar)
-		// TODO: mod could already be there if it has a circular dependency
-		err = CopyFile(jar, filepath.Join(instance.ModsDir(), targetName))
-		if err != nil {
-			logger.Fail(err.Error())
+		if err := l.buildMod(); err != nil {
+			return err
 		}
 	}
 
@@ -214,7 +146,6 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 	crashErr := make(chan error)
 
 	if l.crashTest {
-
 		go func() {
 			crashErr <- crashTest()
 		}()
@@ -298,6 +229,84 @@ func crashTest() error {
 		// wait 3 seconds before retrying
 		time.Sleep(3 * time.Second)
 	}
+}
+
+func (l *launchRunner) instanceFromWd() (*instances.Instance, error) {
+	var err error
+	instance, err := instances.NewInstanceFromWd()
+	if err != nil {
+		return nil, err
+	}
+	instance.MinepkgAPI = globals.ApiClient
+
+	return instance, err
+}
+
+func (l *launchRunner) instanceFromModpack(modpack string) (*instances.Instance, error) {
+	apiClient := globals.ApiClient
+
+	instance := instances.NewEmptyInstance()
+	instance.MinepkgAPI = apiClient
+
+	// fetch modpack
+	reqs := &api.RequirementQuery{
+		Platform:  "fabric", // TODO: not static!
+		Minecraft: "*",
+		Version:   "latest", // TODO: get from id
+	}
+	if l.overwrites.McVersion != "" {
+		reqs.Minecraft = l.overwrites.McVersion
+	}
+
+	release, err := apiClient.FindRelease(context.TODO(), modpack, reqs)
+	if err != nil {
+		return nil, l.formatApiError(err)
+	}
+
+	if release.Package.Type == "mod" {
+		return nil, errCanOnlyLaunchModpacks
+	}
+
+	// instanceDir =
+	// os.MkdirAll(instanceDir, os.ModePerm)
+
+	// set instance details
+	instance.Manifest = manifest.NewInstanceLike(release.Manifest)
+
+	instance.MinepkgAPI = apiClient
+	instance.Directory = filepath.Join(instance.InstancesDir(), release.Package.Name+"_"+release.Package.Platform)
+
+	// overwrite some instance launch options with flags
+	launch.ApplyInstanceOverwrites(instance, l.overwrites)
+
+	if l.overwrites.McVersion == "" {
+		fmt.Println("Minecraft version '*' resolved to: " + release.LatestTestedMinecraftVersion())
+		instance.Manifest.Requirements.Minecraft = release.LatestTestedMinecraftVersion()
+	}
+
+	return instance, nil
+}
+
+func (l *launchRunner) buildMod() error {
+	if !l.noBuild {
+		build := l.instance.BuildMod()
+		cmdTerminalOutput(build)
+		build.Start()
+		err := build.Wait()
+		if err != nil {
+			// TODO: output logs or something
+			return fmt.Errorf("build step failed: %w", err)
+		}
+	}
+	// copy jar
+	jar, err := l.instance.FindModJar()
+	if err != nil {
+		return err
+	}
+	_, targetName := filepath.Split(jar)
+	fmt.Printf("adding %s to temporary modpack\n", jar)
+	// TODO: mod could already be there if it has a circular dependency
+	return CopyFile(jar, filepath.Join(l.instance.ModsDir(), targetName))
 }
 
 func (l *launchRunner) formatApiError(err error) error {
