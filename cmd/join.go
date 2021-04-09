@@ -100,7 +100,7 @@ func (i *joinRunner) RunE(cmd *cobra.Command, args []string) error {
 		instance.UseSystemJava()
 	}
 
-	fmt.Println("\nLaunching Minecraft …")
+	fmt.Println("\n" + commands.StyleGrass.Render(commands.Emoji("⛏  ")+"Launching Minecraft"))
 	opts := &instances.LaunchOptions{
 		JoinServer: ip + ":" + port,
 	}

@@ -173,7 +173,7 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 	fmt.Println("[dependencies] \n - " + strings.Join(depNames, "\n - "))
 
-	fmt.Println("\n== Launching Minecraft ==")
+	fmt.Println("\n" + commands.StyleGrass.Render(commands.Emoji("⛏  ")+"Launching Minecraft"))
 	opts := &instances.LaunchOptions{
 		LaunchManifest: launchManifest,
 		Server:         t.serverMode,

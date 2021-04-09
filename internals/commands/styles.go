@@ -23,6 +23,17 @@ var styleHelpBox = lipgloss.NewStyle().
 	Margin(0, 1).
 	PaddingTop(1)
 
+var grassBorder = lipgloss.Border{
+	// Top: "▪",
+	Top: "▂",
+}
+
+var StyleGrass = lipgloss.NewStyle().
+	Background(lipgloss.Color("#7a563b")).
+	Border(grassBorder, true, false, false, false).
+	BorderForeground(lipgloss.Color("#63a73c")).
+	Padding(0, 2)
+
 var styleErrText = lipgloss.NewStyle().Width(62)
 
 func ErrorBox(errorString string, helpText string) string {

@@ -202,7 +202,7 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 		os.Exit(0)
 	}
 
-	fmt.Println("\n== Launching Minecraft ==")
+	fmt.Println("\n" + commands.StyleGrass.Render(commands.Emoji("⛏  ")+"Launching Minecraft"))
 	opts := &instances.LaunchOptions{
 		LaunchManifest: launchManifest,
 		SkipDownload:   true,
