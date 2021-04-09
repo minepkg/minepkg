@@ -68,17 +68,15 @@ var (
 
 func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 	var err error
-	var instance *instances.Instance
-	l.instance = instance
 
 	if len(args) == 0 {
-		instance, err = l.instanceFromWd()
+		l.instance, err = l.instanceFromWd()
 		if err != nil {
 			return err
 		}
-		launch.ApplyInstanceOverwrites(instance, l.overwrites)
+		launch.ApplyInstanceOverwrites(l.instance, l.overwrites)
 	} else {
-		instance, err = l.instanceFromModpack(args[0])
+		l.instance, err = l.instanceFromModpack(args[0])
 		if err != nil {
 			return err
 		}
@@ -87,41 +85,41 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 	switch {
 	case l.crashTest && !l.serverMode:
 		logger.Fail("Can only crashtest servers. append --server to crashtest")
-	case instance.Manifest.PlatformString() == "forge":
+	case l.instance.Manifest.PlatformString() == "forge":
 		logger.Fail("Can not launch forge modpacks for now. Sorry.")
 	}
 
 	if viper.GetBool("useSystemJava") {
-		instance.UseSystemJava()
+		l.instance.UseSystemJava()
 	}
 
 	// launch instance
-	fmt.Printf("Launching %s\n", instance.Desc())
-	fmt.Printf("Instance location: %s\n", instance.Directory)
+	fmt.Printf("Launching %s\n", l.instance.Desc())
+	fmt.Printf("Instance location: %s\n", l.instance.Directory)
 
 	// we need login credentials to launch the client
 	// the server needs no creds
 	if !l.serverMode {
 		creds, err := ensureMojangAuth()
 		if err != nil {
-			logger.Fail(err.Error())
+			return err
 		}
-		instance.MojangCredentials = creds
+		l.instance.MojangCredentials = creds
 	}
 
 	cliLauncher := launch.CLILauncher{
-		Instance:       instance,
+		Instance:       l.instance,
 		ServerMode:     l.serverMode,
 		OfflineMode:    l.offlineMode,
 		NonInteractive: viper.GetBool("nonInteractive"),
 	}
 
 	if err := cliLauncher.Prepare(); err != nil {
-		logger.Fail(err.Error())
+		return err
 	}
 
 	// build and add the local jar
-	if instance.Manifest.Package.Type == manifest.TypeMod {
+	if l.instance.Manifest.Package.Type == manifest.TypeMod {
 		if err := l.buildMod(); err != nil {
 			return err
 		}
