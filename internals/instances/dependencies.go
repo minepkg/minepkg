@@ -107,10 +107,19 @@ func (i *Instance) LinkDependencies() error {
 			continue
 		}
 
+		copyFallback := false
 		// windows required admin permissions for symlinks (yea …)
 		if runtime.GOOS == "windows" {
-			// TODO: fallback to copy
-			err = os.Link(from, to)
+			if !copyFallback {
+				err = os.Link(from, to)
+				// first time link fails, we just fallback to copying
+				if err != nil {
+					copyFallback = true
+				}
+			}
+			if copyFallback {
+				err = copyFileContents(from, to)
+			}
 		} else {
 			err = os.Symlink(from, to)
 		}
