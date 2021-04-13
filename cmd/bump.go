@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/jwalton/gchalk"
 	"github.com/magiconair/properties"
 	"github.com/manifoldco/promptui"
+	"github.com/mattn/go-isatty"
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/spf13/cobra"
@@ -44,8 +46,6 @@ type bumpRunner struct {
 	targetTag     string
 	upstreamPair  []string
 }
-
-var remoteGitHubSSH = regexp.MustCompile(`^git@github.com:(.+)\.git`)
 
 func (b *bumpRunner) RunE(cmd *cobra.Command, args []string) error {
 
@@ -107,14 +107,14 @@ func (b *bumpRunner) RunE(cmd *cobra.Command, args []string) error {
 	fmt.Println("\nBumping version to: " + gchalk.Bold(targetVersion))
 
 	// bump the manifest version
-	fmt.Println(" updating minepkg.toml")
+	fmt.Println("► updating minepkg.toml")
 	instance.Manifest.Package.Version = targetVersion
 	if err := instance.SaveManifest(); err != nil {
 		return err
 	}
 
 	// bump the gradle.properties files
-	fmt.Println(" updating gradle.properties")
+	fmt.Println("► updating gradle.properties")
 	props, err := properties.LoadFile("./gradle.properties", properties.UTF8)
 	if err != nil {
 		return nil
@@ -132,6 +132,10 @@ func (b *bumpRunner) RunE(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
+
+	fmt.Println("\n" + commands.Emoji("✅ ") +
+		"Bump complete. You can now publish with " +
+		gchalk.Bold("minepkg publish"))
 
 	return nil
 }
@@ -272,25 +276,62 @@ func (b *bumpRunner) gitActions() error {
 		}
 	}
 
+	if !b.noTag {
+		return b.gitCreateReleasePrompt()
+	}
+
+	return nil
+}
+
+var remoteGitHubSSH = regexp.MustCompile(`^git@github.com:(.+)\.git`)
+var remoteGitHubHttps = regexp.MustCompile(`https://github.com/(.+)\.git`)
+
+func (b *bumpRunner) gitCreateReleasePrompt() error {
 	origin, err := simpleGitExec("config --get remote.origin.url")
 	if err != nil {
 		return err
 	}
+
 	match := remoteGitHubSSH.FindStringSubmatch(origin)
+	if len(match) != 2 {
+		match = remoteGitHubHttps.FindStringSubmatch(origin)
+	}
 	if len(match) == 2 {
-		fmt.Println(gchalk.Bold("\nYou can now create a new GitHub release here:"))
 		v := url.Values{}
 		v.Add("tag", b.targetTag)
 		v.Add("title", b.targetVersion)
-		fmt.Printf("  https://github.com/%s/releases/new?%s\n", match[1], v.Encode())
-	}
+		url := fmt.Sprintf("https://github.com/%s/releases/new?%s", match[1], v.Encode())
 
+		if isInteractive() {
+			openBrowser := boolPrompt(&promptui.Prompt{
+				Label:     "Open browser to create GitHub release now (recommended)",
+				Default:   "Y",
+				IsConfirm: true,
+			})
+			if openBrowser {
+				openbrowser(url)
+			} else {
+				fmt.Println("Ok not opening. You can still create the release here if you want:")
+				fmt.Println("  " + url)
+			}
+		} else {
+			fmt.Println(gchalk.Bold("\nYou can now create a new GitHub release here:"))
+			fmt.Println("  " + url)
+		}
+
+	}
 	return nil
 }
 
 func isGit() bool {
 	_, err := os.Stat(".git")
 	return err == nil
+}
+
+func isInteractive() bool {
+	return !viper.GetBool("nonInteractive") &&
+		(isatty.IsTerminal(os.Stdout.Fd()) ||
+			isatty.IsCygwinTerminal(os.Stdout.Fd()))
 }
 
 var lineMatch = regexp.MustCompile("(.*)\r?\n?$")
@@ -301,4 +342,24 @@ func simpleGitExec(args string) (string, error) {
 	out, err := cmd.Output()
 	cleanOut := lineMatch.FindStringSubmatch(string(out))
 	return cleanOut[1], err
+}
+
+func openbrowser(url string) {
+	var err error
+
+	fmt.Println("opening ", url)
+
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", url).Run()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Run()
+	case "darwin":
+		err = exec.Command("open", url).Run()
+	default:
+		err = fmt.Errorf("unsupported platform")
+	}
+	if err != nil {
+		panic(err)
+	}
 }
