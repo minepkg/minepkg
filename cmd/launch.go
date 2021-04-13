@@ -34,11 +34,12 @@ Alternatively: Can be used in directories containing a minepkg.toml manifest to 
 	}, runner)
 
 	cmd.Flags().BoolVarP(&runner.serverMode, "server", "s", false, "Start a server instead of a client")
-	cmd.Flags().BoolVarP(&runner.debugMode, "debug", "", false, "Do not start, just debug")
-	cmd.Flags().BoolVarP(&runner.offlineMode, "offline", "", false, "Start the server in offline mode (server only)")
-	cmd.Flags().BoolVarP(&runner.onlyPrepare, "only-prepare", "", false, "Only prepare, skip launching")
-	cmd.Flags().BoolVarP(&runner.crashTest, "crashtest", "", false, "Stop server after it's online (can be used for testing)")
-	cmd.Flags().BoolVarP(&runner.noBuild, "no-build", "", false, "Skip build (if any)")
+	cmd.Flags().BoolVar(&runner.debugMode, "debug", false, "Do not start, just debug")
+	cmd.Flags().BoolVar(&runner.offlineMode, "offline", false, "Start the server in offline mode (server only)")
+	cmd.Flags().BoolVar(&runner.onlyPrepare, "only-prepare", false, "Only prepare, skip launching")
+	cmd.Flags().BoolVar(&runner.crashTest, "crashtest", false, "Stop server after it's online (can be used for testing)")
+	cmd.Flags().BoolVar(&runner.noBuild, "no-build", false, "Skip build (if any)")
+	cmd.Flags().BoolVar(&runner.demo, "demo", false, "Start Minecraft in demo mode (without auth)")
 	runner.overwrites = launch.CmdOverwriteFlags(cmd.Command)
 
 	rootCmd.AddCommand(cmd.Command)
@@ -51,6 +52,7 @@ type launchRunner struct {
 	onlyPrepare bool
 	crashTest   bool
 	noBuild     bool
+	demo        bool
 
 	overwrites *launch.OverwriteFlags
 
@@ -138,6 +140,7 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 		SkipDownload:   true,
 		Server:         l.serverMode,
 		Debug:          l.debugMode,
+		Demo:           l.demo,
 	}
 
 	launchErr := make(chan error)

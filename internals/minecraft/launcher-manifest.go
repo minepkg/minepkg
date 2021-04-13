@@ -125,10 +125,10 @@ func (l *LaunchManifest) MinecraftVersion() string {
 }
 
 // LaunchArgs returns the launch arguments defined in the manifest as a string
-func (l *LaunchManifest) LaunchArgs() string {
+func (l *LaunchManifest) LaunchArgs() []string {
 	// easy minecraft versions before 1.13
 	if l.MinecraftArguments != "" {
-		return l.MinecraftArguments
+		return strings.Split(l.MinecraftArguments, "")
 	}
 
 	// TODO: missing jvm
@@ -144,7 +144,7 @@ OUTER:
 		args = append(args, strings.Join(arg.Value, ""))
 	}
 
-	return strings.Join(args, " ")
+	return args
 }
 
 type argument struct {

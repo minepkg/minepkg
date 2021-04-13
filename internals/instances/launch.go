@@ -60,7 +60,9 @@ type LaunchOptions struct {
 	Offline bool
 	Java    string
 	Server  bool
-	// JoinServer can be a server adress to join after startup
+	// Demo launches the client in demo mode. should have no effect on a server
+	Demo bool
+	// JoinServer can be a server address to join after startup
 	JoinServer string
 	// StartSave can be a savegame name to start after startup
 	StartSave string
@@ -84,7 +86,7 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 	cmd.Wait()
 
 	// minecraft server will always return code 130 when
-	// stop was succesfull, so we ignore the error here
+	// stop was successful, so we ignore the error here
 	if cmd.ProcessState.ExitCode() == 130 {
 		return nil
 	}
@@ -92,32 +94,30 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 	return err
 }
 
-// BuildLaunchCmd returns a go cmd ready to start minecraft
-func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
-	// HACK: don't use client config for server, so we
-	// don't have to fake this here
+func (i *Instance) getMojangData() (*mojang.Profile, *mojang.AuthResponse, error) {
 	var (
 		profile *mojang.Profile
 		creds   *mojang.AuthResponse
 	)
 
-	// server mode does not need minecraft credentials
-	if !opts.Server {
-		creds = i.MojangCredentials
-		if creds == nil {
-			return nil, ErrNoCredentials
-		}
-
-		profile = creds.SelectedProfile
-		// do not allow non paid accounts to start minecraft
-		// (demo mode is not implemented)
-		// unpaid accounts should not have a profile
-		if profile == nil {
-			return nil, ErrNoPaidAccount
-		}
+	creds = i.MojangCredentials
+	if creds == nil {
+		return nil, nil, ErrNoCredentials
 	}
 
-	// this file tells us howto construct the start command
+	profile = creds.SelectedProfile
+	// do not allow non paid accounts to start minecraft
+	// unpaid accounts should not have a profile
+	if profile == nil {
+		return nil, creds, ErrNoPaidAccount
+	}
+
+	return profile, creds, nil
+}
+
+// BuildLaunchCmd returns a go cmd ready to start minecraft
+func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
+	// this file tells us how to construct the start command
 	launchManifest := opts.LaunchManifest
 	var err error
 
@@ -198,36 +198,51 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	mcJar := filepath.Join(i.VersionsDir(), launchManifest.MinecraftVersion(), launchManifest.JarName())
 	cpArgs = append(cpArgs, mcJar)
 
-	var replacer *strings.Replacer
-
-	if opts.Server {
-		// TODO: this is kind of ugly
-		replacer = strings.NewReplacer(
-			v("auth_player_name"), "server",
-			v("version_name"), launchManifest.MinecraftVersion(),
-			v("game_directory"), i.McDir(),
-			v("assets_root"), filepath.Join(i.AssetsDir()),
-			v("assets_index_name"), launchManifest.Assets, // asset index version
-			v("auth_uuid"), "0", // profile id
-			v("auth_access_token"), "none",
-			v("user_type"), "mojang", // unsure about this one (legacy mc login flag?)
-			v("version_type"), launchManifest.Type, // release / snapshot … etc
-		)
-	} else {
-		replacer = strings.NewReplacer(
-			v("auth_player_name"), profile.Name,
-			v("version_name"), launchManifest.MinecraftVersion(),
-			v("game_directory"), i.McDir(),
-			v("assets_root"), filepath.Join(i.AssetsDir()),
-			v("assets_index_name"), launchManifest.Assets, // asset index version
-			v("auth_uuid"), profile.ID, // profile id
-			v("auth_access_token"), creds.AccessToken,
-			v("user_type"), "mojang", // unsure about this one (legacy mc login flag?)
-			v("version_type"), launchManifest.Type, // release / snapshot … etc
-		)
+	gameArgs := map[string]string{
+		// the minecraft version
+		"version_name": launchManifest.MinecraftVersion(),
+		// minecraft game dir that contains saves, worlds & mods
+		"game_directory": i.McDir(),
+		// asset dir contains some shared minecraft resources like sounds & some textures
+		"assets_root": i.AssetsDir(),
+		// asset index version tells the game which assets to load. this usually just is the same
+		// as the minecraft version
+		"assets_index_name": launchManifest.Assets,
+		// release / snapshot … etc
+		"version_type": launchManifest.Type,
 	}
 
-	args := replacer.Replace(launchManifest.LaunchArgs())
+	// this is not a server, we need to set some more auth data
+	if !opts.Server && !opts.Demo {
+		profile, creds, err := i.getMojangData()
+		if err != nil {
+			return nil, err
+		}
+		gameArgs["auth_player_name"] = profile.Name
+		gameArgs["auth_uuid"] = profile.ID
+		gameArgs["auth_access_token"] = creds.AccessToken
+		gameArgs["user_type"] = "mojang" // unsure about this one (legacy mc login flag?)
+	}
+
+	finalGameArgs := make([]string, 0, len(gameArgs)*2)
+	launchArgsTemplate := launchManifest.LaunchArgs()
+	for i := 0; i < len(launchArgsTemplate)-1; i += 2 {
+		arg := launchArgsTemplate[i]
+		// looks something like ${version_name}
+		valueTemplate := launchArgsTemplate[i+1]
+		// cut to just version_name
+		valueName := valueTemplate[2 : len(valueTemplate)-1]
+
+		// found in our args map
+		if val, ok := gameArgs[valueName]; ok {
+			// append to final args
+			finalGameArgs = append(finalGameArgs, arg, val)
+		}
+	}
+
+	if opts.Demo {
+		finalGameArgs = append(finalGameArgs, "--demo")
+	}
 
 	javaCpSeperator := ":"
 	// of course
@@ -260,8 +275,9 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	}
 
 	if !opts.Server {
-		cmdArgs = append(cmdArgs, strings.Split(args, " ")...)
+		cmdArgs = append(cmdArgs, finalGameArgs...)
 	} else {
+		// maybe don't use client args for server …
 		cmdArgs = append(cmdArgs, "nogui")
 	}
 

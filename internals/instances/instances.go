@@ -74,16 +74,18 @@ func (i *Instance) VersionsDir() string {
 }
 
 // AssetsDir returns the path to the assets directory
+// it contains some shared Minecraft resources like sounds & some textures
 func (i *Instance) AssetsDir() string {
 	return filepath.Join(i.CacheDir, "assets")
 }
 
 // LibrariesDir returns the path to the libraries directory
+// contains libraries needed to load minecraft
 func (i *Instance) LibrariesDir() string {
 	return filepath.Join(i.CacheDir, "libraries")
 }
 
-// InstancesDir returns the path to the instances directory
+// InstancesDir returns the path to the "global" instances directory
 func (i *Instance) InstancesDir() string {
 	return filepath.Join(i.GlobalDir, "instances")
 }
@@ -98,7 +100,8 @@ func (i *Instance) JavaDir() string {
 	return filepath.Join(i.CacheDir, "java")
 }
 
-// McDir is the path where the actual minecraft instance is living. This is the `minecraft` subfolder
+// McDir is the path where the actual Minecraft instance is living. This is the `minecraft` subfolder
+// this folder contains saves, configs & mods that should be loaded
 func (i *Instance) McDir() string {
 	return filepath.Join(i.Directory, "minecraft")
 }

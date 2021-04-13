@@ -44,11 +44,6 @@ func extractNative(jar string, target string) error {
 	return nil
 }
 
-// v for variable
-func v(s string) string {
-	return "${" + s + "}"
-}
-
 // TODO: remove
 func existOrDownload(lib minecraft.Lib) {
 	home, _ := os.UserHomeDir()
