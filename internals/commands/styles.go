@@ -36,6 +36,28 @@ var StyleGrass = lipgloss.NewStyle().
 
 var styleErrText = lipgloss.NewStyle().Width(62)
 
+var warnBorder = lipgloss.Border{
+	Top: "▪",
+}
+
+var StyleWarnBox = lipgloss.NewStyle().
+	MarginTop(1).
+	Bold(true).
+	Background(lipgloss.AdaptiveColor{Light: "#ffe09d", Dark: "#5b4729"}).
+	Foreground(lipgloss.AdaptiveColor{Light: "#774d00", Dark: "#ffe5d5"}).
+	Border(lipgloss.NormalBorder(), false, false, false, true).
+	BorderLeftForeground(lipgloss.Color("#ffb837")).
+	Padding(1, 2)
+
+var StyleInfoBox = lipgloss.NewStyle().
+	MarginTop(1).
+	Bold(true).
+	Background(lipgloss.AdaptiveColor{Light: "#a9d0ff", Dark: "#263040"}).
+	Foreground(lipgloss.AdaptiveColor{Light: "#00174c", Dark: "#e7d5ff"}).
+	Border(lipgloss.NormalBorder(), false, false, false, true).
+	BorderLeftForeground(lipgloss.Color("#5e5eff")).
+	Padding(1, 2)
+
 func ErrorBox(errorString string, helpText string) string {
 	rendered := styleErrBox.Render(
 		lipgloss.JoinHorizontal(

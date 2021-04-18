@@ -361,5 +361,9 @@ func (p *publishRunner) findJar(instance *instances.Instance) (string, error) {
 		return abs, nil
 	}
 
-	return instance.FindModJar()
+	match, err := getJarFileForInstance(instance)
+	if err != nil {
+		return "", err
+	}
+	return match.Path(), nil
 }

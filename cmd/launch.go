@@ -300,14 +300,15 @@ func (l *launchRunner) buildMod() error {
 		}
 	}
 	// copy jar
-	jar, err := l.instance.FindModJar()
+
+	jar, err := getJarFileForInstance(l.instance)
 	if err != nil {
 		return err
 	}
-	_, targetName := filepath.Split(jar)
-	fmt.Printf("adding %s to temporary modpack\n", jar)
+
+	fmt.Printf(" ► adding %s to temporary modpack\n", jar.Name())
 	// TODO: mod could already be there if it has a circular dependency
-	return CopyFile(jar, filepath.Join(l.instance.ModsDir(), targetName))
+	return CopyFile(jar.Path(), filepath.Join(l.instance.ModsDir(), jar.Name()))
 }
 
 func (l *launchRunner) formatApiError(err error) error {

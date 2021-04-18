@@ -7,7 +7,9 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/globals"
+	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/minepkg/minepkg/internals/mojang"
 )
 
@@ -137,4 +139,25 @@ func copyFileContents(src, dst string) (err error) {
 func cmdTerminalOutput(b *exec.Cmd) {
 	b.Stderr = os.Stderr
 	b.Stdout = os.Stdout
+}
+
+func getJarFileForInstance(i *instances.Instance) (*instances.MatchedJar, error) {
+	jars, err := i.FindModJar()
+	if err != nil {
+		return nil, err
+	}
+
+	if i.Manifest.Dev.Jar != "" {
+		fmt.Printf("Searching according to your pattern \"%s\" to find jar file\n", i.Manifest.Dev.Jar)
+	}
+	if len(jars) > 1 && i.Manifest.Dev.Jar == "" {
+		text := fmt.Sprintf("Found multiple jar files. Using %s", jars[0].Name())
+		fmt.Println(commands.StyleWarnBox.Render(text))
+		fmt.Println(" Checkout https://preview.minepkg.io/docs/manifest#devjar if this is the wrong file!")
+	} else {
+		text := fmt.Sprintf("Using jar: %s", jars[0].Path())
+		fmt.Println(commands.StyleInfoBox.Render(text))
+	}
+
+	return &jars[0], nil
 }

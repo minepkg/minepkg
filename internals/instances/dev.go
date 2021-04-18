@@ -1,18 +1,45 @@
 package instances
 
 import (
-	"errors"
+	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
+
+	"github.com/minepkg/minepkg/internals/commands"
 )
 
 var (
-	ErrNoBuildFiles = errors.New("no build files found in ./build/libs")
+	ErrNoBuildFiles = &commands.CliError{
+		Text: "no jar files found",
+		Suggestions: []string{
+			`Set the "dev.jar" field in your minepkg.toml`,
+			`Checkout https://preview.minepkg.io/docs/manifest#devjar`,
+			"Make sure that your build is outputing jar files",
+		},
+	}
 )
+
+type MatchedJar struct {
+	path string
+	stat fs.FileInfo
+}
+
+// Name returns just the name of the jar
+// eg "my-jar.jar"
+func (m *MatchedJar) Name() string {
+	return filepath.Base(m.path)
+}
+
+// Path returns the full path to the jar file
+func (m *MatchedJar) Path() string {
+	return m.path
+}
 
 // BuildMod uses the manifest "dev.buildCmd" script to build this package
 // falls back to "gradle --build-cache build"
@@ -39,39 +66,94 @@ func (i *Instance) BuildMod() *exec.Cmd {
 }
 
 // FindModJar tries to find the right built mod jar
-func (i *Instance) FindModJar() (string, error) {
+func (i *Instance) FindModJar() ([]MatchedJar, error) {
+
+	var files []MatchedJar
+	var err error
+	if i.Manifest.Dev.Jar != "" {
+		files, err = i.findModJarCandidatesFromPattern(i.Manifest.Dev.Jar)
+
+	} else {
+		files, err = i.findModJarCandidates()
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	if len(files) == 0 {
+		return nil, ErrNoBuildFiles
+	}
+
+	sort.Slice(files, func(a int, b int) bool {
+		return files[a].stat.ModTime().After(files[b].stat.ModTime())
+	})
+
+	return files, nil
+}
+
+func (i *Instance) findModJarCandidatesFromPattern(pattern string) ([]MatchedJar, error) {
+	matches, err := filepath.Glob(pattern)
+	if err != nil {
+		return nil, err
+	}
+	switch {
+	case len(matches) == 0:
+		return nil, ErrNoBuildFiles
+	case len(matches) > 100:
+		return nil, fmt.Errorf("aborting because of over 100 matched files")
+	}
+
+	files := make([]MatchedJar, 0, len(matches))
+	for _, file := range matches {
+		stat, err := os.Stat(file)
+		if err != nil {
+			return nil, err
+		}
+
+		// filter out directories
+		if !stat.IsDir() {
+			matched := MatchedJar{
+				path: file,
+				stat: stat,
+			}
+			files = append(files, matched)
+		}
+	}
+
+	return files, nil
+}
+
+func (i *Instance) findModJarCandidates() ([]MatchedJar, error) {
 	files, err := ioutil.ReadDir("./build/libs")
 	if err != nil {
-		return "", ErrNoBuildFiles
+		return nil, ErrNoBuildFiles
 	}
 	if len(files) == 0 {
-		return "", ErrNoBuildFiles
+		return nil, ErrNoBuildFiles
 	}
 
-	chosen := files[0]
+	preFiltered := []MatchedJar{}
 
-search:
-	for _, file := range files[1:] {
+	for _, file := range files {
 		name := file.Name()
 		base := filepath.Base(name)
 
-		// filter out dev and sources jars
+		// filter out dirs, dev and sources jars
 		switch {
+		case file.IsDir():
+			continue
 		case strings.HasSuffix(base, "dev.jar"):
 			continue
 		case strings.HasSuffix(base, "sources.jar"):
 			continue
-		// worldedit uses dist for the runnable jars. lets hope this
-		// does not break any other mods
-		case strings.HasSuffix(base, "dist.jar"):
-			// we choose this file and stop
-			chosen = file
-			break search
-		}
-		if len(file.Name()) < len(chosen.Name()) {
-			chosen = file
+		default:
+			matched := MatchedJar{
+				path: filepath.Join("./build/libs", name),
+				stat: file,
+			}
+			preFiltered = append(preFiltered, matched)
 		}
 	}
 
-	return filepath.Join("./build/libs", chosen.Name()), nil
+	return preFiltered, nil
 }
