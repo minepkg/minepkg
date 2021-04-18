@@ -69,12 +69,12 @@ type selfupdateRunner struct {
 func (s *selfupdateRunner) RunE(cmd *cobra.Command, args []string) error {
 	toUpdate, err := os.Executable()
 	if err != nil {
-		logger.Fail(err.Error())
+		return err
 	}
 
 	toUpdate, err = filepath.EvalSymlinks(toUpdate)
 	if err != nil {
-		logger.Fail(err.Error())
+		return err
 	}
 
 	fmt.Println("Checking for new version")
@@ -92,8 +92,13 @@ func (s *selfupdateRunner) RunE(cmd *cobra.Command, args []string) error {
 		fmt.Println(styleWarnBox.Render(parsed.Info))
 	}
 
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		return err
+	}
+
 	// TODO: if this version is newer
-	newCli, err := ioutil.TempFile(os.TempDir(), parsed.Version)
+	newCli, err := ioutil.TempFile(cacheDir, parsed.Version)
 	if err != nil {
 		return err
 	}
@@ -104,7 +109,7 @@ func (s *selfupdateRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 	_, err = io.Copy(newCli, download.Body)
 	if err != nil {
-		logger.Fail(err.Error())
+		return err
 	}
 
 	newCli.Close()
@@ -121,7 +126,7 @@ func (s *selfupdateRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	if runtime.GOOS == "windows" {
 		if err := os.Rename(toUpdate, toUpdate+".old"); err != nil {
-			logger.Fail(err.Error())
+			return err
 		}
 	}
 
@@ -133,7 +138,7 @@ func (s *selfupdateRunner) RunE(cmd *cobra.Command, args []string) error {
 			}
 			logger.Fail("Upgrade failed. Reverted to old version. Please open a bug report")
 		}
-		logger.Fail(err.Error())
+		return err
 	}
 	fmt.Println("minepkg CLI was updated successfully")
 
