@@ -17,9 +17,9 @@ type OverwriteFlags struct {
 
 func CmdOverwriteFlags(cmd *cobra.Command) *OverwriteFlags {
 	flags := OverwriteFlags{}
-	cmd.Flags().StringVarP(&flags.McVersion, "minecraft", "m", "", "Overwrite the required minepkg companion version (can also be \"none\")")
-	cmd.Flags().StringVarP(&flags.FabricVersion, "fabric", "", "", "Overwrite the required fabric version")
-	cmd.Flags().StringVarP(&flags.MinepkgCompanion, "minepkgCompanion", "", "", "Overwrite the required minepkg companion version")
+	cmd.Flags().StringVarP(&flags.McVersion, "minecraft", "m", "", "Overwrite the required Minecraft version")
+	cmd.Flags().StringVar(&flags.FabricVersion, "fabricLoader", "", "Overwrite the required fabricLoader version")
+	cmd.Flags().StringVar(&flags.MinepkgCompanion, "minepkgCompanion", "", "Overwrite the required minepkg companion version (can also be \"none\")")
 
 	return &flags
 }
