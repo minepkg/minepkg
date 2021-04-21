@@ -121,9 +121,9 @@ func (d *DependencyLock) ID() string {
 	return string(sha256.New().Sum([]byte(input)))
 }
 
-// Filename returns the dependency in the "[sha256].jar" format
+// Filename returns the dependency in the "[name]-[version].jar" format
 func (d *DependencyLock) Filename() string {
-	return d.Sha256 + d.FileExt()
+	return fmt.Sprintf("%s-%s%s", d.Name, d.Version, d.FileExt())
 }
 
 // MinecraftVersion returns the Minecraft version
