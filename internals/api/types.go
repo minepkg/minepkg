@@ -21,11 +21,15 @@ type User struct {
 // Project is a project
 type Project struct {
 	client      *MinepkgAPI
-	Name        string        `json:"name"`
-	Type        string        `json:"type"`
-	Description string        `json:"description,omitempty"`
-	Readme      string        `json:"readme,omitempty"`
-	Stats       *ProjectStats `json:"stats,omitempty"`
+	Name        string `json:"name"`
+	Type        string `json:"type"`
+	Description string `json:"description,omitempty"`
+	Readme      string `json:"readme,omitempty"`
+	Links       struct {
+		Source   string `json:"source,omitempty"`
+		Homepage string `json:"homepage,omitempty"`
+	} `json:"links,omitempty"`
+	Stats *ProjectStats `json:"stats,omitempty"`
 }
 
 // ProjectStats contains statistics for a project
@@ -110,7 +114,7 @@ type ForgeVersion struct {
 }
 
 // MinepkgError is the json response if the response
-// was not succesfull
+// was not successful
 type MinepkgError struct {
 	StatusCode uint16 `json:"statusCode"`
 	Status     string `json:"error"`

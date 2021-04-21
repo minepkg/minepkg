@@ -94,9 +94,17 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 		}
 		readme, _ := getReadme()
 		project, err = apiClient.CreateProject(&api.Project{
-			Name:   m.Package.Name,
-			Type:   m.Package.Type,
-			Readme: readme,
+			Name:        m.Package.Name,
+			Type:        m.Package.Type,
+			Readme:      readme,
+			Description: m.Package.Description,
+			Links: struct {
+				Source   string "json:\"source,omitempty\""
+				Homepage string "json:\"homepage,omitempty\""
+			}{
+				Source:   m.Package.Source,
+				Homepage: m.Package.Homepage,
+			},
 		})
 		if err != nil {
 			return err
