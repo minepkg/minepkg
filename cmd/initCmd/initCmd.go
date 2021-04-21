@@ -13,6 +13,7 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/globals"
+	"github.com/minepkg/minepkg/internals/utils"
 	"github.com/minepkg/minepkg/pkg/manifest"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -59,7 +60,7 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 	if man.Package.Type == "mod" {
 		cursorPos = 1
 	}
-	man.Package.Type = selectPrompt(&promptui.Select{
+	man.Package.Type = utils.SelectPrompt(&promptui.Select{
 		Label:     "Type",
 		Items:     []string{"modpack", "mod"},
 		CursorPos: cursorPos,
@@ -70,13 +71,13 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 	if man.Package.Type == "forge" {
 		cursorPos = 1
 	}
-	man.Package.Platform = selectPrompt(&promptui.Select{
+	man.Package.Platform = utils.SelectPrompt(&promptui.Select{
 		Label:     "Platform",
 		Items:     []string{"fabric", "forge"},
 		CursorPos: cursorPos,
 	})
 
-	man.Package.Name = stringPrompt(&promptui.Prompt{
+	man.Package.Name = utils.StringPrompt(&promptui.Prompt{
 		Label:   "Name",
 		Default: man.Package.Name,
 		Validate: func(s string) error {
@@ -95,32 +96,32 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 		AllowEdit: true,
 	})
 
-	man.Package.Description = stringPrompt(&promptui.Prompt{
+	man.Package.Description = utils.StringPrompt(&promptui.Prompt{
 		Label:     "Description",
 		Default:   man.Package.Description,
 		AllowEdit: true,
 	})
 
 	// TODO: maybe check local "LICENSE" file for popular licenses
-	man.Package.License = stringPrompt(&promptui.Prompt{
+	man.Package.License = utils.StringPrompt(&promptui.Prompt{
 		Label:     "License",
 		Default:   man.Package.License,
 		AllowEdit: true,
 	})
 
-	man.Package.Author = stringPrompt(&promptui.Prompt{
+	man.Package.Author = utils.StringPrompt(&promptui.Prompt{
 		Label:     "Author",
 		Default:   man.Package.Author,
 		AllowEdit: true,
 	})
 
-	man.Package.Source = stringPrompt(&promptui.Prompt{
+	man.Package.Source = utils.StringPrompt(&promptui.Prompt{
 		Label:     "Source",
 		Default:   man.Package.Source,
 		AllowEdit: true,
 	})
 
-	man.Package.Version = stringPrompt(&promptui.Prompt{
+	man.Package.Version = utils.StringPrompt(&promptui.Prompt{
 		Label:     "Version",
 		Default:   man.Package.Version,
 		AllowEdit: true,
@@ -146,13 +147,13 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 	switch man.Package.Platform {
 	case "fabric":
 		// fmt.Println("Leaving * here is usually fine")
-		man.Requirements.Fabric = stringPrompt(&promptui.Prompt{
+		man.Requirements.Fabric = utils.StringPrompt(&promptui.Prompt{
 			Label:     "Supported Fabric version",
 			Default:   man.Requirements.Fabric,
 			AllowEdit: true,
 			// TODO: validation
 		})
-		man.Requirements.Minecraft = stringPrompt(&promptui.Prompt{
+		man.Requirements.Minecraft = utils.StringPrompt(&promptui.Prompt{
 			Label:     "Supported Minecraft version",
 			Default:   man.Requirements.Minecraft,
 			AllowEdit: true,
@@ -160,14 +161,14 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 		})
 	case "forge":
 		man.Requirements.Fabric = ""
-		man.Requirements.Forge = stringPrompt(&promptui.Prompt{
+		man.Requirements.Forge = utils.StringPrompt(&promptui.Prompt{
 			Label:     "Supported Forge version",
 			Default:   "*",
 			AllowEdit: true,
 			// TODO: validation
 		})
 
-		man.Requirements.Minecraft = stringPrompt(&promptui.Prompt{
+		man.Requirements.Minecraft = utils.StringPrompt(&promptui.Prompt{
 			Label:     "Supported Minecraft version",
 			Default:   "~1.16.2",
 			AllowEdit: true,
@@ -176,7 +177,7 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 	default:
 		man.Requirements.Fabric = ""
 		man.Requirements.Forge = ""
-		man.Requirements.Minecraft = stringPrompt(&promptui.Prompt{
+		man.Requirements.Minecraft = utils.StringPrompt(&promptui.Prompt{
 			Label:     "Supported Minecraft version",
 			Default:   "~1.16.2",
 			AllowEdit: true,

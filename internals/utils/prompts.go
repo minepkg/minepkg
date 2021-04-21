@@ -1,4 +1,4 @@
-package initCmd
+package utils
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"github.com/manifoldco/promptui"
 )
 
-func selectPrompt(prompt *promptui.Select) string {
+func SelectPrompt(prompt *promptui.Select) string {
 	_, res, err := prompt.Run()
 	if err != nil {
 		fmt.Println("Aborting")
@@ -16,7 +16,7 @@ func selectPrompt(prompt *promptui.Select) string {
 	return res
 }
 
-func stringPrompt(prompt *promptui.Prompt) string {
+func StringPrompt(prompt *promptui.Prompt) string {
 	res, err := prompt.Run()
 	if err != nil {
 		fmt.Println("Aborting")
@@ -25,7 +25,7 @@ func stringPrompt(prompt *promptui.Prompt) string {
 	return res
 }
 
-func boolPrompt(prompt *promptui.Prompt) bool {
+func BoolPrompt(prompt *promptui.Prompt) bool {
 	_, err := prompt.Run()
 	if err != nil {
 		if err.Error() == "^C" {

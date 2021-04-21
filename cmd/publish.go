@@ -18,6 +18,7 @@ import (
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/instances"
+	"github.com/minepkg/minepkg/internals/utils"
 	"github.com/minepkg/minepkg/pkg/manifest"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -82,7 +83,7 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	if err == api.ErrNotFound {
 		if !nonInteractive {
-			create := boolPrompt(&promptui.Prompt{
+			create := utils.BoolPrompt(&promptui.Prompt{
 				Label:     "Project " + m.Package.Name + " does not exist. Do you want to create it",
 				Default:   "Y",
 				IsConfirm: true,

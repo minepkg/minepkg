@@ -169,7 +169,7 @@ func (b *bumpRunner) interactiveVersionInput(currentVersion *semver.Version) (st
 	case 2:
 		userInput = "major"
 	case 3:
-		userInput = stringPrompt(&promptui.Prompt{
+		userInput = utils.StringPrompt(&promptui.Prompt{
 			Label:     "New Version",
 			Default:   currentVersion.String(),
 			AllowEdit: true,
@@ -302,7 +302,7 @@ func (b *bumpRunner) gitCreateReleasePrompt() error {
 		url := fmt.Sprintf("https://github.com/%s/releases/new?%s", match[1], v.Encode())
 
 		if isInteractive() {
-			openBrowser := boolPrompt(&promptui.Prompt{
+			openBrowser := utils.BoolPrompt(&promptui.Prompt{
 				Label:     "Open browser to create GitHub release now (recommended)",
 				Default:   "Y",
 				IsConfirm: true,
