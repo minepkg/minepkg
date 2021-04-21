@@ -7,7 +7,7 @@ import (
 
 	"github.com/jwalton/gchalk"
 	"github.com/minepkg/minepkg/cmd/dev"
-	"github.com/minepkg/minepkg/internals/cmdlog"
+	"github.com/minepkg/minepkg/cmd/initCmd"
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/credentials"
 	"github.com/minepkg/minepkg/internals/globals"
@@ -16,7 +16,7 @@ import (
 )
 
 // TODO: this logger is not so great – also: it should not be global
-var logger *cmdlog.Logger = cmdlog.New()
+var logger = globals.Logger
 
 // Version is the current version. it should be set by goreleaser
 var Version string
@@ -108,8 +108,11 @@ func initRoot() {
 	viper.BindPFlag("verboseLogging", rootCmd.PersistentFlags().Lookup("verbose"))
 	viper.BindPFlag("nonInteractive", rootCmd.PersistentFlags().Lookup("non-interactive"))
 
+	// viper.SetDefault("init.defaultSource", "https://github.com/")
+
 	// subcommands
 	rootCmd.AddCommand(dev.SubCmd)
+	rootCmd.AddCommand(initCmd.New())
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -125,8 +128,7 @@ func initConfig() {
 	} else {
 		configDir, err := os.UserConfigDir()
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			panic(err)
 		}
 
 		viper.SetConfigName("config")

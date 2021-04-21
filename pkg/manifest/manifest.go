@@ -64,6 +64,7 @@ package manifest
 import (
 	"bytes"
 	"log"
+	"net/mail"
 
 	"github.com/BurntSushi/toml"
 )
@@ -82,12 +83,14 @@ type Manifest struct {
 	ManifestVersion int `toml:"manifestVersion" comment:"Preview of the minepkg.toml format! Could break anytime!" json:"manifestVersion"`
 	Package         struct {
 		// Type should be one of `TypeMod` ("mod") or `TypeModpack` ("modpack")
+		// this field is REQUIRED
 		Type string `toml:"type" json:"type"`
 		// Name is the name of the package. It may NOT include spaces. It may ONLY consist of
 		// alphanumeric chars but can also include `-` and `_`
 		// Should be unique. (This will be enforced by the minepkg api)
 		// This field is REQUIRED
-		Name        string `toml:"name" json:"name"`
+		Name string `toml:"name" json:"name"`
+		// Description can be any free text that describes this package. Should be short(ish)
 		Description string `toml:"description" json:"description"`
 		// Version is the version number of this package. A proceeding `v` (like `v2.1.1`) is NOT
 		// allowed to preserve consistency
@@ -96,9 +99,16 @@ type Manifest struct {
 		// The version can be omitted. Publishing will require a version number as flag in that case
 		Version string `toml:"version,omitempty" json:"version,omitempty"`
 		// Platform indicates the supported playform of this package. can be `fabric`, `forge` or `vanilla`
-		Platform string   `toml:"platform,omitempty" json:"platform,omitempty"`
-		License  string   `toml:"license,omitempty" json:"license,omitempty"`
-		Provides []string `toml:"provides,omitempty" json:"provides,omitempty"`
+		Platform string `toml:"platform,omitempty" json:"platform,omitempty"`
+		// Licence for this project. Should be a valid SPDX identifier if possible
+		// see https://spdx.org/licenses/
+		License string `toml:"license,omitempty" json:"license,omitempty"`
+		// Source is an URL that should point to the source code repository of this package (if any)
+		Source string `toml:"source,omitempty" json:"source,omitempty"`
+		// Homepage is an URL that should point to the website of this package (if any)
+		Homepage string `toml:"homepage,omitempty" json:"homepage,omitempty"`
+		// Author in the form of "Full Name <email@example.com>". Email can be omitted and Full Name does not have to be a real name
+		Author string `toml:"author,omitempty" json:"author,omitempty"`
 		// BasedOn can be a another package that this one is based on.
 		// Most notably, this field is used for instances to determine what modpack is actually running
 		// This field is striped when publishing the package to the minepkg api
@@ -167,6 +177,24 @@ func (m *Manifest) PlatformVersion() string {
 	default:
 		return ""
 	}
+}
+
+// AuthorName returns the name of the author (excluding the email address if set)
+func (m *Manifest) AuthorName() string {
+	parsed, err := mail.ParseAddress(m.Package.Author)
+	if err == nil {
+		return parsed.Name
+	}
+	return m.Package.Author
+}
+
+// AuthorEmail returns the email of the author or empty string if none is set
+func (m *Manifest) AuthorEmail() string {
+	parsed, err := mail.ParseAddress(m.Package.Author)
+	if err == nil {
+		return parsed.Address
+	}
+	return ""
 }
 
 // AddDependency adds a new dependency to the manifest

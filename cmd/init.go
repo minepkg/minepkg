@@ -1,19 +1,29 @@
 package cmd
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"net/url"
 	"os"
+	"os/user"
+	"path"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/jwalton/gchalk"
 	"github.com/magiconair/properties"
 	"github.com/manifoldco/promptui"
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/fabric"
+	"github.com/minepkg/minepkg/internals/license"
+	"github.com/minepkg/minepkg/internals/utils"
 	"github.com/minepkg/minepkg/pkg/manifest"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -33,7 +43,7 @@ func init() {
 	cmd.Flags().BoolVarP(&runner.force, "force", "f", false, "Overwrite the minepkg.toml if one exists")
 	cmd.Flags().BoolVarP(&runner.yes, "yes", "y", false, "Choose defaults for all questions. (same as --non-interactive)")
 
-	rootCmd.AddCommand(cmd.Command)
+	// rootCmd.AddCommand(cmd.Command)
 }
 
 type initRunner struct {
@@ -93,6 +103,7 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 			}
 			return nil
 		},
+		AllowEdit: true,
 	})
 
 	man.Package.Description = stringPrompt(&promptui.Prompt{
@@ -101,10 +112,22 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 		AllowEdit: true,
 	})
 
-	// TODO: maybe check local "LICENCE" file for popular licences
+	// TODO: maybe check local "LICENSE" file for popular licenses
 	man.Package.License = stringPrompt(&promptui.Prompt{
 		Label:     "License",
 		Default:   man.Package.License,
+		AllowEdit: true,
+	})
+
+	man.Package.Author = stringPrompt(&promptui.Prompt{
+		Label:     "Author",
+		Default:   man.Package.Author,
+		AllowEdit: true,
+	})
+
+	man.Package.Source = stringPrompt(&promptui.Prompt{
+		Label:     "Source",
+		Default:   man.Package.Source,
 		AllowEdit: true,
 	})
 
@@ -128,14 +151,14 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 		},
 	})
 
-	fmt.Println("")
+	fmt.Printf("\n")
 	logger.Info("[requirements]")
 
 	switch man.Package.Platform {
 	case "fabric":
-		fmt.Println("Leaving * here is usually fine")
+		// fmt.Println("Leaving * here is usually fine")
 		man.Requirements.Fabric = stringPrompt(&promptui.Prompt{
-			Label:     "Minimum Fabric version",
+			Label:     "Supported Fabric version",
 			Default:   man.Requirements.Fabric,
 			AllowEdit: true,
 			// TODO: validation
@@ -149,7 +172,7 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 	case "forge":
 		man.Requirements.Fabric = ""
 		man.Requirements.Forge = stringPrompt(&promptui.Prompt{
-			Label:     "Minimum Forge version",
+			Label:     "Supported Forge version",
 			Default:   "*",
 			AllowEdit: true,
 			// TODO: validation
@@ -157,7 +180,7 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 
 		man.Requirements.Minecraft = stringPrompt(&promptui.Prompt{
 			Label:     "Supported Minecraft version",
-			Default:   "1.16",
+			Default:   "~1.16.2",
 			AllowEdit: true,
 			// TODO: validation
 		})
@@ -166,28 +189,26 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 		man.Requirements.Forge = ""
 		man.Requirements.Minecraft = stringPrompt(&promptui.Prompt{
 			Label:     "Supported Minecraft version",
-			Default:   "1.16",
+			Default:   "~1.16.2",
 			AllowEdit: true,
 			// TODO: validation
 		})
 	}
 
-	// generate hooks section for mods
+	// sets dev.buildCommand
 	if man.Package.Type == manifest.TypeMod {
-		useHook := boolPrompt(&promptui.Prompt{
-			Label:     "Do you want to use gradlew to build",
-			Default:   "Y",
-			IsConfirm: true,
-		})
-		if useHook {
-			man.Dev.BuildCommand = "./gradlew build"
-		} else {
-			logger.Warn(`Please set the "dev.buildCommand" field in the minepkg.toml file by hand.`)
+		if err := i.modFinalization(man); err != nil {
+			return err
 		}
+	}
 
-		// add test-mansion as dev dependency to ease testing
-		// maybe ask for this?
-		man.AddDevDependency("test-mansion", "*")
+	empty, err := IsEmpty(".")
+	if err != nil {
+		return err
+	}
+	// asks for template && creates license
+	if empty {
+		i.emptyDirFinalization(man)
 	}
 
 	// generate toml
@@ -201,11 +222,205 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+func (i *initRunner) emptyDirFinalization(man *manifest.Manifest) error {
+	if man.Package.Type == manifest.TypeMod {
+		fmt.Println("\nThis directory is empty. Do you want to use a template?")
+		q := &promptui.Select{
+			Label: "Template",
+			Items: []string{
+				"Fabric Example Mod (https://github.com/FabricMC/fabric-example-mod)",
+				"No template",
+			},
+		}
+		selection, _, err := q.Run()
+		if err != nil {
+			fmt.Println("Aborting")
+			os.Exit(1)
+		}
+
+		fmt.Println()
+		if selection == 0 {
+			if _, err := utils.SimpleGitExec("clone https://github.com/FabricMC/fabric-example-mod ."); err != nil {
+				return err
+			}
+			logger.Info(" ✓ Cloned template repository")
+		}
+	}
+
+	if err := writeLicense(man); err == nil {
+		logger.Info(" ✓ Created LICENSE file for you (please double check it)")
+	}
+
+	if err := writeReadme(man); err == nil {
+		logger.Info(" ✓ Created README.md file")
+	}
+
+	if man.Package.Type == manifest.TypeMod && man.Package.Platform == "fabric" {
+		if err := syncFabricMod(man); err == nil {
+			logger.Info(" ✓ Updated fabric.mod.json to match your minepkg.toml")
+		}
+	}
+
+	if man.Package.Source != "" {
+		newRemote := man.Package.Source
+		if !strings.HasSuffix(man.Package.Source, ".git") {
+			newRemote = man.Package.Source + ".git"
+		}
+
+		if _, err := utils.SimpleGitExec("remote set-url origin " + newRemote); err == nil {
+			logger.Info(" ✓ Setting your git remote to " + newRemote)
+		}
+
+		if viper.GetString("init.defaultSource") == "" {
+			u, err := url.Parse(man.Package.Source)
+			if err != nil {
+				return err
+			}
+
+			dir, _ := path.Split(u.Path)
+			u.Path = dir
+
+			newDefaultSource := u.String()
+
+			viper.Set("init.defaultSource", newDefaultSource)
+
+			configDir, err := os.UserConfigDir()
+			if err != nil {
+				return err
+			}
+
+			if err = viper.WriteConfigAs(filepath.Join(configDir, "minepkg/config.toml")); err == nil {
+				dot := gchalk.Yellow("·")
+				fmt.Printf(
+					"  %s Setting default source to %s for next init\n",
+					dot,
+					newDefaultSource,
+				)
+				fmt.Printf(
+					`  %s Change with "minepkg config set init.defaultSource <value>"`,
+					dot,
+				)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (i *initRunner) modFinalization(man *manifest.Manifest) error {
+	// useHook := boolPrompt(&promptui.Prompt{
+	// 	Label:     "Do you want to use gradlew to build",
+	// 	Default:   "Y",
+	// 	IsConfirm: true,
+	// })
+	// if useHook {
+	// 	man.Dev.BuildCommand = "./gradlew build"
+	// } else {
+	// 	logger.Warn(`Please set the "dev.buildCommand" field in the minepkg.toml file by hand.`)
+	// }
+
+	// add test-mansion as dev dependency to ease testing
+	// maybe ask for this?
+	man.AddDevDependency("test-mansion", "*")
+
+	return nil
+}
+
+func syncFabricMod(man *manifest.Manifest) error {
+	file, err := os.Open("./src/main/resources/fabric.mod.json")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	var fabricManifest fabric.Manifest
+	if err := json.NewDecoder(file).Decode(&fabricManifest); err != nil {
+		return err
+	}
+
+	fabricManifest.ID = man.Package.Name
+	fabricManifest.Name = man.Package.Name
+	fabricManifest.License = man.Package.License
+	fabricManifest.Authors = []string{man.AuthorName()}
+	fabricManifest.Description = man.Package.Description
+
+	fabricManifest.Contact.Email = man.AuthorEmail()
+	fabricManifest.Contact.Homepage = man.Package.Homepage
+	fabricManifest.Contact.Sources = man.Package.Source
+
+	if fabricV, ok := man.Dependencies["fabric"]; ok {
+		fabricManifest.Depends["fabric"] = fabricV
+	}
+	fabricManifest.Depends["fabricloader"] = man.Requirements.Fabric
+	fabricManifest.Depends["minecraft"] = man.Requirements.Minecraft
+
+	newFile, err := os.Create("./src/main/resources/fabric.mod.json")
+	if err != nil {
+		return err
+	}
+	encoder := json.NewEncoder(newFile)
+	encoder.SetIndent("", "  ")
+	encoder.SetEscapeHTML(false)
+
+	return encoder.Encode(fabricManifest)
+}
+
+func writeLicense(man *manifest.Manifest) error {
+	license, err := license.GetLicense(man.Package.License)
+	if err != nil {
+		return err
+	}
+
+	author := man.AuthorName()
+	if author == "" {
+		author = "Contributors"
+	}
+
+	replacer := strings.NewReplacer(
+		"[year]", strconv.Itoa(time.Now().Year()),
+		"[fullname]", author,
+	)
+
+	finalLicense := replacer.Replace(license.Body)
+	return os.WriteFile("LICENSE", []byte(finalLicense), 0655)
+}
+
+func writeReadme(man *manifest.Manifest) error {
+	content := []byte(fmt.Sprintf("# %s\n\n%s\n", man.Package.Name, man.Package.Description))
+	return os.WriteFile("README.md", content, 0655)
+}
+
+func getDefaultAuthor() string {
+	author := ""
+
+	userName, err := utils.SimpleGitExec("config user.name")
+	if err != nil {
+		osUser, err := user.Current()
+		if err != nil {
+			return author
+		}
+		author = osUser.Name
+		if author == "" {
+			author = osUser.Username
+		}
+		return author
+	}
+
+	author = userName
+
+	email, err := utils.SimpleGitExec("config user.email")
+	if err != nil || email == "" {
+		return author
+	}
+
+	return fmt.Sprintf("%s <%s>", author, email)
+}
+
 func defaultManifest() *manifest.Manifest {
 	fabricMan := &fabric.Manifest{}
 	man := manifest.New()
 
-	err := readJSON("./src/main/resources/fabric.mod.json", fabricMan)
+	err := utils.ReadJSONFile("./src/main/resources/fabric.mod.json", fabricMan)
 	if err == nil {
 		fmt.Println("Detected Fabric mod! Using fabric.mod.json for default values")
 		if fabricMan.ID != "" {
@@ -219,6 +434,12 @@ func defaultManifest() *manifest.Manifest {
 			man.Package.License = fabricMan.License
 		}
 		man.Package.Description = fabricMan.Description
+
+		if len(fabricMan.Authors) != 0 {
+			man.Package.Author = fabricMan.Authors[0]
+		} else {
+			man.Package.Author = getDefaultAuthor()
+		}
 
 		if mcDep, ok := fabricMan.Depends["minecraft"]; ok {
 			man.Requirements.Minecraft = mcDep
@@ -248,11 +469,35 @@ func defaultManifest() *manifest.Manifest {
 	man.Package.Platform = "fabric"
 	man.Package.Version = "0.1.0"
 	man.Package.License = "MIT"
+	man.Package.Author = getDefaultAuthor()
+
+	source := viper.GetString("init.defaultSource")
+	if source != "" {
+		if u, err := url.Parse(source); err == nil {
+			u.Path = path.Join(u.Path, man.Package.Name)
+			source = u.String()
+		}
+	}
+	man.Package.Source = source
 
 	man.Requirements.Fabric = "*"
-	man.Requirements.Minecraft = "1.16"
+	man.Requirements.Minecraft = "~1.16.2"
 
 	return man
+}
+
+func IsEmpty(name string) (bool, error) {
+	f, err := os.Open(name)
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+
+	_, err = f.Readdirnames(1) // Or f.Readdir(1)
+	if err == io.EOF {
+		return true, nil
+	}
+	return false, err // Either not empty or error, suits both cases
 }
 
 var fallbackVersion = "0.1.0"

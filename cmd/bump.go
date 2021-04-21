@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"os/exec"
 	"regexp"
-	"runtime"
 	"strconv"
 	"strings"
 
@@ -18,6 +16,7 @@ import (
 	"github.com/mattn/go-isatty"
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/instances"
+	"github.com/minepkg/minepkg/internals/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -195,7 +194,7 @@ func (b *bumpRunner) interactiveVersionInput(currentVersion *semver.Version) (st
 }
 
 func (b *bumpRunner) gitChecks() error {
-	dirty, err := simpleGitExec("status --porcelain")
+	dirty, err := utils.SimpleGitExec("status --porcelain")
 	if err != nil {
 		return err
 	}
@@ -205,14 +204,14 @@ func (b *bumpRunner) gitChecks() error {
 
 	fmt.Println(" ✓ Directory is not dirty")
 
-	_, err = simpleGitExec("rev-parse --verify --quiet " + b.targetTag)
+	_, err = utils.SimpleGitExec("rev-parse --verify --quiet " + b.targetTag)
 	if err == nil {
 		return fmt.Errorf("git tag %s already exists", b.targetTag)
 	}
 
 	fmt.Println(" ✓ Git tag does not already exist")
 
-	upstream, err := simpleGitExec("rev-parse --symbolic-full-name --abbrev-ref @{upstream}")
+	upstream, err := utils.SimpleGitExec("rev-parse --symbolic-full-name --abbrev-ref @{upstream}")
 	if err != nil {
 		return err
 	}
@@ -222,13 +221,13 @@ func (b *bumpRunner) gitChecks() error {
 	}
 
 	// fetch from remote
-	if _, err = simpleGitExec("fetch --no-tags --quiet --recurse-submodules=no -v " + strings.Join(upstreamPair, " ")); err != nil {
+	if _, err = utils.SimpleGitExec("fetch --no-tags --quiet --recurse-submodules=no -v " + strings.Join(upstreamPair, " ")); err != nil {
 		return err
 	}
 
 	fmt.Println(" ✓ Valid upstream")
 
-	upstreamCommitsStr, err := simpleGitExec("rev-list --count HEAD..HEAD@{upstream}")
+	upstreamCommitsStr, err := utils.SimpleGitExec("rev-list --count HEAD..HEAD@{upstream}")
 	if err != nil {
 		return err
 	}
@@ -250,14 +249,14 @@ func (b *bumpRunner) gitActions() error {
 	var err error
 	// commit changes
 	fmt.Println("► commiting changes")
-	_, err = simpleGitExec("commit -am " + b.targetVersion)
+	_, err = utils.SimpleGitExec("commit -am " + b.targetVersion)
 	if err != nil {
 		return err
 	}
 
 	if !b.noTag {
 		fmt.Println("► creating tag")
-		_, err = simpleGitExec("tag v" + b.targetVersion + " -m " + b.targetTag)
+		_, err = utils.SimpleGitExec("tag v" + b.targetVersion + " -m " + b.targetTag)
 		if err != nil {
 			return err
 		}
@@ -265,12 +264,12 @@ func (b *bumpRunner) gitActions() error {
 
 	if !b.noPush {
 		fmt.Println("► pushing commits")
-		_, err = simpleGitExec("push")
+		_, err = utils.SimpleGitExec("push")
 		if err != nil {
 			return err
 		}
 		fmt.Println("► pushing tag")
-		_, err = simpleGitExec("push " + b.upstreamPair[0] + " " + b.targetTag)
+		_, err = utils.SimpleGitExec("push " + b.upstreamPair[0] + " " + b.targetTag)
 		if err != nil {
 			return err
 		}
@@ -287,7 +286,7 @@ var remoteGitHubSSH = regexp.MustCompile(`^git@github.com:(.+)\.git`)
 var remoteGitHubHttps = regexp.MustCompile(`https://github.com/(.+)\.git`)
 
 func (b *bumpRunner) gitCreateReleasePrompt() error {
-	origin, err := simpleGitExec("config --get remote.origin.url")
+	origin, err := utils.SimpleGitExec("config --get remote.origin.url")
 	if err != nil {
 		return err
 	}
@@ -309,7 +308,7 @@ func (b *bumpRunner) gitCreateReleasePrompt() error {
 				IsConfirm: true,
 			})
 			if openBrowser {
-				openbrowser(url)
+				utils.OpenBrowser(url)
 			} else {
 				fmt.Println("Ok not opening. You can still create the release here if you want:")
 				fmt.Println("  " + url)
@@ -332,34 +331,4 @@ func isInteractive() bool {
 	return !viper.GetBool("nonInteractive") &&
 		(isatty.IsTerminal(os.Stdout.Fd()) ||
 			isatty.IsCygwinTerminal(os.Stdout.Fd()))
-}
-
-var lineMatch = regexp.MustCompile("(.*)\r?\n?$")
-
-func simpleGitExec(args string) (string, error) {
-	splitArgs := strings.Split(args, " ")
-	cmd := exec.Command("git", splitArgs...)
-	out, err := cmd.Output()
-	cleanOut := lineMatch.FindStringSubmatch(string(out))
-	return cleanOut[1], err
-}
-
-func openbrowser(url string) {
-	var err error
-
-	fmt.Println("opening ", url)
-
-	switch runtime.GOOS {
-	case "linux":
-		err = exec.Command("xdg-open", url).Run()
-	case "windows":
-		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Run()
-	case "darwin":
-		err = exec.Command("open", url).Run()
-	default:
-		err = fmt.Errorf("unsupported platform")
-	}
-	if err != nil {
-		panic(err)
-	}
 }

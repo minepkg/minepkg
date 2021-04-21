@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -17,14 +16,6 @@ import (
 type MinepkgMapping struct {
 	Platform string `json:"platform"`
 	Modpack  string `json:"modpack"`
-}
-
-func readJSON(filename string, i interface{}) error {
-	buf, err := os.ReadFile(filename)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(buf, i)
 }
 
 // HumanUint32 returns the number in a human readable format
