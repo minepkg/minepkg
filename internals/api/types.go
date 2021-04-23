@@ -29,7 +29,8 @@ type Project struct {
 		Source   string `json:"source,omitempty"`
 		Homepage string `json:"homepage,omitempty"`
 	} `json:"links,omitempty"`
-	Stats *ProjectStats `json:"stats,omitempty"`
+	Stats      *ProjectStats `json:"stats,omitempty"`
+	Unofficial bool          `json:"unofficial,omitempty"`
 }
 
 // ProjectStats contains statistics for a project

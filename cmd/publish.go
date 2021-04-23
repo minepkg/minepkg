@@ -33,6 +33,7 @@ func init() {
 		Args:    cobra.MaximumNArgs(1),
 	}, runner)
 
+	cmd.Flags().BoolVarP(&runner.unofficial, "unofficial", "", false, "Indicate that you are only maintaining this package and do not controll the source")
 	cmd.Flags().BoolVarP(&runner.dry, "dry", "", false, "Dry run without publishing")
 	cmd.Flags().BoolVarP(&runner.noBuild, "no-build", "", false, "Skips building the package")
 	cmd.Flags().StringVarP(&runner.release, "release", "r", "", "Release version number to publish (overwrites version in manifest)")
@@ -41,10 +42,11 @@ func init() {
 }
 
 type publishRunner struct {
-	dry     bool
-	noBuild bool
-	release string
-	file    string
+	unofficial bool
+	dry        bool
+	noBuild    bool
+	release    string
+	file       string
 }
 
 func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
@@ -83,8 +85,12 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	if err == api.ErrNotFound {
 		if !nonInteractive {
+			createText := "Project " + m.Package.Name + " does not exist. Do you want to create it"
+			if p.unofficial {
+				createText += " as unofficial"
+			}
 			create := utils.BoolPrompt(&promptui.Prompt{
-				Label:     "Project " + m.Package.Name + " does not exist. Do you want to create it",
+				Label:     createText,
 				Default:   "Y",
 				IsConfirm: true,
 			})
@@ -99,6 +105,7 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 			Type:        m.Package.Type,
 			Readme:      readme,
 			Description: m.Package.Description,
+			Unofficial:  p.unofficial,
 			Links: struct {
 				Source   string "json:\"source,omitempty\""
 				Homepage string "json:\"homepage,omitempty\""
