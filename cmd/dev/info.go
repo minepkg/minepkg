@@ -2,12 +2,15 @@ package dev
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/globals"
+	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/spf13/cobra"
 )
 
@@ -20,6 +23,8 @@ func init() {
 
 	cmd.Flags().String("minecraft", "*", "Overwrite the required Minecraft version")
 	cmd.Flags().String("platform", "fabric", "Overwrite the wanted platform")
+	cmd.Flags().Bool("lockfile", false, "Output lockfile instead of manifest")
+	cmd.Flags().Bool("json", false, "Output json")
 
 	SubCmd.AddCommand(cmd.Command)
 }
@@ -28,6 +33,35 @@ type infoRunner struct{}
 
 func (i *infoRunner) RunE(cmd *cobra.Command, args []string) error {
 	apiClient := globals.ApiClient
+
+	if len(args) == 0 {
+		instance, err := instances.NewInstanceFromWd()
+		if err != nil {
+			return err
+		}
+
+		wantsJson, _ := cmd.Flags().GetBool("json")
+		wantsLockfile, _ := cmd.Flags().GetBool("lockfile")
+
+		if wantsJson {
+			enc := json.NewEncoder(os.Stdout)
+			enc.SetIndent("", "  ")
+			enc.SetEscapeHTML(false)
+
+			var toEncode interface{}
+			if wantsLockfile {
+				toEncode = instance.Lockfile
+			} else {
+				toEncode = instance.Manifest
+			}
+
+			err := enc.Encode(toEncode)
+			return err
+		}
+		fmt.Println(instance.Manifest)
+		return nil
+	}
+
 	comp := strings.Split(args[0], "@")
 	name := comp[0]
 	version := "latest"

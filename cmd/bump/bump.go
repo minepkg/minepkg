@@ -1,4 +1,4 @@
-package cmd
+package bump
 
 import (
 	"errors"
@@ -6,12 +6,10 @@ import (
 	"net/url"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/jwalton/gchalk"
-	"github.com/magiconair/properties"
 	"github.com/manifoldco/promptui"
 	"github.com/mattn/go-isatty"
 	"github.com/minepkg/minepkg/internals/commands"
@@ -21,7 +19,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func init() {
+func New() *cobra.Command {
 	runner := &bumpRunner{}
 	cmd := commands.New(&cobra.Command{
 		Use:   "bump <major|minor|patch|version-number>",
@@ -33,7 +31,7 @@ func init() {
 	cmd.Flags().BoolVar(&runner.noGit, "no-git", false, "Skips git checks & tag creation")
 	cmd.Flags().BoolVar(&runner.noPush, "no-push", false, "Skips git push")
 
-	rootCmd.AddCommand(cmd.Command)
+	return cmd.Command
 }
 
 type bumpRunner struct {
@@ -103,36 +101,59 @@ func (b *bumpRunner) RunE(cmd *cobra.Command, args []string) error {
 		fmt.Println("  Not in git directory. Skipping checks")
 	}
 
+	actions := []*action{}
+
+	if instance.Manifest.Package.Type == "mod" {
+		actions = append(actions, b.gradleAction())
+	}
+
+	if !b.noGit {
+		actions = append(
+			actions,
+			b.gitCommitAction(),
+			b.gitTagAction(),
+			b.gitPushAction(),
+		)
+	}
+
+	fmt.Println("\n" + gchalk.Bold("minepkg will now:"))
+	fmt.Printf("+ update the minepkg.toml package.version %s → %s\n", instance.Manifest.Package.Version, targetVersion)
+
+	for _, action := range actions {
+		fmt.Println(action.StatusText())
+	}
+
+	fmt.Println()
+
+	if !viper.GetBool("nonInteractive") {
+		confirmBump := utils.BoolPrompt(&promptui.Prompt{
+			Label:     "Continue bump",
+			Default:   "Y",
+			IsConfirm: true,
+		})
+
+		if !confirmBump {
+			return nil
+		}
+	}
+
 	fmt.Println("\nBumping version to: " + gchalk.Bold(targetVersion))
 
 	// bump the manifest version
-	fmt.Println("► updating minepkg.toml")
 	instance.Manifest.Package.Version = targetVersion
 	if err := instance.SaveManifest(); err != nil {
 		return err
 	}
+	fmt.Println("► updated minepkg.toml")
 
-	// bump the gradle.properties files
-	fmt.Println("► updating gradle.properties")
-	props, err := properties.LoadFile("./gradle.properties", properties.UTF8)
-	if err != nil {
-		return nil
-	}
-
-	// write mod_version in gradle.properties if its there
-	if props.GetString("mod_version", "") != "" {
-		props.Set("mod_version", targetVersion)
-		f, err := os.Create("./gradle.properties")
-		if err != nil {
+	for _, action := range actions {
+		if err := action.Run(); err != nil {
 			return err
 		}
-		props.WriteComment(f, "# ", properties.UTF8)
 	}
 
-	if !b.noGit {
-		if err := b.gitActions(); err != nil {
-			return err
-		}
+	if !b.noGit && !b.noTag && !b.noPush {
+		return b.gitCreateReleasePrompt()
 	}
 
 	fmt.Println("\n" + commands.Emoji("✅ ") +
@@ -194,95 +215,6 @@ func (b *bumpRunner) interactiveVersionInput(currentVersion *semver.Version) (st
 	}
 
 	return userInput, nil
-}
-
-func (b *bumpRunner) gitChecks() error {
-	dirty, err := utils.SimpleGitExec("status --porcelain")
-	if err != nil {
-		return err
-	}
-	if dirty != "" {
-		return fmt.Errorf("uncommitted files in git directory. Please commit them first")
-	}
-
-	fmt.Println(" ✓ Directory is not dirty")
-
-	_, err = utils.SimpleGitExec("rev-parse --verify --quiet " + b.targetTag)
-	if err == nil {
-		return fmt.Errorf("git tag %s already exists", b.targetTag)
-	}
-
-	fmt.Println(" ✓ Git tag does not already exist")
-
-	upstream, err := utils.SimpleGitExec("rev-parse --symbolic-full-name --abbrev-ref @{upstream}")
-	if err != nil {
-		return err
-	}
-	upstreamPair := strings.Split(upstream, "/")
-	if len(upstreamPair) != 2 {
-		return fmt.Errorf("invalid upstream git output. please report this")
-	}
-
-	// fetch from remote
-	if _, err = utils.SimpleGitExec("fetch --no-tags --quiet --recurse-submodules=no -v " + strings.Join(upstreamPair, " ")); err != nil {
-		return err
-	}
-
-	fmt.Println(" ✓ Valid upstream")
-
-	upstreamCommitsStr, err := utils.SimpleGitExec("rev-list --count HEAD..HEAD@{upstream}")
-	if err != nil {
-		return err
-	}
-	upstreamCommits, err := strconv.Atoi(upstreamCommitsStr)
-	if err != nil {
-		return fmt.Errorf("invalid git output. please report this error: %w", err)
-	}
-	if upstreamCommits != 0 {
-		return fmt.Errorf("there are %d unsynced commits upstream! Please run something like \"git pull --rebase\" first", upstreamCommits)
-	}
-
-	fmt.Println(" ✓ No missing commits from upstream")
-	b.upstreamPair = upstreamPair
-
-	return nil
-}
-
-func (b *bumpRunner) gitActions() error {
-	var err error
-	// commit changes
-	fmt.Println("► commiting changes")
-	_, err = utils.SimpleGitExec("commit -am " + b.targetVersion)
-	if err != nil {
-		return err
-	}
-
-	if !b.noTag {
-		fmt.Println("► creating tag")
-		_, err = utils.SimpleGitExec("tag v" + b.targetVersion + " -m " + b.targetTag)
-		if err != nil {
-			return err
-		}
-	}
-
-	if !b.noPush {
-		fmt.Println("► pushing commits")
-		_, err = utils.SimpleGitExec("push")
-		if err != nil {
-			return err
-		}
-		fmt.Println("► pushing tag")
-		_, err = utils.SimpleGitExec("push " + b.upstreamPair[0] + " " + b.targetTag)
-		if err != nil {
-			return err
-		}
-	}
-
-	if !b.noTag {
-		return b.gitCreateReleasePrompt()
-	}
-
-	return nil
 }
 
 var remoteGitHubSSH = regexp.MustCompile(`^git@github.com:(.+)\.git`)
