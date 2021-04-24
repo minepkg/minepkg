@@ -17,6 +17,7 @@ var lineMatch = regexp.MustCompile("(.*)\r?\n?$")
 func SimpleGitExec(args string) (string, error) {
 	splitArgs := strings.Split(args, " ")
 	cmd := exec.Command("git", splitArgs...)
+	cmd.Env = os.Environ()
 	out, err := cmd.Output()
 	cleanOut := lineMatch.FindStringSubmatch(string(out))
 	return cleanOut[1], err
