@@ -119,12 +119,15 @@ func (b *bumpRunner) RunE(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	props.Set("mod_version", targetVersion)
-	f, err := os.Create("./gradle.properties")
-	if err != nil {
-		return err
+	// write mod_version in gradle.properties if its there
+	if props.GetString("mod_version", "") != "" {
+		props.Set("mod_version", targetVersion)
+		f, err := os.Create("./gradle.properties")
+		if err != nil {
+			return err
+		}
+		props.WriteComment(f, "# ", properties.UTF8)
 	}
-	props.WriteComment(f, "# ", properties.UTF8)
 
 	if !b.noGit {
 		if err := b.gitActions(); err != nil {
