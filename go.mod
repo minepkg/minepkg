@@ -5,7 +5,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/Tnze/go-mc v1.16.1
 	github.com/briandowns/spinner v1.12.0
-	github.com/charmbracelet/lipgloss v0.2.0
+	github.com/charmbracelet/lipgloss v0.2.1
 	github.com/dchest/uniuri v0.0.0-20200228104902-7aecb25e1fe5
 	github.com/fatih/color v1.10.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
@@ -30,8 +30,8 @@ require (
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/zalando/go-keyring v0.1.1
-	golang.org/x/oauth2 v0.0.0-20210413134643-5e61552d6c78
-	golang.org/x/sys v0.0.0-20210403161142-5e06dd20ab57 // indirect
+	golang.org/x/oauth2 v0.0.0-20210427180440-81ed05c6b58c
+	golang.org/x/sys v0.0.0-20210426230700-d19ff857e887 // indirect
 	golang.org/x/text v0.3.6 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
