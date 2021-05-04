@@ -92,13 +92,17 @@ func (b *bumpRunner) RunE(cmd *cobra.Command, args []string) error {
 	fmt.Printf(" ✓ Target version %s is valid\n", targetVersion)
 
 	fmt.Println("\nGit checks")
-	if !b.noGit && isGit() {
+
+	if !isGit() {
+		b.noGit = true
+	}
+	if !b.noGit {
 		// run git checks (this also sets b.upstreamPair)
 		if err := b.gitChecks(); err != nil {
 			return err
 		}
 	} else {
-		fmt.Println("  Not in git directory. Skipping checks")
+		fmt.Println("  Skipping git checks")
 	}
 
 	actions := []*action{}
@@ -136,7 +140,7 @@ func (b *bumpRunner) RunE(cmd *cobra.Command, args []string) error {
 			return nil
 		}
 	}
-
+	fmt.Println()
 	fmt.Println("\nBumping version to: " + gchalk.Bold(targetVersion))
 
 	// bump the manifest version
