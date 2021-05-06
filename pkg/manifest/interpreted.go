@@ -49,6 +49,8 @@ func (m *Manifest) InterpretedDevDependencies() []*InterpretedDependency {
 
 func interpretSingleDependency(name string, source string) *InterpretedDependency {
 	switch {
+	case strings.HasPrefix(source, "github:"):
+		return &InterpretedDependency{Name: name, Provider: "github", Source: source}
 	case strings.HasPrefix(source, "https://"):
 		return &InterpretedDependency{Name: name, Provider: "https", Source: source}
 	default:

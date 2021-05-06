@@ -13,8 +13,6 @@ import (
 
 // installManifest installs dependencies from the minepkg.toml
 func installManifest(instance *instances.Instance) error {
-	cacheDir := filepath.Join(globalDir, "cache")
-
 	task := logger.NewTask(2)
 
 	task.Info("Installing minepkg.toml dependencies")
@@ -42,7 +40,7 @@ func installManifest(instance *instances.Instance) error {
 	task.Step("🚚", fmt.Sprintf("Downloading %d Packages", len(missingFiles)))
 	for _, m := range missingFiles {
 		fmt.Printf(" - %s@%s\n", m.Name, m.Version)
-		p := filepath.Join(cacheDir, m.Name, m.Version+".jar")
+		p := filepath.Join(instance.PackageCacheDir(), m.Name, m.Version+m.FileExt())
 		mgr.Add(downloadmgr.NewHTTPItem(m.URL, p))
 	}
 

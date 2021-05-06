@@ -1,11 +1,12 @@
 package resolver
 
 import (
-	"context"
 	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/minepkg/minepkg/internals/api"
+	"github.com/minepkg/minepkg/internals/resolver/providers"
 	"github.com/minepkg/minepkg/pkg/manifest"
 )
 
@@ -49,17 +50,30 @@ type Resolver struct {
 	IgnoreVersion bool
 	// IncludeDev includes dev.dependencies
 	IncludeDev bool
+
+	Providers map[string]providers.Provider
 }
 
 // New returns a new resolver
 func New(client *api.MinepkgAPI, reqs manifest.PlatformLock) *Resolver {
-	return &Resolver{
+	resolver := &Resolver{
 		Resolved:      make(map[string]*manifest.DependencyLock),
 		client:        client,
 		GlobalReqs:    reqs,
 		IgnoreVersion: false,
 		IncludeDev:    true,
+		Providers:     make(map[string]providers.Provider, 1),
 	}
+
+	resolver.Providers["minepkg"] = &providers.MinepkgProvider{
+		Client: client,
+	}
+
+	resolver.Providers["https"] = &providers.HttpProvider{
+		Client: http.DefaultClient,
+	}
+
+	return resolver
 }
 
 // ResolveManifest resolves a manifest
@@ -70,24 +84,14 @@ func (r *Resolver) ResolveManifest(man *manifest.Manifest) error {
 	}
 
 	for _, dependency := range man.InterpretedDependencies() {
-		release, err := r.resolveMinepkg(dependency)
-		if err != nil {
-			return err
-		}
-		err = r.Resolve(release, nil, false)
-		if err != nil {
+		if err := r.Resolve(dependency, false); err != nil {
 			return err
 		}
 	}
 
 	if r.IncludeDev {
 		for _, dependency := range man.InterpretedDevDependencies() {
-			release, err := r.resolveMinepkg(dependency)
-			if err != nil {
-				return err
-			}
-			err = r.Resolve(release, nil, true)
-			if err != nil {
+			if err := r.Resolve(dependency, true); err != nil {
 				return err
 			}
 		}
@@ -97,11 +101,28 @@ func (r *Resolver) ResolveManifest(man *manifest.Manifest) error {
 }
 
 // Resolve resolves all dependencies of a single package
-func (r *Resolver) Resolve(release *api.Release, dependend *manifest.Manifest, isDev bool) error {
+func (r *Resolver) Resolve(dep *manifest.InterpretedDependency, isDev bool) error {
 
+	provider, ok := r.Providers[dep.Provider]
+	if !ok {
+		return fmt.Errorf("%s needs %s as install provider which is not supported", dep.Name, dep.Provider)
+	}
 	// add this release
-	r.Resolved[release.Package.Name] = r.lockFromRelease(release, dependend)
-	resolveNext := release.InterpretedDependencies()
+	result, err := provider.Resolve(r.providerRequest(dep))
+	if err != nil {
+		return err
+	}
+
+	lock := result.Lock()
+	lock.Dependend = "_root"
+
+	if isDev {
+		lock.IsDev = true
+	}
+	r.Resolved[lock.Name] = lock
+
+	parentPackage := result
+	resolveNext := result.Dependencies()
 
 	for len(resolveNext) != 0 {
 		resolveNow := resolveNext
@@ -110,64 +131,34 @@ func (r *Resolver) Resolve(release *api.Release, dependend *manifest.Manifest, i
 		for _, dep := range resolveNow {
 			// already resolved
 			_, ok := r.Resolved[dep.Name]
-			if ok == true {
+			if ok {
 				continue
 			}
 			r.Resolved[dep.Name] = nil
 
-			resolvedDep, err := r.resolveMinepkg(dep)
+			result, err := r.Providers[dep.Provider].Resolve(r.providerRequest(dep))
 			if err != nil {
 				return err
 			}
-			lock := r.lockFromRelease(resolvedDep, release.Manifest)
+
+			lock := result.Lock()
+			lock.Dependend = parentPackage.Lock().Name
+
 			if isDev {
 				lock.IsDev = true
 			}
-			r.Resolved[resolvedDep.Package.Name] = lock
-			resolveNext = append(resolveNext, resolvedDep.InterpretedDependencies()...)
+			r.Resolved[lock.Name] = lock
+			resolveNext = append(resolveNext, result.Dependencies()...)
+			parentPackage = result
 		}
 	}
 
 	return nil
 }
 
-func (r *Resolver) lockFromRelease(release *api.Release, dependend *manifest.Manifest) *manifest.DependencyLock {
-	lock := &manifest.DependencyLock{
-		Name:     release.Package.Name,
-		Version:  release.Package.Version,
-		Type:     release.Package.Type,
-		IPFSHash: release.Meta.IPFSHash,
-		Sha256:   release.Meta.Sha256,
-		URL:      release.DownloadURL(),
+func (r *Resolver) providerRequest(dep *manifest.InterpretedDependency) *providers.Request {
+	return &providers.Request{
+		Dependency:   dep,
+		Requirements: r.GlobalReqs,
 	}
-
-	if dependend != nil {
-		lock.Dependend = dependend.Package.Name
-	} else {
-		lock.Dependend = "_root"
-	}
-
-	return lock
-}
-
-func (r *Resolver) resolveMinepkg(dep *manifest.InterpretedDependency) (*api.Release, error) {
-	reqs := &api.RequirementQuery{
-		Minecraft: r.GlobalReqs.MinecraftVersion(),
-		Version:   dep.Source,
-		Platform:  r.GlobalReqs.PlatformName(),
-	}
-
-	if r.IgnoreVersion {
-		reqs.Version = "*"
-	}
-
-	release, err := r.client.FindRelease(context.TODO(), dep.Name, reqs)
-	if err != nil {
-		return nil, err
-	}
-	return release, nil
-}
-
-func resolveHttp() {
-
 }

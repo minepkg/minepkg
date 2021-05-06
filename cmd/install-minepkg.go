@@ -22,9 +22,6 @@ func (i *installRunner) installFromMinepkg(mods []string) error {
 	instance := i.instance
 	apiClient := globals.ApiClient
 
-	cacheDir := filepath.Join(globalDir, "cache")
-	os.MkdirAll(cacheDir, os.ModePerm)
-
 	task := logger.NewTask(3)
 	task.Step("📚", "Finding packages")
 
@@ -122,7 +119,7 @@ func (i *installRunner) installFromMinepkg(mods []string) error {
 
 	task.Step("🚚", fmt.Sprintf("Downloading %d Packages", len(missingFiles)))
 	for _, m := range missingFiles {
-		p := filepath.Join(cacheDir, m.Name, m.Version+".jar")
+		p := filepath.Join(instance.PackageCacheDir(), m.Name, m.Version+m.FileExt())
 		item := downloadmgr.HTTPItem{URL: m.URL, Target: p, Sha256: m.Sha256}
 		mgr.Add(&item)
 	}
