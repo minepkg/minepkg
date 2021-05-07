@@ -206,7 +206,7 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 	logger.Info(" ✓ Created minepkg.toml")
 
 	if man.Package.Type == manifest.TypeModpack {
-		os.MkdirAll("overwrites/configs", os.ModePerm)
+		os.MkdirAll("overwrites/config", os.ModePerm)
 	}
 
 	return nil
