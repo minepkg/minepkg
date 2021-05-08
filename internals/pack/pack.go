@@ -148,7 +148,6 @@ func Open(filePath string) (*PackageFile, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
 
 	fStats, err := file.Stat()
 	if err != nil {
