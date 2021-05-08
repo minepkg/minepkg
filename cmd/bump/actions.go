@@ -31,6 +31,9 @@ func (a *action) StatusText() string {
 }
 
 func (a *action) Run() error {
+	if !a.enabled {
+		return nil
+	}
 	if err := a.run(); err != nil {
 		return err
 	}
