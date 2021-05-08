@@ -79,7 +79,7 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	logger.Log("Checking access rights")
-	timeout, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	timeout, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
 	project, err := apiClient.GetProject(timeout, m.Package.Name)
 
