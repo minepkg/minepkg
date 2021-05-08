@@ -56,6 +56,8 @@ func (i *Instance) CopyOverwrites() error {
 		if err != nil {
 			return err
 		}
+		defer src.Close()
+
 		dest, err := os.Create(destPath)
 		if err != nil {
 			return err
@@ -107,6 +109,7 @@ func (i *Instance) CopyLocalSaves() error {
 		if err != nil {
 			return err
 		}
+		defer src.Close()
 		dest, err := os.Create(destPath)
 		if err != nil {
 			return err

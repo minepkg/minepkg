@@ -202,6 +202,7 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 					fmt.Println(err)
 					continue
 				}
+				defer f.Close()
 				err = apiClient.PostProjectMedia(context.TODO(), release.Package.Name, f)
 				if err != nil {
 					fmt.Println("Could not upload screenshot: " + err.Error())

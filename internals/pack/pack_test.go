@@ -28,6 +28,7 @@ import (
 func TestPackage_Manifest(t *testing.T) {
 
 	testFile, _ := os.Open("../../testdata/fake-testmod-0.0.1.jar")
+	defer testFile.Close()
 	testFileInfo, _ := testFile.Stat()
 
 	tests := []struct {

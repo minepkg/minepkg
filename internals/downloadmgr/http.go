@@ -113,6 +113,7 @@ func checkSha256(sha string, srcPath string) error {
 	if err != nil {
 		return err
 	}
+	defer src.Close()
 	hasher := sha256.New()
 	_, err = io.Copy(hasher, src)
 	// probably io error during hashing

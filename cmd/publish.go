@@ -227,6 +227,7 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
+		defer file.Close()
 		if release, err = release.Upload(file); err != nil {
 			return err
 		}
