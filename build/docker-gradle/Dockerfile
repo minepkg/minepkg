@@ -1,4 +1,4 @@
-FROM gradle:6.8-jdk8
+FROM gradle:6.9-jdk8
 
 USER root
 
