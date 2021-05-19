@@ -5,12 +5,14 @@ require (
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/Tnze/go-mc v1.16.1
 	github.com/briandowns/spinner v1.12.0
+	github.com/charmbracelet/bubbletea v0.13.4
 	github.com/charmbracelet/lipgloss v0.2.1
 	github.com/dchest/uniuri v0.0.0-20200228104902-7aecb25e1fe5
 	github.com/fatih/color v1.10.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
+	github.com/google/goterm v0.0.0-20190703233501-fc88cf888a3f // indirect
 	github.com/google/uuid v1.2.0 // indirect
 	github.com/jwalton/gchalk v1.0.3
 	github.com/kr/text v0.2.0 // indirect
@@ -21,6 +23,7 @@ require (
 	github.com/mholt/archiver/v3 v3.5.0
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/pelletier/go-toml v1.9.0 // indirect
+	github.com/pkg/term v0.0.0-20200520122047-c3ffed290a03 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
@@ -30,6 +33,7 @@ require (
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/zalando/go-keyring v0.1.1
+	golang.org/x/crypto v0.0.0-20201012173705-84dcc777aaee // indirect
 	golang.org/x/oauth2 v0.0.0-20210427180440-81ed05c6b58c
 	golang.org/x/sys v0.0.0-20210503173754-0981d6026fa6 // indirect
 	golang.org/x/text v0.3.6 // indirect

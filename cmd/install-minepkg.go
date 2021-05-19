@@ -108,6 +108,7 @@ func (i *installRunner) installFromMinepkg(mods []string) error {
 			instance.Manifest.AddDevDependency(release.Package.Name, "^"+release.Package.Version)
 		}
 	}
+
 	instance.UpdateLockfileDependencies(context.TODO())
 	for _, dep := range instance.Lockfile.Dependencies {
 		fmt.Printf(" - %s@%s\n", dep.Name, dep.Version)

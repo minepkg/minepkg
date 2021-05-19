@@ -2,6 +2,8 @@ package providers
 
 import (
 	"context"
+	"io"
+	"net/http"
 
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/pkg/manifest"
@@ -31,8 +33,9 @@ func (m *minepkgResult) Dependencies() []*manifest.InterpretedDependency {
 	return m.InterpretedDependencies()
 }
 
-func (m *MinepkgProvider) Resolve(request *Request) (Result, error) {
-	reqs := &api.RequirementQuery{
+func (m *MinepkgProvider) Resolve(ctx context.Context, request *Request) (Result, error) {
+	reqs := &api.ReleasesQuery{
+		Name:      request.Dependency.Name,
 		Version:   request.Dependency.Source,
 		Minecraft: request.Requirements.MinecraftVersion(),
 		Platform:  request.Requirements.PlatformName(),
@@ -42,10 +45,24 @@ func (m *MinepkgProvider) Resolve(request *Request) (Result, error) {
 		reqs.Version = "*"
 	}
 
-	release, err := m.Client.FindRelease(context.TODO(), request.Dependency.Name, reqs)
+	release, err := m.Client.ReleasesQuery(ctx, reqs)
 	if err != nil {
 		return nil, err
 	}
 
 	return &minepkgResult{release}, nil
+}
+
+func (m *MinepkgProvider) Fetch(ctx context.Context, toFetch Result) (io.Reader, int, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", toFetch.Lock().URL, nil)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	fileRes, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return fileRes.Body, int(fileRes.ContentLength), nil
 }

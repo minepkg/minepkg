@@ -27,11 +27,12 @@ var defaultClient = http.Client{
 // HTTPItem is a URL, target pair with optional properties that will be downloaded
 // using http(s)
 type HTTPItem struct {
-	Client *http.Client
-	URL    string
-	Target string
-	Size   int
-	Sha256 string
+	Client           *http.Client
+	URL              string
+	Target           string
+	Size             int
+	Sha256           string
+	bytesTransferred int64
 }
 
 // ErrInvalidSha is returned when the downloaded file's sha256 sum does not match the given sha1
@@ -71,6 +72,7 @@ func (i *HTTPItem) Download(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("Error while fetching %s: %w", i.URL, err)
 	}
+	defer fileRes.Body.Close()
 
 	if fileRes.StatusCode != 200 {
 		return fmt.Errorf("invalid status code: %s from %s", fileRes.Status, fileRes.Request.URL)
@@ -80,7 +82,9 @@ func (i *HTTPItem) Download(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	_, err = io.Copy(dest, fileRes.Body)
+
+	src := io.TeeReader(fileRes.Body, &WriteCounter{&i.bytesTransferred})
+	_, err = io.Copy(dest, src)
 	if err != nil {
 		return err
 	}
@@ -105,7 +109,7 @@ func NewHTTPItem(URL string, Target string) *HTTPItem {
 	if Target == "" {
 		panic("Target can not be empty")
 	}
-	return &HTTPItem{&defaultClient, URL, Target, 0, ""}
+	return &HTTPItem{&defaultClient, URL, Target, 0, "", 0}
 }
 
 func checkSha256(sha string, srcPath string) error {
@@ -127,4 +131,19 @@ func checkSha256(sha string, srcPath string) error {
 		return &ErrInvalidSha{src.Name(), sha, actualSha}
 	}
 	return nil
+}
+
+// WriteCounter counts the number of bytes written to it.
+type WriteCounter struct {
+	Total *int64 // Total # of bytes transferred
+}
+
+// Write implements the io.Writer interface.
+//
+// Always completes and never returns an error.
+func (wc *WriteCounter) Write(p []byte) (int, error) {
+	n := len(p)
+	*wc.Total += int64(n)
+	fmt.Printf("Read %d bytes for a total of %d\n", n, wc.Total)
+	return n, nil
 }

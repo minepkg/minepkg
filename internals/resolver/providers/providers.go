@@ -1,11 +1,15 @@
 package providers
 
 import (
+	"context"
+	"io"
+
 	"github.com/minepkg/minepkg/pkg/manifest"
 )
 
 type Provider interface {
-	Resolve(request *Request) (Result, error)
+	Resolve(ctx context.Context, request *Request) (Result, error)
+	Fetch(ctx context.Context, toFetch Result) (io.Reader, int, error)
 }
 
 type Request struct {
@@ -13,6 +17,7 @@ type Request struct {
 	Requirements manifest.PlatformLock
 
 	ignoreVersionsFlag bool
+	depth              uint16
 }
 
 type Result interface {

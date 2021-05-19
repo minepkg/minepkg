@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/charmbracelet/lipgloss"
+	"github.com/jwalton/gchalk"
 	"github.com/minepkg/minepkg/internals/downloadmgr"
 	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/minepkg/minepkg/internals/minecraft"
@@ -33,6 +35,7 @@ type CLILauncher struct {
 	// NonInteractive determines if fancy spinners or prompts should be displayed
 	NonInteractive bool
 
+	introPrinted        bool
 	originalServerProps []byte
 }
 
@@ -41,17 +44,22 @@ type CLILauncher struct {
 func (c *CLILauncher) Prepare() error {
 	instance := c.Instance
 	serverMode := c.ServerMode
-	// Prepare launch
-	s := NewMaybeSpinner(!c.NonInteractive) // Build our new spinner
-	s.Start()
-	defer s.Stop()
-	s.Update("Preparing launch")
+
+	ctx := context.Background()
+
+	c.printIntro()
+	c.introPrinted = true
+
+	javaUpdate := make(chan error)
 
 	if !instance.HasJava() {
-		s.Update("Preparing launch – Downloading java")
-		if err := instance.UpdateJava(); err != nil {
-			return err
-		}
+		go func() {
+			javaUpdate <- instance.UpdateJava()
+		}()
+	} else {
+		go func() {
+			javaUpdate <- nil
+		}()
 	}
 
 	// resolve requirements
@@ -59,34 +67,43 @@ func (c *CLILauncher) Prepare() error {
 	if err != nil {
 		return err
 	}
+
+	fmt.Print(pipeText.Render(gchalk.BgGray("Requirements")))
 	if outdatedReqs {
-		s.Update("Preparing launch – Resolving Requirements")
+		fmt.Print(gchalk.Gray(" is updating"))
 		err := instance.UpdateLockfileRequirements(context.TODO())
 		if err != nil {
 			return err
 		}
 		instance.SaveLockfile()
 	}
+	fmt.Println()
+	fmt.Println("│ Minecraft " + c.Instance.Lockfile.MinecraftVersion())
+	fmt.Println("│")
 
 	// resolve dependencies
 	outdatedDeps, err := instance.AreDependenciesOutdated()
 	if err != nil {
 		return err
 	}
+
 	// also update deps when reqs are outdated
+	fmt.Print(pipeText.Render(gchalk.BgGray("Dependencies")))
 	if outdatedReqs || outdatedDeps {
-		s.Update("Preparing launch – Resolving Dependencies")
-		err := instance.UpdateLockfileDependencies(context.TODO())
-		if err != nil {
+		fmt.Print(gchalk.Gray(" is updating\n"))
+		if err := c.newFetchDependencies(ctx); err != nil {
 			return err
 		}
 		instance.SaveLockfile()
+	} else {
+		fmt.Println()
+		for _, dependency := range instance.Lockfile.Dependencies {
+			fmt.Println(dependencyLine(dependency))
+		}
 	}
+	fmt.Println("│")
 
 	mgr := downloadmgr.New()
-	mgr.OnProgress = func(p int) {
-		s.Update(fmt.Sprintf("Preparing launch – Downloading %v", p) + "%")
-	}
 
 	launchManifest, err := instance.GetLaunchManifest()
 	if err != nil {
@@ -127,29 +144,33 @@ func (c *CLILauncher) Prepare() error {
 		return err
 	}
 
-	s.Update("Copying local saves (if any)")
 	if err := instance.CopyLocalSaves(); err != nil {
 		return err
 	}
 
-	s.Update("Downloading dependencies")
+	// TODO: still needed?
 	if err := instance.EnsureDependencies(context.TODO()); err != nil {
 		return err
 	}
 
-	s.Update("Copying overwrites")
 	if err := instance.CopyOverwrites(); err != nil {
 		return err
 	}
 
 	if serverMode {
-		s.Update("Preparing server files")
+		fmt.Println(pipeText.Render("\nPreparing server"))
 		c.prepareServer()
 		if c.OfflineMode {
-			s.Update("Preparing for offline mode")
+			pipeText.Render("  in offline mode")
 			c.prepareOfflineServer()
 		}
 	}
+
+	if err := <-javaUpdate; err != nil {
+		return err
+	}
+
+	c.printOutro()
 
 	return nil
 }
@@ -169,7 +190,7 @@ func (c *CLILauncher) prepareOfflineServer() {
 	settingsFile := filepath.Join(c.Instance.McDir(), "server.properties")
 	rawSettings, err := ioutil.ReadFile(settingsFile)
 
-	// workarround to get server that was started in offline mode for the first time
+	// workaround to get server that was started in offline mode for the first time
 	// to start in online mode next time it is launched
 	if err != nil {
 		rawSettings = []byte("online-mode=true\n")
@@ -186,3 +207,55 @@ func (c *CLILauncher) prepareOfflineServer() {
 		panic(err)
 	}
 }
+
+func (c *CLILauncher) printIntro() {
+	title := lipgloss.NewStyle().
+		Border(lipgloss.Border{Left: "┃"}, false).
+		BorderLeft(true).
+		Background(lipgloss.Color("#FFF")).
+		Foreground(lipgloss.Color("#000")).
+		Padding(0, 1).
+		Render(c.Instance.Manifest.Package.Name)
+
+	fmt.Println(title)
+	// fmt.Println("│ Fabric Loader 0.65.4") // TODO
+	fmt.Println("│")
+}
+
+func (c *CLILauncher) newFetchDependencies(ctx context.Context) error {
+	instance := c.Instance
+
+	resolver, err := instance.GetResolver(ctx)
+	if err != nil {
+		return err
+	}
+
+	sub := resolver.Subscribe()
+	resolverErrorC := make(chan error)
+	go func() {
+		resolverErrorC <- resolver.Resolve(ctx)
+	}()
+
+	for resolved := range sub {
+		fmt.Println(dependencyLine(resolved.Result.Lock()))
+	}
+
+	if err := <-resolverErrorC; err != nil {
+		return err
+	}
+
+	// TODO: print stats or something
+
+	return nil
+}
+
+func (c *CLILauncher) printOutro() {
+	instance := c.Instance
+	// fmt.Println("│ minepkg " + Version)
+	fmt.Println("│ Java " + instance.JavaDir())
+}
+
+var pipeText = lipgloss.NewStyle().
+	Border(lipgloss.Border{Left: "│"}, false).
+	BorderLeft(true).
+	Padding(0, 1)

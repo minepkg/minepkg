@@ -6,12 +6,24 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/charmbracelet/lipgloss"
+	"github.com/jwalton/gchalk"
+	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/instances"
 )
 
 // Launch will launch the instance with the provided launchOptions
 // and will set some fallback values
 func (c *CLILauncher) Launch(opts *instances.LaunchOptions) error {
+	fmt.Println("│")
+	fmt.Println(
+		lipgloss.JoinHorizontal(
+			0.5,
+			gchalk.Hex("#7a563b")("│"+"\n"+"┕"),
+			commands.StyleGrass.Render(commands.Emoji("⛏  ")+"Launching Minecraft"),
+		),
+	)
+
 	switch {
 	case opts.LaunchManifest == nil:
 		opts.LaunchManifest = c.LaunchManifest

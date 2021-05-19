@@ -177,16 +177,14 @@ func NewInstanceFromWd() (*Instance, error) {
 		return nil, err
 	}
 
-	hasManifest := func() bool {
-		info, err := os.Stat("./minepkg.toml")
-		if err != nil {
-			return false
-		}
-		return !info.IsDir()
-	}()
-
-	if !hasManifest {
+	manifestToml, err := ioutil.ReadFile("./minepkg.toml")
+	if err != nil {
+		// TODO only for not found errors
 		return nil, ErrNoInstance
+	}
+	manifest := manifest.Manifest{}
+	if err = toml.Unmarshal(manifestToml, &manifest); err != nil {
+		return nil, err
 	}
 
 	userConfig, err := os.UserConfigDir()
@@ -199,6 +197,7 @@ func NewInstanceFromWd() (*Instance, error) {
 	}
 
 	instance := &Instance{
+		Manifest:  &manifest,
 		Directory: dir,
 		GlobalDir: filepath.Join(userConfig, "minepkg"),
 		CacheDir:  filepath.Join(userCache, "minepkg"),

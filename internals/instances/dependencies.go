@@ -13,12 +13,11 @@ import (
 	"github.com/minepkg/minepkg/pkg/manifest"
 )
 
-// UpdateLockfileDependencies resolves all dependencies
-func (i *Instance) UpdateLockfileDependencies(ctx context.Context) error {
+func (i *Instance) GetResolver(ctx context.Context) (*resolver.Resolver, error) {
 	if i.Lockfile == nil {
 		i.Lockfile = manifest.NewLockfile()
 		if err := i.UpdateLockfileRequirements(ctx); err != nil {
-			return err
+			return nil, err
 		}
 	} else {
 		i.Lockfile.ClearDependencies()
@@ -34,17 +33,25 @@ func (i *Instance) UpdateLockfileDependencies(ctx context.Context) error {
 		i.Manifest.AddDependency("minepkg-companion", v)
 	}
 
-	res := resolver.New(i.MinepkgAPI, i.Lockfile.PlatformLock())
+	res := resolver.New(i.Manifest, i.Lockfile.PlatformLock())
 	// only include dev dependencies if this instance was created from a working directory
 	// (eg. typing "minepkg launch" in a directory with a minepkg.toml)
 	res.IncludeDev = i.isFromWd
 
-	err := res.ResolveManifest(i.Manifest)
+	return res, nil
+}
 
+// UpdateLockfileDependencies resolves all dependencies
+func (i *Instance) UpdateLockfileDependencies(ctx context.Context) error {
+	resolver, err := i.GetResolver(ctx)
 	if err != nil {
 		return err
 	}
-	for _, lock := range res.Resolved {
+	if err := resolver.Resolve(ctx); err != nil {
+		return err
+	}
+
+	for _, lock := range resolver.Resolved {
 		i.Lockfile.AddDependency(lock)
 	}
 

@@ -1,11 +1,17 @@
 package resolver
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"sync"
+	"time"
 
 	"github.com/minepkg/minepkg/internals/api"
+	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/resolver/providers"
 	"github.com/minepkg/minepkg/pkg/manifest"
 )
@@ -43,30 +49,37 @@ func (e *ErrNoMatchingRelease) Error() string {
 
 // Resolver resolves given the mods of given dependencies
 type Resolver struct {
-	Resolved   map[string]*manifest.DependencyLock
-	client     *api.MinepkgAPI
-	GlobalReqs manifest.PlatformLock
+	Resolved       map[string]*manifest.DependencyLock
+	BetterResolved []*Resolved
+	manifest       *manifest.Manifest
+	GlobalReqs     manifest.PlatformLock
 	// IgnoreVersion will make the resolver ignore all version requirements and just fetch the latest version for everything
 	IgnoreVersion bool
 	// IncludeDev includes dev.dependencies
-	IncludeDev bool
+	IncludeDev   bool
+	AlsoDownload bool
 
-	Providers map[string]providers.Provider
+	downloadWg  sync.WaitGroup
+	subscribers []chan *Resolved
+	Providers   map[string]providers.Provider
 }
 
 // New returns a new resolver
-func New(client *api.MinepkgAPI, reqs manifest.PlatformLock) *Resolver {
+func New(man *manifest.Manifest, platformLock manifest.PlatformLock) *Resolver {
 	resolver := &Resolver{
-		Resolved:      make(map[string]*manifest.DependencyLock),
-		client:        client,
-		GlobalReqs:    reqs,
-		IgnoreVersion: false,
-		IncludeDev:    true,
-		Providers:     make(map[string]providers.Provider, 1),
+		Resolved:       make(map[string]*manifest.DependencyLock),
+		BetterResolved: make([]*Resolved, 0, len(man.Dependencies)),
+		manifest:       man,
+		GlobalReqs:     platformLock,
+		IgnoreVersion:  false,
+		IncludeDev:     true,
+		AlsoDownload:   false, // TODO: set to true when working properly
+		Providers:      make(map[string]providers.Provider, 2),
+		downloadWg:     sync.WaitGroup{},
 	}
 
 	resolver.Providers["minepkg"] = &providers.MinepkgProvider{
-		Client: client,
+		Client: globals.ApiClient,
 	}
 
 	resolver.Providers["https"] = &providers.HttpProvider{
@@ -76,84 +89,158 @@ func New(client *api.MinepkgAPI, reqs manifest.PlatformLock) *Resolver {
 	return resolver
 }
 
-// ResolveManifest resolves a manifest
-func (r *Resolver) ResolveManifest(man *manifest.Manifest) error {
+func (r *Resolver) Subscribe() chan *Resolved {
+	subChannel := make(chan *Resolved)
+	r.subscribers = append(r.subscribers, subChannel)
+
+	return subChannel
+}
+
+func (r *Resolver) notifySubscribers(result *Resolved) {
+	for _, subscription := range r.subscribers {
+		subscription <- result
+	}
+}
+
+func (r *Resolver) closeSubscribers() {
+	for _, subscription := range r.subscribers {
+		close(subscription)
+	}
+}
+
+// Resolve resolves a manifest
+func (r *Resolver) Resolve(ctx context.Context) error {
+	man := r.manifest
+	defer r.closeSubscribers()
 
 	if r.GlobalReqs == nil {
 		return ErrNoGlobalReqs
 	}
 
-	for _, dependency := range man.InterpretedDependencies() {
-		if err := r.Resolve(dependency, false); err != nil {
+	if err := r.ResolveDependencies(ctx, man.InterpretedDependencies(), false); err != nil {
+		return err
+	}
+
+	if r.IncludeDev {
+		if err := r.ResolveDependencies(ctx, man.InterpretedDevDependencies(), false); err != nil {
 			return err
 		}
 	}
 
-	if r.IncludeDev {
-		for _, dependency := range man.InterpretedDevDependencies() {
-			if err := r.Resolve(dependency, true); err != nil {
-				return err
-			}
-		}
+	if r.AlsoDownload {
+		r.downloadWg.Wait()
 	}
 
 	return nil
 }
 
-// Resolve resolves all dependencies of a single package
-func (r *Resolver) Resolve(dep *manifest.InterpretedDependency, isDev bool) error {
+// Resolve resolves all given dependencies
+func (r *Resolver) ResolveDependencies(ctx context.Context, dependencies []*manifest.InterpretedDependency, isDev bool) error {
 
-	provider, ok := r.Providers[dep.Provider]
-	if !ok {
-		return fmt.Errorf("%s needs %s as install provider which is not supported", dep.Name, dep.Provider)
+	resolving := 0
+	resultsC := make(chan *Resolved)
+	errorC := make(chan error)
+	throttle := make(chan interface{}, 24) // 24 is good
+
+	throttleDownload := make(chan interface{}, 8)
+
+	asyncResolve := func(dependency *manifest.InterpretedDependency) {
+		throttle <- nil
+		// t := time.Now()
+		ctx, cancel := context.WithTimeout(ctx, time.Minute*2)
+		defer cancel()
+
+		result, err := r.resolveSingle(ctx, dependency)
+		if err != nil {
+			errorC <- err
+			return
+		}
+
+		resultsC <- result
+		<-throttle
 	}
-	// add this release
-	result, err := provider.Resolve(r.providerRequest(dep))
-	if err != nil {
-		return err
-	}
 
-	lock := result.Lock()
-	lock.Dependend = "_root"
-
-	if isDev {
-		lock.IsDev = true
-	}
-	r.Resolved[lock.Name] = lock
-
-	parentPackage := result
-	resolveNext := result.Dependencies()
-
-	for len(resolveNext) != 0 {
-		resolveNow := resolveNext
-		resolveNext = []*manifest.InterpretedDependency{}
-
-		for _, dep := range resolveNow {
+	batchResolve := func(dependencies []*manifest.InterpretedDependency) {
+		for _, dep := range dependencies {
 			// already resolved
+			// TODO: check if this version is newer
 			_, ok := r.Resolved[dep.Name]
 			if ok {
 				continue
 			}
+			resolving++
+
 			r.Resolved[dep.Name] = nil
 
-			result, err := r.Providers[dep.Provider].Resolve(r.providerRequest(dep))
-			if err != nil {
-				return err
-			}
+			go asyncResolve(dep)
+		}
+	}
 
-			lock := result.Lock()
-			lock.Dependend = parentPackage.Lock().Name
+	download := func(resolved *Resolved) {
+		throttleDownload <- nil
+		r.downloadWg.Add(1)
+		resolved.Fetch(context.TODO())
+		r.downloadWg.Done()
+		<-throttleDownload
+	}
+
+	for {
+		// start resolving the 1st level
+		batchResolve(dependencies)
+
+		if resolving == 0 {
+			return nil
+		}
+
+		select {
+		case err := <-errorC:
+			return err
+		case resolved := <-resultsC:
+			resolving--
+			lock := resolved.Result.Lock()
 
 			if isDev {
 				lock.IsDev = true
 			}
 			r.Resolved[lock.Name] = lock
-			resolveNext = append(resolveNext, result.Dependencies()...)
-			parentPackage = result
+			r.BetterResolved = append(r.BetterResolved, resolved)
+
+			// download this package
+			if r.AlsoDownload {
+				go func(resolved *Resolved) {
+					download(resolved)
+					r.notifySubscribers(resolved)
+				}(resolved)
+			} else {
+				r.notifySubscribers(resolved)
+			}
+
+			// resolve the dependencies of this package
+			batchResolve(resolved.Result.Dependencies())
 		}
 	}
+}
 
-	return nil
+func (r *Resolver) resolveSingle(ctx context.Context, dependency *manifest.InterpretedDependency) (*Resolved, error) {
+	provider, ok := r.Providers[dependency.Provider]
+	if !ok {
+		return nil, fmt.Errorf("%s needs %s as install provider which is not supported", dependency.Name, dependency.Provider)
+	}
+
+	request := r.providerRequest(dependency)
+
+	result, err := provider.Resolve(ctx, r.providerRequest(dependency))
+	if err != nil {
+		return nil, err
+	}
+
+	resolved := &Resolved{
+		Request:  request,
+		Result:   result,
+		provider: provider,
+	}
+
+	return resolved, nil
 }
 
 func (r *Resolver) providerRequest(dep *manifest.InterpretedDependency) *providers.Request {
@@ -161,4 +248,56 @@ func (r *Resolver) providerRequest(dep *manifest.InterpretedDependency) *provide
 		Dependency:   dep,
 		Requirements: r.GlobalReqs,
 	}
+}
+
+type Resolved struct {
+	Request *providers.Request
+	Result  providers.Result
+
+	provider         providers.Provider
+	bytesTransferred uint64
+	totalBytes       uint64
+}
+
+func (r *Resolved) Fetch(ctx context.Context) error {
+	// TODO: check cache here
+	reader, size, err := r.provider.Fetch(ctx, r.Result)
+	if err != nil {
+		return err
+	}
+	r.totalBytes = uint64(size)
+
+	src := io.TeeReader(reader, &WriteCounter{&r.bytesTransferred})
+	dest, err := os.CreateTemp("", "minepkg")
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(dest, src); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *Resolved) Progress() float64 {
+	if r.totalBytes == 0 {
+		return 0
+	}
+
+	return float64(r.bytesTransferred) / float64(r.totalBytes)
+}
+
+// WriteCounter counts the number of bytes written to it.
+type WriteCounter struct {
+	Total *uint64 // Total # of bytes transferred
+}
+
+// Write implements the io.Writer interface.
+//
+// Always completes and never returns an error.
+func (wc *WriteCounter) Write(p []byte) (int, error) {
+	n := len(p)
+	*wc.Total += uint64(n)
+	// fmt.Printf("Read %d bytes for a total of %d\n", n, wc.Total)
+	return n, nil
 }

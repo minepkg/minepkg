@@ -120,6 +120,8 @@ type MinepkgError struct {
 	StatusCode uint16 `json:"statusCode"`
 	Status     string `json:"error"`
 	Message    string `json:"message"`
+	// ResolveError is only present for release queries
+	ResolveError string `json:"resolveError"`
 }
 
 func (m MinepkgError) Error() string {

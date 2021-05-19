@@ -5,6 +5,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/jwalton/gchalk"
 )
@@ -66,7 +67,7 @@ func (l *Logger) Fail(s string) {
 // NewTask returns a new Task logger
 func (l *Logger) NewTask(end int) *Task {
 	logger := *l
-	task := Task{&logger, 0, end}
+	task := Task{&logger, 0, end, time.Now()}
 	// TODO:
 	// task.indention = 2
 	return &task
@@ -86,12 +87,17 @@ func New() *Logger {
 // Task logs but with progress
 type Task struct {
 	*Logger
-	current int
-	end     int
+	current   int
+	end       int
+	startTime time.Time
 }
 
 // Step prints progress
 func (l *Task) Step(e string, s string) {
+	if l.current > 0 {
+		elapsed := time.Since(l.startTime)
+		fmt.Printf(" took %s\n", elapsed)
+	}
 	l.current++
 	text := fmt.Sprintf(
 		"[%d / %d] %s %s",
