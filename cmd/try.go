@@ -145,6 +145,7 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 		Instance:       instance,
 		ServerMode:     t.serverMode,
 		OfflineMode:    t.offlineMode,
+		MinepkgVersion: rootCmd.Version,
 		NonInteractive: viper.GetBool("nonInteractive"),
 	}
 	if err := cliLauncher.Prepare(); err != nil {
@@ -152,28 +153,6 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 	launchManifest := cliLauncher.LaunchManifest
 
-	fmt.Println("\n[launch settings]")
-	fmt.Println("Directory: " + instance.Directory)
-	fmt.Println("MC directory: " + instance.McDir())
-	fmt.Println("Platform: " + instance.Manifest.PlatformString())
-	fmt.Println("Minecraft: " + instance.Manifest.Requirements.Minecraft)
-	if instance.Manifest.PlatformString() == "fabric" {
-		fmt.Printf(
-			"fabric: %s / %s (loader / mapping)\n",
-			instance.Lockfile.Fabric.FabricLoader,
-			instance.Lockfile.Fabric.Mapping,
-		)
-	}
-
-	depNames := make([]string, len(instance.Lockfile.Dependencies))
-	i := 0
-	for name, lock := range instance.Lockfile.Dependencies {
-		depNames[i] = name + "@" + lock.Version
-		i++
-	}
-	fmt.Println("[dependencies] \n - " + strings.Join(depNames, "\n - "))
-
-	fmt.Println("\n" + commands.StyleGrass.Render(commands.Emoji("⛏  ")+"Launching Minecraft"))
 	opts := &instances.LaunchOptions{
 		LaunchManifest: launchManifest,
 		Server:         t.serverMode,

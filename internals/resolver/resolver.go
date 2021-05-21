@@ -177,6 +177,7 @@ func (r *Resolver) ResolveDependencies(ctx context.Context, dependencies []*mani
 	}
 
 	download := func(resolved *Resolved) {
+		fmt.Println("downloading")
 		throttleDownload <- nil
 		r.downloadWg.Add(1)
 		resolved.Fetch(context.TODO())

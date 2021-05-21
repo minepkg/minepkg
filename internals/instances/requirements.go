@@ -67,7 +67,7 @@ func (i *Instance) resolveVanillaRequirement(ctx context.Context) (*MinecraftRel
 		// TODO: some versions contain spaces
 		semverVersion, err := semver.NewVersion(v.ID)
 
-		// skip unparsable minecraft versions
+		// skip non-parsable minecraft versions
 		if err != nil {
 			continue
 		}

@@ -93,7 +93,11 @@ func (i *joinRunner) RunE(cmd *cobra.Command, args []string) error {
 	instance.Manifest = resolvedModpack.Manifest
 	fmt.Println("Using modpack " + resolvedModpack.Identifier())
 
-	cliLauncher := launch.CLILauncher{Instance: instance, ServerMode: false}
+	cliLauncher := launch.CLILauncher{
+		Instance:       instance,
+		ServerMode:     false,
+		MinepkgVersion: rootCmd.Version,
+	}
 	cliLauncher.Prepare()
 
 	if viper.GetBool("useSystemJava") {

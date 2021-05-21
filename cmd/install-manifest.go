@@ -12,6 +12,7 @@ import (
 func installManifest(instance *instances.Instance) error {
 	cliLauncher := launch.CLILauncher{
 		Instance:       instance,
+		MinepkgVersion: rootCmd.Version,
 		NonInteractive: viper.GetBool("nonInteractive"),
 	}
 

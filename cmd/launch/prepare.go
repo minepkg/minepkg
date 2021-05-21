@@ -22,6 +22,9 @@ type CLILauncher struct {
 	// Instance is the minepkg instance to be launched
 	Instance *instances.Instance
 
+	// MinepkgVersion is the version number of minepkg
+	MinepkgVersion string
+
 	Cmd *exec.Cmd
 	// ServerMode indicated if this instance should be started as a server
 	ServerMode bool
@@ -79,6 +82,14 @@ func (c *CLILauncher) Prepare() error {
 	}
 	fmt.Println()
 	fmt.Println("│ Minecraft " + c.Instance.Lockfile.MinecraftVersion())
+	fmt.Println("│ Directory: " + instance.Directory)
+	if instance.Manifest.PlatformString() == "fabric" {
+		fmt.Printf(
+			"│ Fabric: %s / %s (loader / mapping)\n",
+			instance.Lockfile.Fabric.FabricLoader,
+			instance.Lockfile.Fabric.Mapping,
+		)
+	}
 	fmt.Println("│")
 
 	// resolve dependencies
@@ -208,6 +219,11 @@ func (c *CLILauncher) prepareOfflineServer() {
 	}
 }
 
+var pipeText = lipgloss.NewStyle().
+	Border(lipgloss.Border{Left: "│"}, false).
+	BorderLeft(true).
+	Padding(0, 1)
+
 func (c *CLILauncher) printIntro() {
 	title := lipgloss.NewStyle().
 		Border(lipgloss.Border{Left: "┃"}, false).
@@ -218,8 +234,13 @@ func (c *CLILauncher) printIntro() {
 		Render(c.Instance.Manifest.Package.Name)
 
 	fmt.Println(title)
-	// fmt.Println("│ Fabric Loader 0.65.4") // TODO
 	fmt.Println("│")
+}
+
+func (c *CLILauncher) printOutro() {
+	instance := c.Instance
+	fmt.Println("│ minepkg " + c.MinepkgVersion)
+	fmt.Println("│ Java " + instance.JavaDir())
 }
 
 func (c *CLILauncher) newFetchDependencies(ctx context.Context) error {
@@ -238,6 +259,7 @@ func (c *CLILauncher) newFetchDependencies(ctx context.Context) error {
 
 	for resolved := range sub {
 		fmt.Println(dependencyLine(resolved.Result.Lock()))
+		instance.Lockfile.AddDependency(resolved.Result.Lock())
 	}
 
 	if err := <-resolverErrorC; err != nil {
@@ -248,14 +270,3 @@ func (c *CLILauncher) newFetchDependencies(ctx context.Context) error {
 
 	return nil
 }
-
-func (c *CLILauncher) printOutro() {
-	instance := c.Instance
-	// fmt.Println("│ minepkg " + Version)
-	fmt.Println("│ Java " + instance.JavaDir())
-}
-
-var pipeText = lipgloss.NewStyle().
-	Border(lipgloss.Border{Left: "│"}, false).
-	BorderLeft(true).
-	Padding(0, 1)

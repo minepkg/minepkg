@@ -113,6 +113,7 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 		Instance:       l.instance,
 		ServerMode:     l.serverMode,
 		OfflineMode:    l.offlineMode,
+		MinepkgVersion: rootCmd.Version,
 		NonInteractive: viper.GetBool("nonInteractive"),
 	}
 
