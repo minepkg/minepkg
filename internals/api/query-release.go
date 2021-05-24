@@ -13,8 +13,8 @@ type ReleasesQuery struct {
 	Platform string
 	// Name should be the name of the wanted package
 	Name string
-	// Minecraft version for the project. This has to be either '*' or a valid version number.
-	// any semver string is NOT allowed here
+	// Minecraft version for the project. This has to be either '' or a valid version number.
+	// a semver string is NOT allowed here
 	Minecraft string
 	// VersionRange can be any semver string specifying the desired package version
 	VersionRange string
@@ -22,7 +22,7 @@ type ReleasesQuery struct {
 
 // FindRelease gets the latest release matching the passed requirements via `RequirementQuery`
 func (m *MinepkgAPI) ReleasesQuery(ctx context.Context, query *ReleasesQuery) (*Release, error) {
-	if query.Minecraft != "*" {
+	if query.Minecraft != "" {
 		var err error
 		if _, err = semver.NewVersion(query.Minecraft); err != nil {
 			return nil, ErrInvalidMinecraftRequirement
@@ -32,7 +32,9 @@ func (m *MinepkgAPI) ReleasesQuery(ctx context.Context, query *ReleasesQuery) (*
 	urlQuery := url.Values{}
 	urlQuery.Add("platform", query.Platform)
 	urlQuery.Add("name", query.Name)
-	urlQuery.Add("minecraft", query.Minecraft)
+	if query.Minecraft != "" {
+		urlQuery.Add("minecraft", query.Minecraft)
+	}
 	urlQuery.Add("versionRange", query.VersionRange)
 	res, err := m.get(ctx, m.APIUrl+"/releases/_query?"+urlQuery.Encode())
 	if err != nil {

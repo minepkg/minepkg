@@ -253,8 +253,7 @@ func (l *launchRunner) instanceFromModpack(modpack string) (*instances.Instance,
 	query := &api.ReleasesQuery{
 		Platform:     "fabric", // TODO: not static!
 		Name:         modpack,
-		Minecraft:    "*",
-		VersionRange: "latest", // TODO: get from id
+		VersionRange: "*", // TODO: get from id
 	}
 	if l.overwrites.McVersion != "" {
 		query.Minecraft = l.overwrites.McVersion
