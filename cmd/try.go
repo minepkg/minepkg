@@ -88,12 +88,12 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 		mcVersion = t.overwrites.McVersion
 	}
 
-	reqs := &api.RequirementQuery{
-		Version:   version,
-		Minecraft: mcVersion,
-		Platform:  "fabric", // TODO!!!
-	}
-	release, err := apiClient.FindRelease(context.TODO(), name, reqs)
+	release, err := apiClient.ReleasesQuery(context.TODO(), &api.ReleasesQuery{
+		Platform:     "fabric", // TODO!!!
+		Name:         name,
+		Minecraft:    mcVersion,
+		VersionRange: version,
+	})
 	var e *api.ErrNoMatchingRelease
 	if err != nil && !errors.As(err, &e) {
 		return err
@@ -106,7 +106,12 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 			os.Exit(1)
 		}
 
-		release, err = apiClient.FindRelease(context.TODO(), project.Name, reqs)
+		release, err = apiClient.ReleasesQuery(context.TODO(), &api.ReleasesQuery{
+			Platform:     "fabric", // TODO!!!
+			Name:         project.Name,
+			Minecraft:    mcVersion,
+			VersionRange: version,
+		})
 		if err != nil || release == nil {
 			logger.Info("Could not find package " + name + "@" + version)
 			os.Exit(1)

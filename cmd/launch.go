@@ -250,16 +250,17 @@ func (l *launchRunner) instanceFromModpack(modpack string) (*instances.Instance,
 	instance.MinepkgAPI = apiClient
 
 	// fetch modpack
-	reqs := &api.RequirementQuery{
-		Platform:  "fabric", // TODO: not static!
-		Minecraft: "*",
-		Version:   "latest", // TODO: get from id
+	query := &api.ReleasesQuery{
+		Platform:     "fabric", // TODO: not static!
+		Name:         modpack,
+		Minecraft:    "*",
+		VersionRange: "latest", // TODO: get from id
 	}
 	if l.overwrites.McVersion != "" {
-		reqs.Minecraft = l.overwrites.McVersion
+		query.Minecraft = l.overwrites.McVersion
 	}
 
-	release, err := apiClient.FindRelease(context.TODO(), modpack, reqs)
+	release, err := apiClient.ReleasesQuery(context.TODO(), query)
 	if err != nil {
 		return nil, l.formatApiError(err)
 	}
@@ -267,9 +268,6 @@ func (l *launchRunner) instanceFromModpack(modpack string) (*instances.Instance,
 	if release.Package.Type == "mod" {
 		return nil, errCanOnlyLaunchModpacks
 	}
-
-	// instanceDir =
-	// os.MkdirAll(instanceDir, os.ModePerm)
 
 	// set instance details
 	instance.Manifest = manifest.NewInstanceLike(release.Manifest)

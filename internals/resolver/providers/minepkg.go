@@ -35,14 +35,14 @@ func (m *minepkgResult) Dependencies() []*manifest.InterpretedDependency {
 
 func (m *MinepkgProvider) Resolve(ctx context.Context, request *Request) (Result, error) {
 	reqs := &api.ReleasesQuery{
-		Name:      request.Dependency.Name,
-		Version:   request.Dependency.Source,
-		Minecraft: request.Requirements.MinecraftVersion(),
-		Platform:  request.Requirements.PlatformName(),
+		Name:         request.Dependency.Name,
+		VersionRange: request.Dependency.Source,
+		Minecraft:    request.Requirements.MinecraftVersion(),
+		Platform:     request.Requirements.PlatformName(),
 	}
 
 	if request.ignoreVersionsFlag {
-		reqs.Version = "*"
+		reqs.VersionRange = "*"
 	}
 
 	release, err := m.Client.ReleasesQuery(ctx, reqs)

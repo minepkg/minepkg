@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 
 	"github.com/Masterminds/semver/v3"
@@ -17,8 +16,8 @@ type ReleasesQuery struct {
 	// Minecraft version for the project. This has to be either '*' or a valid version number.
 	// any semver string is NOT allowed here
 	Minecraft string
-	// Version to return. this can be any semver string
-	Version string
+	// VersionRange can be any semver string specifying the desired package version
+	VersionRange string
 }
 
 // FindRelease gets the latest release matching the passed requirements via `RequirementQuery`
@@ -34,7 +33,7 @@ func (m *MinepkgAPI) ReleasesQuery(ctx context.Context, query *ReleasesQuery) (*
 	urlQuery.Add("platform", query.Platform)
 	urlQuery.Add("name", query.Name)
 	urlQuery.Add("minecraft", query.Minecraft)
-	urlQuery.Add("versionRange", query.Version)
+	urlQuery.Add("versionRange", query.VersionRange)
 	res, err := m.get(ctx, m.APIUrl+"/releases/_query?"+urlQuery.Encode())
 	if err != nil {
 		return nil, err
@@ -48,9 +47,6 @@ func (m *MinepkgAPI) ReleasesQuery(ctx context.Context, query *ReleasesQuery) (*
 			if !ok {
 				return nil, err
 			}
-			fmt.Println("BULLSHIT")
-			fmt.Println(e)
-			fmt.Printf("%+v", query)
 			switch e.ResolveError {
 			case "minecraft_req_not_satisfiable":
 				return nil, ErrNoReleaseForMinecraftVersion
