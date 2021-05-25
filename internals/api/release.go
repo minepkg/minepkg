@@ -54,7 +54,7 @@ func (r *Release) LatestTestedMinecraftVersion() string {
 	// oh well ...
 	// TODO: maybe not static
 	if len(workingMcVersion) == 0 {
-		return "1.15.2"
+		return "1.16.5"
 	}
 	return workingMcVersion[len(workingMcVersion)-1].String()
 }

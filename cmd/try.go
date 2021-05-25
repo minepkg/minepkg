@@ -83,7 +83,7 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 		version = comp[1]
 	}
 
-	mcVersion := "*"
+	var mcVersion string
 	if t.overwrites.McVersion != "" {
 		mcVersion = t.overwrites.McVersion
 	}

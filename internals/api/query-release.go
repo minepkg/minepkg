@@ -51,6 +51,9 @@ type ReleasesQuery struct {
 
 // FindRelease gets the latest release matching the passed requirements via `RequirementQuery`
 func (m *MinepkgAPI) ReleasesQuery(ctx context.Context, query *ReleasesQuery) (*Release, error) {
+	if query.Minecraft == "*" || query.Minecraft == "latest" {
+		query.Minecraft = ""
+	}
 	if query.Minecraft != "" {
 		var err error
 		if _, err = semver.NewVersion(query.Minecraft); err != nil {
