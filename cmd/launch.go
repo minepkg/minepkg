@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"net"
 	"os"
 	"path/filepath"
@@ -227,8 +228,9 @@ func crashTest() error {
 			return err
 		}
 
-		// wait 3 seconds before retrying
-		time.Sleep(3 * time.Second)
+		// wait up to 15 seconds before retrying
+		wait := math.Min(15, float64(3*tries))
+		time.Sleep(time.Duration(wait) * time.Second)
 	}
 }
 
