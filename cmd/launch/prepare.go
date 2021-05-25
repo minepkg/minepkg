@@ -73,7 +73,7 @@ func (c *CLILauncher) Prepare() error {
 
 	fmt.Print(pipeText.Render(gchalk.BgGray("Requirements")))
 	if outdatedReqs {
-		fmt.Print(gchalk.Gray(" is updating"))
+		fmt.Print(gchalk.Gray("(updating)"))
 		err := instance.UpdateLockfileRequirements(context.TODO())
 		if err != nil {
 			return err
@@ -101,7 +101,7 @@ func (c *CLILauncher) Prepare() error {
 	// also update deps when reqs are outdated
 	fmt.Print(pipeText.Render(gchalk.BgGray("Dependencies")))
 	if outdatedReqs || outdatedDeps {
-		fmt.Print(gchalk.Gray(" is updating\n"))
+		fmt.Print(gchalk.Gray("(updating)\n"))
 		if err := c.newFetchDependencies(ctx); err != nil {
 			return err
 		}

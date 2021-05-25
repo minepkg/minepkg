@@ -144,6 +144,5 @@ type WriteCounter struct {
 func (wc *WriteCounter) Write(p []byte) (int, error) {
 	n := len(p)
 	*wc.Total += int64(n)
-	fmt.Printf("Read %d bytes for a total of %d\n", n, wc.Total)
 	return n, nil
 }
