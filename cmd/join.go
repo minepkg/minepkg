@@ -90,7 +90,7 @@ func (i *joinRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 	instance.MojangCredentials = creds
 
-	instance.Manifest = resolvedModpack.Manifest
+	instance.Manifest = manifest.NewInstanceLike(resolvedModpack.Manifest)
 	fmt.Println("Using modpack " + resolvedModpack.Identifier())
 
 	cliLauncher := launch.CLILauncher{
@@ -98,13 +98,14 @@ func (i *joinRunner) RunE(cmd *cobra.Command, args []string) error {
 		ServerMode:     false,
 		MinepkgVersion: rootCmd.Version,
 	}
-	cliLauncher.Prepare()
+	if err := cliLauncher.Prepare(); err != nil {
+		return err
+	}
 
 	if viper.GetBool("useSystemJava") {
 		instance.UseSystemJava()
 	}
 
-	fmt.Println("\n" + commands.StyleGrass.Render(commands.Emoji("⛏  ")+"Launching Minecraft"))
 	opts := &instances.LaunchOptions{
 		JoinServer: ip + ":" + port,
 	}
