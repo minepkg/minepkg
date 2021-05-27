@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -23,6 +24,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
+
+var semverMatch = regexp.MustCompile(`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-(0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*)?(\+[0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*)?$`)
 
 func init() {
 	runner := &publishRunner{}
@@ -141,6 +144,18 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	if m.Package.Version == "" {
 		logger.Fail("Could not determine version to publish")
+	}
+
+	if validSemver := semverMatch.MatchString(m.Package.Version); !validSemver {
+		return &commands.CliError{
+			Text: "release version is not valid semver",
+			Suggestions: []string{
+				"Check that your supplied version is valid semver",
+				"Semver versions always look like major.minor.patch (eg. 2.1.0)",
+				"You can also use a prerelease semver version or add build info",
+				"See https://semver.org/ for more info",
+			},
+		}
 	}
 
 	// check if version exists
