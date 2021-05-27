@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/BurntSushi/toml"
 	"github.com/minepkg/minepkg/pkg/manifest"
+	"github.com/pelletier/go-toml"
 )
 
 // Reader for a zip (or jar) file that may contain a minepkg.toml

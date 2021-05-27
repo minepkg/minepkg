@@ -10,10 +10,10 @@ import (
 	"github.com/jwalton/gchalk"
 	"github.com/minepkg/minepkg/internals/commands"
 
-	"github.com/BurntSushi/toml"
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/mojang"
 	"github.com/minepkg/minepkg/pkg/manifest"
+	"github.com/pelletier/go-toml"
 	strcase "github.com/stoewer/go-strcase"
 )
 

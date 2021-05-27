@@ -3,8 +3,8 @@ package manifest_test
 import (
 	"fmt"
 
-	"github.com/BurntSushi/toml"
 	"github.com/minepkg/minepkg/pkg/manifest"
+	"github.com/pelletier/go-toml"
 )
 
 // Unmarshal a toml to a manifest struct

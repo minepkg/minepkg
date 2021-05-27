@@ -66,7 +66,7 @@ import (
 	"log"
 	"net/mail"
 
-	"github.com/BurntSushi/toml"
+	"github.com/pelletier/go-toml"
 )
 
 const (
@@ -236,7 +236,7 @@ func (m *Manifest) RemoveDevDependency(name string) {
 // Buffer returns the manifest as toml in Buffer form
 func (m *Manifest) Buffer() *bytes.Buffer {
 	buf := new(bytes.Buffer)
-	if err := toml.NewEncoder(buf).Encode(m); err != nil {
+	if err := toml.NewEncoder(buf).Order(toml.OrderPreserve).Encode(m); err != nil {
 		log.Fatal(err)
 	}
 	return buf

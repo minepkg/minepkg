@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/BurntSushi/toml"
+	"github.com/pelletier/go-toml"
 )
 
 // LockfileVersion is the current version of the lockfile template
@@ -176,7 +176,7 @@ func (l *Lockfile) HasRequirements() bool {
 // Buffer returns the manifest as toml in Buffer form
 func (l *Lockfile) Buffer() *bytes.Buffer {
 	buf := new(bytes.Buffer)
-	if err := toml.NewEncoder(buf).Encode(l); err != nil {
+	if err := toml.NewEncoder(buf).Order(toml.OrderPreserve).Encode(l); err != nil {
 		log.Fatal(err)
 	}
 
