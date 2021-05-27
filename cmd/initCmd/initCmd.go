@@ -49,7 +49,12 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 	man := defaultManifest()
 
 	if i.yes || viper.GetBool("nonInteractive") {
-		// generate toml with defaults
+		if man.Package.Type == "mod" {
+			if err := i.modFinalization(man); err != nil {
+				return err
+			}
+		}
+		// write toml with defaults
 		writeManifest(man)
 		logger.Info(" ✓ Created minepkg.toml")
 		return nil
