@@ -76,7 +76,7 @@ func (r *Release) WorksWithManifest(man *manifest.Manifest) bool {
 }
 
 // Upload uploads the jar or zipfile for a release
-func (r *Release) Upload(reader io.Reader) (*Release, error) {
+func (r *Release) Upload(reader io.Reader, size int64) (*Release, error) {
 	// prepare request
 	client := r.client
 
@@ -88,6 +88,9 @@ func (r *Release) Upload(reader io.Reader) (*Release, error) {
 
 	client.decorate(req)
 	req.Header.Set("Content-Type", "application/java-archive")
+	if size != 0 {
+		req.ContentLength = size
+	}
 
 	// execute request and handle response
 	res, err := client.HTTP.Do(req)
@@ -103,6 +106,7 @@ func (r *Release) Upload(reader io.Reader) (*Release, error) {
 	if err := parseJSON(res, &release); err != nil {
 		return nil, err
 	}
+	release.decorate(r.client)
 
 	return &release, nil
 }
@@ -123,6 +127,25 @@ func (m *MinepkgAPI) GetRelease(ctx context.Context, platform string, identifier
 		return nil, err
 	}
 	release.decorate(m)
+
+	return &release, nil
+}
+
+// DeleteRelease gets a single release from a project
+// `identifier` is a project@version string
+func (m *MinepkgAPI) DeleteRelease(ctx context.Context, platform string, identifier string) (*Release, error) {
+	res, err := m.delete(ctx, m.APIUrl+"/releases/"+platform+"/"+identifier)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkResponse(res); err != nil {
+		return nil, err
+	}
+
+	release := Release{}
+	if err := parseJSON(res, &release); err != nil {
+		return nil, err
+	}
 
 	return &release, nil
 }

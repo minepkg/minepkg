@@ -140,9 +140,20 @@ func (m *MinepkgAPI) PostProjectMedia(ctx context.Context, project string, conte
 	return err
 }
 
-// get is a helper that does a get request and also sets various things
+// get is a helper that does a GET request and also sets various things
 func (m *MinepkgAPI) get(ctx context.Context, url string) (*http.Response, error) {
 	req, err := http.NewRequest("GET", url, nil)
+	req = req.WithContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	m.decorate(req)
+	return m.HTTP.Do(req)
+}
+
+// delete is a helper that does a DELETE request and also sets various things
+func (m *MinepkgAPI) delete(ctx context.Context, url string) (*http.Response, error) {
+	req, err := http.NewRequest("DELETE", url, nil)
 	req = req.WithContext(ctx)
 	if err != nil {
 		return nil, err
@@ -178,11 +189,11 @@ func checkResponse(res *http.Response) error {
 	case res.StatusCode >= 400:
 		minepkgErr := &MinepkgError{}
 		if err := parseJSON(res, minepkgErr); err != nil {
-			return errors.New("minepkg API did respond with expected error format. code: " + res.Status)
+			return errors.New("minepkg API did respond with unexpected error format. code: " + res.Status)
 		}
 		return minepkgErr
 	default:
-		return errors.New("minepkg API did respond unexpected status code " + res.Status)
+		return errors.New("minepkg API did respond with unexpected status code " + res.Status)
 	}
 }
 

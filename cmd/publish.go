@@ -39,17 +39,19 @@ func init() {
 	cmd.Flags().BoolVarP(&runner.unofficial, "unofficial", "", false, "Indicate that you are only maintaining this package and do not controll the source")
 	cmd.Flags().BoolVarP(&runner.dry, "dry", "", false, "Dry run without publishing")
 	cmd.Flags().BoolVarP(&runner.noBuild, "no-build", "", false, "Skips building the package")
-	cmd.Flags().StringVarP(&runner.release, "release", "r", "", "Release version number to publish (overwrites version in manifest)")
+	cmd.Flags().StringVarP(&runner.versionName, "release", "r", "", "Release version number to publish (overwrites version in manifest)")
 
 	rootCmd.AddCommand(cmd.Command)
 }
 
 type publishRunner struct {
-	unofficial bool
-	dry        bool
-	noBuild    bool
-	release    string
-	file       string
+	unofficial  bool
+	dry         bool
+	noBuild     bool
+	versionName string
+	file        string
+
+	release *api.Release
 }
 
 func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
@@ -133,9 +135,9 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	tasks.Log("Determening version to publish")
 	switch {
-	case p.release != "":
-		tasks.Log("Using supplied release version number: " + p.release)
-		m.Package.Version = strings.TrimPrefix(p.release, "v")
+	case p.versionName != "":
+		tasks.Log("Using supplied release version number: " + p.versionName)
+		m.Package.Version = strings.TrimPrefix(p.versionName, "v")
 	case m.Package.Version != "":
 		tasks.Log("Using version number in minepkg.toml: " + m.Package.Version)
 	default:
@@ -162,10 +164,10 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 	logger.Log("Checking if release exists: ")
 
 	// TODO: static fabric is bad!
-	release, err := apiClient.GetRelease(context.TODO(), "fabric", m.Package.Name+"@"+m.Package.Version)
+	p.release, err = apiClient.GetRelease(context.TODO(), "fabric", m.Package.Name+"@"+m.Package.Version)
 
 	switch {
-	case err == nil && release.Meta.Published:
+	case err == nil && p.release.Meta.Published:
 		logger.Fail("Release already published!")
 	case err != nil && err != api.ErrNotFound:
 		// unknown error
@@ -219,13 +221,13 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 		os.Exit(0)
 	}
 
-	if release == nil {
+	if p.release == nil {
 		logger.Info("Creating release")
 		r := apiClient.NewUnpublishedRelease(m)
 		if artifact == "" {
 			r = apiClient.NewRelease(m)
 		}
-		release, err = project.CreateRelease(context.TODO(), r)
+		p.release, err = project.CreateRelease(context.TODO(), r)
 		if err != nil {
 			if merr, ok := err.(*api.MinepkgError); ok {
 				return fmt.Errorf("[%d] Api error: %s", merr.StatusCode, merr.Message)
@@ -236,6 +238,19 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	// upload the file
+	if err := p.uploadArtifact(artifact); err != nil {
+		logger.Warn("Upload failed. Removing release")
+		if _, err := apiClient.DeleteRelease(context.TODO(), p.release.Package.Platform, p.release.Identifier()); err != nil {
+			return fmt.Errorf("error-inception: could not delete release after error. %w", err)
+		}
+		return fmt.Errorf("upload failed: %w", err)
+	}
+
+	logger.Info(" ✓ Released " + p.release.Package.Version)
+	return nil
+}
+
+func (p *publishRunner) uploadArtifact(artifact string) error {
 	if artifact != "" {
 		logger.Info("Uploading artifact (" + artifact + ")")
 		file, err := os.Open(artifact)
@@ -243,14 +258,15 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		defer file.Close()
-		if release, err = release.Upload(file); err != nil {
+		fsStat, err := file.Stat()
+		if err != nil {
 			return err
 		}
-	} else if !release.Meta.Published {
-		logger.Fail("This release expects an artifact to upload but we have nothing to upload.\n Contact support to cleanup this package")
+		_, err = p.release.Upload(file, fsStat.Size())
+		return err
+	} else if !p.release.Meta.Published {
+		return fmt.Errorf("release expects an artifact to upload but we have nothing to upload")
 	}
-
-	logger.Info(" ✓ Released " + release.Package.Version)
 	return nil
 }
 
