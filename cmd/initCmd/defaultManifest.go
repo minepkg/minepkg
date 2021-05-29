@@ -46,6 +46,8 @@ func defaultManifest() *manifest.Manifest {
 
 		if mcDep, ok := fabricMan.Depends["minecraft"]; ok {
 			man.Requirements.Minecraft = mcDep
+		} else {
+			man.Requirements.Minecraft = "~1.16.2"
 		}
 
 		if fabricReq, ok := fabricMan.Depends["fabricloader"]; ok {
