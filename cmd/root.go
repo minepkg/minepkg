@@ -7,6 +7,7 @@ import (
 
 	"github.com/jwalton/gchalk"
 	"github.com/minepkg/minepkg/cmd/bump"
+	"github.com/minepkg/minepkg/cmd/config"
 	"github.com/minepkg/minepkg/cmd/dev"
 	"github.com/minepkg/minepkg/cmd/initCmd"
 	"github.com/minepkg/minepkg/internals/commands"
@@ -113,6 +114,7 @@ func initRoot() {
 
 	// subcommands
 	rootCmd.AddCommand(dev.SubCmd)
+	rootCmd.AddCommand(config.SubCmd)
 	rootCmd.AddCommand(initCmd.New())
 	rootCmd.AddCommand(bump.New())
 }
