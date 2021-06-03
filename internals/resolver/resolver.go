@@ -18,7 +18,8 @@ import (
 
 var (
 	// ErrNoGlobalReqs is returned when GlobalReqs was not set
-	ErrNoGlobalReqs = errors.New("no GlobalReqs set. They are required to resolve")
+	ErrNoGlobalReqs  = errors.New("no GlobalReqs set. They are required to resolve")
+	ErrUnexpectedEOF = errors.New("file stream closed unexpectedly")
 )
 
 // ErrNoMatchingRelease is returned if a wanted releaseendency (package) could not be resolved given the requirements
@@ -277,6 +278,10 @@ func (r *Resolved) Fetch(ctx context.Context) error {
 		return err
 	}
 
+	if r.bytesTransferred != r.totalBytes {
+		return ErrUnexpectedEOF
+	}
+
 	return nil
 }
 
@@ -294,8 +299,6 @@ type WriteCounter struct {
 }
 
 // Write implements the io.Writer interface.
-//
-// Always completes and never returns an error.
 func (wc *WriteCounter) Write(p []byte) (int, error) {
 	n := len(p)
 	*wc.Total += uint64(n)

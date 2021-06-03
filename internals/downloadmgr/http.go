@@ -20,7 +20,7 @@ var defaultClient = http.Client{
 		}).Dial,
 		TLSHandshakeTimeout:   20 * time.Second,
 		ResponseHeaderTimeout: 60 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
+		ExpectContinueTimeout: 5 * time.Second,
 	},
 }
 

@@ -36,7 +36,7 @@ type Item struct {
 func (d *DownloadManager) Add(i Downloader) {
 	d.queue = append(d.queue, &Item{
 		downloader:  i,
-		maxAttempts: 6,
+		maxAttempts: 12,
 	})
 }
 
@@ -54,7 +54,7 @@ func (d *DownloadManager) Start(ctx context.Context) error {
 			sem <- 1
 			go func(item *Item, errc chan error) {
 				for {
-					time.Sleep(time.Duration(item.attempts) * time.Second)
+					time.Sleep(time.Duration(item.attempts*item.attempts) * time.Second)
 					err := item.downloader.Download(ctx)
 					if err == nil {
 						errc <- nil
