@@ -31,6 +31,7 @@ func (p *Reader) Manifest() *manifest.Manifest {
 	if err != nil {
 		panic(err)
 	}
+	defer manReader.Close()
 	manBuf, err := ioutil.ReadAll(manReader)
 	if err != nil {
 		panic(err)
@@ -112,17 +113,18 @@ outer:
 		if err != nil {
 			return err
 		}
+		defer rc.Close()
+
 		target, err := os.Create(filepath.Join(dest, f.Name))
 		if err != nil {
 			return err
 		}
+		defer target.Close()
 
 		_, err = io.Copy(target, rc)
 		if err != nil {
 			return err
 		}
-
-		rc.Close()
 	}
 	return nil
 }

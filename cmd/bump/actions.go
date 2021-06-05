@@ -130,6 +130,7 @@ func (b *bumpRunner) gradleAction() *action {
 		if err != nil {
 			return err
 		}
+		defer f.Close()
 		_, err = props.WriteComment(f, "# ", properties.UTF8)
 		return err
 	}

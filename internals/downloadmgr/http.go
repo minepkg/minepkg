@@ -82,6 +82,7 @@ func (i *HTTPItem) Download(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	defer dest.Close()
 
 	src := io.TeeReader(fileRes.Body, &WriteCounter{&i.bytesTransferred})
 	_, err = io.Copy(dest, src)

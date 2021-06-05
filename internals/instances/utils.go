@@ -33,13 +33,14 @@ func extractNative(jar string, target string) error {
 		if err != nil {
 			return err
 		}
+		defer rc.Close()
 		f, err := os.Create(filepath.Join(target, f.Name))
 		if err != nil {
 			return err
 		}
+		defer f.Close()
 
 		io.Copy(f, rc)
-		rc.Close()
 	}
 	return nil
 }
@@ -78,6 +79,7 @@ func existOrDownload(lib minecraft.Lib) {
 	if err != nil {
 		panic(err)
 	}
+	defer target.Close()
 	_, err = io.Copy(target, res.Body)
 	if err != nil {
 		panic(err)
@@ -99,6 +101,7 @@ func (i *Instance) ensureAssets(man *minecraft.LaunchManifest) error {
 		if err != nil {
 			return err
 		}
+		defer dest.Close()
 		_, err = io.Copy(dest, fileRes.Body)
 		if err != nil {
 			return err

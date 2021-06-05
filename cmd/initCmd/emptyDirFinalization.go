@@ -137,6 +137,7 @@ func syncFabricMod(man *manifest.Manifest) error {
 	if err != nil {
 		return err
 	}
+	defer newFile.Close()
 	encoder := json.NewEncoder(newFile)
 	encoder.SetIndent("", "  ")
 	encoder.SetEscapeHTML(false)

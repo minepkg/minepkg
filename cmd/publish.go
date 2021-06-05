@@ -346,6 +346,7 @@ func addToZip(archive *zip.Writer, path string, filter ...filter) (int, error) {
 		if err != nil {
 			return err
 		}
+		defer source.Close()
 
 		if info.IsDir() {
 			return nil

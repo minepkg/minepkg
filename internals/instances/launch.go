@@ -448,6 +448,7 @@ func (i *Instance) fetchVanillaManifest(version string) (*minecraft.LaunchManife
 	if err != nil {
 		return nil, err
 	}
+	defer jarDest.Close()
 
 	// copy the jar
 	if _, err = io.Copy(jarDest, jarRes.Body); err != nil {
