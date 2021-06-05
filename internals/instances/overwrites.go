@@ -62,6 +62,7 @@ func (i *Instance) CopyOverwrites() error {
 		if err != nil {
 			return err
 		}
+		defer dest.Close()
 		_, err = io.Copy(dest, src)
 		return err
 	})
@@ -114,6 +115,7 @@ func (i *Instance) CopyLocalSaves() error {
 		if err != nil {
 			return err
 		}
+		defer dest.Close()
 		_, err = io.Copy(dest, src)
 		return err
 	})
