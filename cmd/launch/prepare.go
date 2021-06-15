@@ -243,6 +243,30 @@ func (c *CLILauncher) printOutro() {
 	fmt.Println("│ Java " + instance.JavaDir())
 }
 
+// func (c *CLILauncher) newFetchDependencies(ctx context.Context) error {
+// 	instance := c.Instance
+
+// 	resolveStartTime := time.Now()
+// 	resolver, err := instance.GetResolver(ctx)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	p := tea.NewProgram(NewResolverUI(resolver))
+// 	if err := p.Start(); err != nil {
+// 		return err
+// 	}
+
+// 	timing := fmt.Sprintf(
+// 		"Resolved %d packages in %s",
+// 		len(resolver.BetterResolved),
+// 		time.Since(resolveStartTime),
+// 	)
+// 	fmt.Print("│ " + gchalk.Gray(timing) + ".\n")
+
+// 	return nil
+// }
+
 func (c *CLILauncher) newFetchDependencies(ctx context.Context) error {
 	instance := c.Instance
 
@@ -258,7 +282,6 @@ func (c *CLILauncher) newFetchDependencies(ctx context.Context) error {
 	}()
 
 	for resolved := range sub {
-		fmt.Println(dependencyLine(resolved.Result.Lock()))
 		instance.Lockfile.AddDependency(resolved.Result.Lock())
 	}
 

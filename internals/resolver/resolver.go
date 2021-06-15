@@ -60,9 +60,10 @@ type Resolver struct {
 	IncludeDev   bool
 	AlsoDownload bool
 
-	downloadWg  sync.WaitGroup
-	subscribers []chan *Resolved
-	Providers   map[string]providers.Provider
+	resolvingFinished bool
+	downloadWg        sync.WaitGroup
+	subscribers       []chan *Resolved
+	Providers         map[string]providers.Provider
 }
 
 // New returns a new resolver
@@ -88,6 +89,10 @@ func New(man *manifest.Manifest, platformLock manifest.PlatformLock) *Resolver {
 	}
 
 	return resolver
+}
+
+func (r *Resolver) ResolveFinished() bool {
+	return r.resolvingFinished
 }
 
 func (r *Resolver) Subscribe() chan *Resolved {
@@ -127,6 +132,8 @@ func (r *Resolver) Resolve(ctx context.Context) error {
 			return err
 		}
 	}
+
+	r.resolvingFinished = true
 
 	if r.AlsoDownload {
 		r.downloadWg.Wait()
@@ -178,7 +185,6 @@ func (r *Resolver) ResolveDependencies(ctx context.Context, dependencies []*mani
 	}
 
 	download := func(resolved *Resolved) {
-		fmt.Println("downloading")
 		throttleDownload <- nil
 		r.downloadWg.Add(1)
 		resolved.Fetch(context.TODO())
@@ -283,6 +289,22 @@ func (r *Resolved) Fetch(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (r *Resolved) Transferred() uint64 {
+	if r.totalBytes == 0 {
+		return 0
+	}
+
+	return r.bytesTransferred
+}
+
+func (r *Resolved) Size() uint64 {
+	if r.totalBytes == 0 {
+		return 0
+	}
+
+	return r.totalBytes
 }
 
 func (r *Resolved) Progress() float64 {
