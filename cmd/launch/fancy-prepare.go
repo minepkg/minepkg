@@ -74,7 +74,7 @@ func (m FancyResolveUI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	for _, item := range m.resolver.BetterResolved {
 		transferred += item.Transferred()
 		total += item.Size()
-		if item.Result != nil {
+		if item.Lock() != nil {
 			resolved += 1
 		}
 	}
@@ -119,20 +119,19 @@ func (m FancyResolveUI) View() string {
 }
 
 func old(item resolver.Resolved, rows []string) {
-	// lock := item.Result.Lock()
-	result := item.Result
+	lock := item.Lock()
 
 	border := lipgloss.Border{
 		Left: "├│",
 	}
 
-	version := strings.SplitN(result.Lock().Version, "-", 2)
+	version := strings.SplitN(lock.Version, "-", 2)
 	prettyVersion := version[0]
 	if len(version) == 2 {
 		prettyVersion += gchalk.Gray("-" + version[1])
 	}
 
-	paddedName := fmt.Sprintf(" %-25s", result.Lock().Name)
+	paddedName := fmt.Sprintf(" %-25s", lock.Name)
 	loadingText := strings.Builder{}
 	progressPos := int(item.Progress() * 25)
 

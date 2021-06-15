@@ -18,8 +18,9 @@ import (
 
 var (
 	// ErrNoGlobalReqs is returned when GlobalReqs was not set
-	ErrNoGlobalReqs  = errors.New("no GlobalReqs set. They are required to resolve")
-	ErrUnexpectedEOF = errors.New("file stream closed unexpectedly")
+	ErrNoGlobalReqs          = errors.New("no GlobalReqs set. They are required to resolve")
+	ErrUnexpectedEOF         = errors.New("file stream closed unexpectedly")
+	ErrProviderDidNotResolve = errors.New("provider did not return a result")
 )
 
 // ErrNoMatchingRelease is returned if a wanted releaseendency (package) could not be resolved given the requirements
@@ -154,13 +155,13 @@ func (r *Resolver) ResolveDependencies(ctx context.Context, dependencies []*mani
 
 	throttleDownload := make(chan interface{}, 8)
 
-	asyncResolve := func(dependency *manifest.InterpretedDependency) {
+	asyncResolve := func(dependency *manifest.InterpretedDependency, root *manifest.DependencyLock) {
 		throttle <- nil
 		// t := time.Now()
 		ctx, cancel := context.WithTimeout(ctx, time.Minute*2)
 		defer cancel()
 
-		result, err := r.resolveSingle(ctx, dependency)
+		result, err := r.resolveSingle(ctx, dependency, root)
 		if err != nil {
 			errorC <- err
 			return
@@ -170,7 +171,7 @@ func (r *Resolver) ResolveDependencies(ctx context.Context, dependencies []*mani
 		<-throttle
 	}
 
-	batchResolve := func(dependencies []*manifest.InterpretedDependency) {
+	batchResolve := func(dependencies []*manifest.InterpretedDependency, root *manifest.DependencyLock) {
 		for _, dep := range dependencies {
 			// already resolved
 			// TODO: check if this version is newer
@@ -182,7 +183,7 @@ func (r *Resolver) ResolveDependencies(ctx context.Context, dependencies []*mani
 
 			r.Resolved[dep.Name] = nil
 
-			go asyncResolve(dep)
+			go asyncResolve(dep, root)
 		}
 	}
 
@@ -196,7 +197,7 @@ func (r *Resolver) ResolveDependencies(ctx context.Context, dependencies []*mani
 
 	for {
 		// start resolving the 1st level
-		batchResolve(dependencies)
+		batchResolve(dependencies, nil)
 
 		if resolving == 0 {
 			return nil
@@ -207,7 +208,7 @@ func (r *Resolver) ResolveDependencies(ctx context.Context, dependencies []*mani
 			return err
 		case resolved := <-resultsC:
 			resolving--
-			lock := resolved.Result.Lock()
+			lock := resolved.result.Lock()
 
 			if isDev {
 				lock.IsDev = true
@@ -226,52 +227,65 @@ func (r *Resolver) ResolveDependencies(ctx context.Context, dependencies []*mani
 			}
 
 			// resolve the dependencies of this package
-			batchResolve(resolved.Result.Dependencies())
+			batchResolve(resolved.result.Dependencies(), resolved.result.Lock())
 		}
 	}
 }
 
-func (r *Resolver) resolveSingle(ctx context.Context, dependency *manifest.InterpretedDependency) (*Resolved, error) {
+func (r *Resolver) resolveSingle(ctx context.Context, dependency *manifest.InterpretedDependency, root *manifest.DependencyLock) (*Resolved, error) {
 	provider, ok := r.Providers[dependency.Provider]
 	if !ok {
 		return nil, fmt.Errorf("%s needs %s as install provider which is not supported", dependency.Name, dependency.Provider)
 	}
 
-	request := r.providerRequest(dependency)
-
-	result, err := provider.Resolve(ctx, r.providerRequest(dependency))
+	request := r.providerRequest(dependency, root)
+	result, err := provider.Resolve(ctx, request)
 	if err != nil {
 		return nil, err
 	}
 
+	if result == nil || result.Lock() == nil {
+		return nil, ErrProviderDidNotResolve
+	}
+
 	resolved := &Resolved{
 		Request:  request,
-		Result:   result,
+		result:   result,
 		provider: provider,
 	}
 
 	return resolved, nil
 }
 
-func (r *Resolver) providerRequest(dep *manifest.InterpretedDependency) *providers.Request {
+func (r *Resolver) providerRequest(dep *manifest.InterpretedDependency, root *manifest.DependencyLock) *providers.Request {
 	return &providers.Request{
 		Dependency:   dep,
 		Requirements: r.GlobalReqs,
+		Root:         root,
 	}
 }
 
 type Resolved struct {
 	Request *providers.Request
-	Result  providers.Result
+	result  providers.Result
 
 	provider         providers.Provider
 	bytesTransferred uint64
 	totalBytes       uint64
 }
 
+func (r *Resolved) Lock() *manifest.DependencyLock {
+	lock := r.result.Lock()
+	if r.Request.Root != nil {
+		lock.Dependend = r.Request.Root.Name
+	}
+
+	return lock
+}
+
 func (r *Resolved) Fetch(ctx context.Context) error {
 	// TODO: check cache here
-	reader, size, err := r.provider.Fetch(ctx, r.Result)
+	reader, size, err := r.provider.Fetch(ctx, r.result)
 	if err != nil {
 		return err
 	}
@@ -315,16 +329,4 @@ func (r *Resolved) Progress() float64 {
 	}
 
 	return float64(r.bytesTransferred) / float64(r.totalBytes)
-}
-
-// WriteCounter counts the number of bytes written to it.
-type WriteCounter struct {
-	Total *uint64 // Total # of bytes transferred
-}
-
-// Write implements the io.Writer interface.
-func (wc *WriteCounter) Write(p []byte) (int, error) {
-	n := len(p)
-	*wc.Total += uint64(n)
-	return n, nil
 }

@@ -86,6 +86,9 @@ func (i *Instance) AreDependenciesOutdated() (bool, error) {
 	// check for removed dependencies
 	for _, lock := range lock.Dependencies {
 		if lock.Dependend == "" || lock.Dependend == i.Manifest.Package.Name {
+			if lock.Name == "minepkg-companion" {
+				continue
+			}
 			if _, ok := mani.Dependencies[lock.Name]; !ok {
 				return true, nil
 			}

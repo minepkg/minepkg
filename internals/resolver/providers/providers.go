@@ -15,6 +15,7 @@ type Provider interface {
 type Request struct {
 	Dependency   *manifest.InterpretedDependency
 	Requirements manifest.PlatformLock
+	Root         *manifest.DependencyLock
 
 	ignoreVersionsFlag bool
 	depth              uint16
