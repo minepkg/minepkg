@@ -53,6 +53,8 @@ func interpretSingleDependency(name string, source string) *InterpretedDependenc
 		return &InterpretedDependency{Name: name, Provider: "github", Source: source}
 	case strings.HasPrefix(source, "https://"):
 		return &InterpretedDependency{Name: name, Provider: "https", Source: source}
+	case source == "none":
+		return &InterpretedDependency{Name: name, Provider: "dummy", Source: "none"}
 	default:
 		return &InterpretedDependency{Name: name, Provider: "minepkg", Source: source}
 	}

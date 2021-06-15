@@ -88,6 +88,8 @@ func New(man *manifest.Manifest, platformLock manifest.PlatformLock) *Resolver {
 		Client: http.DefaultClient,
 	}
 
+	resolver.Providers["dummy"] = &providers.DummyProvider{}
+
 	return resolver
 }
 

@@ -283,6 +283,7 @@ func (c *CLILauncher) newFetchDependencies(ctx context.Context) error {
 
 	for resolved := range sub {
 		instance.Lockfile.AddDependency(resolved.Result.Lock())
+		fmt.Println(dependencyLine(resolved.Result.Lock()))
 	}
 
 	if err := <-resolverErrorC; err != nil {

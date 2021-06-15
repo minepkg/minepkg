@@ -16,11 +16,18 @@ func dependencyLine(dependency *manifest.DependencyLock) string {
 
 	version := strings.SplitN(dependency.Version, "-", 2)
 	prettyVersion := version[0]
-	if len(version) == 2 {
-		prettyVersion += gchalk.Gray("-" + version[0])
+
+	if dependency.Version == "none" {
+		prettyVersion = gchalk.Gray("none (overwritten)")
+	} else if len(version) == 2 {
+		prettyVersion += gchalk.Gray("-" + version[1])
 	}
 
-	paddedName := fmt.Sprintf(" %-25s", dependency.Name)
+	name := dependency.Name
+	if dependency.Version == "none" {
+		name = gchalk.Gray(name)
+	}
+	paddedName := fmt.Sprintf(" %-25s", name)
 
 	line := lipgloss.JoinHorizontal(
 		0.5,

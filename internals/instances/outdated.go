@@ -60,6 +60,9 @@ func (i *Instance) AreDependenciesOutdated() (bool, error) {
 
 	deps := mani.InterpretedDependencies()
 	for _, dep := range deps {
+		if dep.Provider == "dummy" {
+			continue
+		}
 		// contains non minepkg package, unsure if update is needed, better be safe
 		if dep.Provider != "minepkg" {
 			return true, nil
