@@ -84,8 +84,8 @@ func (c *CLILauncher) Prepare() error {
 		instance.SaveLockfile()
 	}
 	fmt.Println()
-	fmt.Println("│ Minecraft " + c.Instance.Lockfile.MinecraftVersion())
-	fmt.Println("│ Directory: " + instance.Directory)
+	req := gchalk.Gray(fmt.Sprintf(" resolved from %s", c.Instance.Manifest.Requirements.Minecraft))
+	fmt.Println("│ Minecraft " + c.Instance.Lockfile.MinecraftVersion() + req)
 	if instance.Manifest.PlatformString() == "fabric" {
 		fmt.Printf(
 			"│ Fabric: %s / %s (loader / mapping)\n",
@@ -238,6 +238,7 @@ func (c *CLILauncher) printIntro() {
 
 	fmt.Println(title)
 	fmt.Println("│")
+	fmt.Println("│ Directory: " + c.Instance.Directory)
 }
 
 func (c *CLILauncher) printOutro() {

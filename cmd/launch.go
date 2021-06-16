@@ -98,10 +98,6 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 		l.instance.UseSystemJava()
 	}
 
-	// launch instance
-	fmt.Printf("Launching %s\n", l.instance.Desc())
-	fmt.Printf("Instance location: %s\n", l.instance.Directory)
-
 	// we need login credentials to launch the client
 	// the server needs no creds
 	if !l.serverMode {
