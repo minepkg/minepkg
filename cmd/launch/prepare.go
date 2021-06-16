@@ -31,6 +31,9 @@ type CLILauncher struct {
 	// OfflineMode indicates if this server should be started in offline mode
 	OfflineMode bool
 
+	// ForceUpdate will force a full dependency resolve if set to true
+	ForceUpdate bool
+
 	// LaunchManifest is a minecraft launcher manifest. it should be set after
 	// calling `Prepare`
 	LaunchManifest *minecraft.LaunchManifest
@@ -72,7 +75,7 @@ func (c *CLILauncher) Prepare() error {
 	}
 
 	fmt.Print(pipeText.Render(gchalk.BgGray("Requirements")))
-	if outdatedReqs {
+	if c.ForceUpdate || outdatedReqs {
 		fmt.Print(gchalk.Gray("(updating)"))
 		err := instance.UpdateLockfileRequirements(context.TODO())
 		if err != nil {
@@ -100,7 +103,7 @@ func (c *CLILauncher) Prepare() error {
 
 	// also update deps when reqs are outdated
 	fmt.Print(pipeText.Render(gchalk.BgGray("Dependencies")))
-	if outdatedReqs || outdatedDeps {
+	if c.ForceUpdate || outdatedReqs || outdatedDeps {
 		fmt.Print(gchalk.Gray("(updating)\n"))
 		if err := c.newFetchDependencies(ctx); err != nil {
 			return err

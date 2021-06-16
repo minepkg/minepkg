@@ -35,6 +35,7 @@ Alternatively: Can be used in directories containing a minepkg.toml manifest to 
 	}, runner)
 
 	cmd.Flags().BoolVarP(&runner.serverMode, "server", "s", false, "Start a server instead of a client")
+	cmd.Flags().BoolVarP(&runner.forceUpdate, "update", "u", false, "Force check for updates before starting")
 	cmd.Flags().BoolVar(&runner.debugMode, "debug", false, "Do not start, just debug")
 	cmd.Flags().BoolVar(&runner.offlineMode, "offline", false, "Start the server in offline mode (server only)")
 	cmd.Flags().BoolVar(&runner.onlyPrepare, "only-prepare", false, "Only prepare, skip launching")
@@ -54,6 +55,7 @@ type launchRunner struct {
 	crashTest   bool
 	noBuild     bool
 	demo        bool
+	forceUpdate bool
 
 	overwrites *launch.OverwriteFlags
 
@@ -114,6 +116,7 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 		Instance:       l.instance,
 		ServerMode:     l.serverMode,
 		OfflineMode:    l.offlineMode,
+		ForceUpdate:    l.forceUpdate,
 		MinepkgVersion: rootCmd.Version,
 		NonInteractive: viper.GetBool("nonInteractive"),
 	}
