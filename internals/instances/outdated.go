@@ -77,8 +77,19 @@ func (i *Instance) AreDependenciesOutdated() (bool, error) {
 		if !ok {
 			return true, nil
 		}
+
+		// might not even be semver, but versions match, next!
+		if dep.Source == lockEntry.Version {
+			continue
+		}
+
+		sVersion, err := semver.NewVersion(lockEntry.Version)
+		// not semver and not equal? we check
+		if err != nil {
+			return true, nil
+		}
 		// Version does not match
-		if !packageDep.Check(semver.MustParse(lockEntry.Version)) {
+		if !packageDep.Check(sVersion) {
 			return true, nil
 		}
 	}
