@@ -23,6 +23,7 @@ import (
 )
 
 func init() {
+	runner := &joinRunner{}
 	cmd := commands.New(&cobra.Command{
 		Use:     "join <ip/hostname>",
 		Short:   "Joins a compatible server without any setup",
@@ -30,14 +31,18 @@ func init() {
 		Example: `  minepkg join demo.minepkg.host`,
 		Aliases: []string{"i-wanna-play-on", "connect"},
 		Args:    cobra.ExactArgs(1),
-	}, &joinRunner{})
+	}, runner)
+
+	cmd.Flags().IntVar(&runner.ramMiB, "ram", 0, "Overwrite the amount of RAM in MiB to use")
 
 	rootCmd.AddCommand(cmd.Command)
 }
 
-type joinRunner struct{}
+type joinRunner struct {
+	ramMiB int
+}
 
-func (i *joinRunner) RunE(cmd *cobra.Command, args []string) error {
+func (j *joinRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	var resolvedModpack *api.Release
 	ip := "127.0.0.1"
@@ -108,6 +113,7 @@ func (i *joinRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	opts := &instances.LaunchOptions{
 		JoinServer: ip + ":" + port,
+		RamMiB:     j.ramMiB,
 	}
 	err = cliLauncher.Launch(opts)
 	if err != nil {

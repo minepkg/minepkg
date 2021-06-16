@@ -163,6 +163,7 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 		Server:         t.serverMode,
 		Offline:        t.offlineMode,
 		StartSave:      startSave,
+		RamMiB:         t.overwrites.Ram,
 	}
 	err = cliLauncher.Launch(opts)
 	if err != nil {

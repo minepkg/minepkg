@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -21,6 +22,7 @@ import (
 	"github.com/minepkg/minepkg/internals/minecraft"
 	"github.com/minepkg/minepkg/internals/mojang"
 	"github.com/minepkg/minepkg/pkg/manifest"
+	"github.com/pbnjay/memory"
 )
 
 var (
@@ -67,6 +69,9 @@ type LaunchOptions struct {
 	// StartSave can be a savegame name to start after startup
 	StartSave string
 	Debug     bool
+	// RamMiB can be set to the amount of ram in MiB to start Minecraft with
+	// 0 determins the amount by modcount + available system ram
+	RamMiB int
 }
 
 // Launch will launch the minecraft instance
@@ -250,6 +255,22 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 		javaCpSeperator = ";"
 	}
 
+	var maxRamMiB int
+
+	if opts.RamMiB == 0 {
+		sysMemMiB := float64(memory.TotalMemory()) / 1024 / 1024
+
+		// 1GiB for base Minecraft + every dependency takes 25 MiB
+		maxRamMiB = 1024 + len(i.Lockfile.Dependencies)*25
+
+		// we take 1/4 of the system memory if that is more
+		maxRamMiB = int(math.Max(float64(maxRamMiB), sysMemMiB/4))
+		// but not more than 85% of the memory
+		maxRamMiB = int(math.Min(float64(maxRamMiB), sysMemMiB*0.85))
+	} else {
+		maxRamMiB = opts.RamMiB
+	}
+
 	cmdArgs := []string{
 		"-Xss128M",
 		"-Djava.library.path=" + tmpDir,
@@ -258,7 +279,7 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 		"-Dminecraft.client.jar=" + mcJar,
 		"-cp",
 		strings.Join(cpArgs, javaCpSeperator),
-		// "-Xmx2G", // TODO: option!
+		fmt.Sprintf("-Xmx%dM", maxRamMiB),
 		"-XX:+UnlockExperimentalVMOptions",
 		"-XX:+UseG1GC",
 		"-XX:G1NewSizePercent=20",
@@ -267,6 +288,10 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 		"-XX:G1HeapRegionSize=32M",
 		"-XX:ErrorFile=./jvm-error.log",
 		launchManifest.MainClass,
+	}
+
+	if opts.RamMiB != 0 {
+		cmdArgs = append([]string{fmt.Sprintf("-Xms%dM", opts.RamMiB)}, cmdArgs...)
 	}
 
 	// HACK: prepend this so macos does not crash

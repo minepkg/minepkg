@@ -151,6 +151,7 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 		Server:         l.serverMode,
 		Debug:          l.debugMode,
 		Demo:           l.demo,
+		RamMiB:         l.overwrites.Ram,
 	}
 
 	launchErr := make(chan error)

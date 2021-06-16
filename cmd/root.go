@@ -27,9 +27,8 @@ var Version string
 var nextVersion string = "0.1.0-dev-local"
 
 var (
-	cfgFile       string
-	globalDir     = "/tmp"
-	disableColors bool
+	cfgFile   string
+	globalDir = "/tmp"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -97,14 +96,12 @@ func initRoot() {
 	configPath := filepath.Join(configDir, "minepkg")
 
 	// Global flags
-	rootCmd.PersistentFlags().BoolVarP(&disableColors, "no-color", "", false, "disable color output")
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf("config file (default is %s/config.toml)", configPath))
 	rootCmd.PersistentFlags().BoolP("accept-minecraft-eula", "a", false, "Accept Minecraft's eula. See https://www.minecraft.net/en-us/eula/")
 	rootCmd.PersistentFlags().BoolP("system-java", "", false, "Use system java instead of internal installation for launching Minecraft server or client")
 	rootCmd.PersistentFlags().BoolP("verbose", "", false, "More verbose logging. Not really implemented yet")
-	rootCmd.PersistentFlags().BoolP("non-interactive", "", false, "Use default answer for all prompts")
+	rootCmd.PersistentFlags().BoolP("non-interactive", "", false, "Do not prompt for anything (use defaults instead)")
 
-	viper.BindPFlag("noColor", rootCmd.PersistentFlags().Lookup("no-color"))
 	viper.BindPFlag("useSystemJava", rootCmd.PersistentFlags().Lookup("system-java"))
 	viper.BindPFlag("acceptMinecraftEula", rootCmd.PersistentFlags().Lookup("accept-minecraft-eula"))
 	viper.BindPFlag("verboseLogging", rootCmd.PersistentFlags().Lookup("verbose"))
