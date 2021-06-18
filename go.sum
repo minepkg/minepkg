@@ -60,6 +60,8 @@ github.com/charmbracelet/bubbletea v0.14.0 h1:SBbtRPkZ/wGYyTAn2zrBERes/nwzxZR5Qd
 github.com/charmbracelet/bubbletea v0.14.0/go.mod h1:b5lOf5mLjMg1tRn1HVla54guZB+jvsyV0yYAQja95zE=
 github.com/charmbracelet/lipgloss v0.2.1 h1:knjqLRtlcDsxss6i0CUhNLuXrNW3TQhFDXlXII2UaZA=
 github.com/charmbracelet/lipgloss v0.2.1/go.mod h1:uiZUfrHLQN14I0lJ5591WtcHyY1X76pOIPSaRKPY6dE=
+github.com/charmbracelet/lipgloss v0.3.0 h1:5MysOD6sHr4RP4jkZNWGVIul5GKoOsP12NgbgXPvAlA=
+github.com/charmbracelet/lipgloss v0.3.0/go.mod h1:VkhdBS2eNAmRkTwRKLJCFhCOVkjntMusBDxv7TXahuk=
 github.com/chzyer/logex v1.1.10 h1:Swpa1K6QvQznwJRcfTfQJmTE72DqScAa40E+fbHEXEE=
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=
 github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e h1:fY5BOSpyZCqRo5OhCuC+XN+r/bBCmeuuJtjz+bCNIf8=
@@ -251,6 +253,8 @@ github.com/mattn/go-isatty v0.0.13/go.mod h1:cbi8OIDigv2wuxKPP5vlRcQ1OAZbq2CE4Ky
 github.com/mattn/go-runewidth v0.0.10/go.mod h1:RAqKPSqVFrSLVXbA8x7dzmKdmGzieGRCM46jaSJTDAk=
 github.com/mattn/go-runewidth v0.0.12 h1:Y41i/hVW3Pgwr8gV+J23B9YEY0zxjptBuCWEaxmAOow=
 github.com/mattn/go-runewidth v0.0.12/go.mod h1:RAqKPSqVFrSLVXbA8x7dzmKdmGzieGRCM46jaSJTDAk=
+github.com/mattn/go-runewidth v0.0.13 h1:lTGmDsbAYt5DmK6OnoV7EuIF1wEIFAcxld6ypU4OSgU=
+github.com/mattn/go-runewidth v0.0.13/go.mod h1:Jdepj2loyihRzMpdS35Xk/zdY8IAYHsh153qUoGf23w=
 github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5Ld7szi9bcBfOoFv/3dc6xSMkL2PC0=
 github.com/mholt/archiver/v3 v3.5.0 h1:nE8gZIrw66cu4osS/U7UW7YDuGMHssxKutU8IfWxwWE=
 github.com/mholt/archiver/v3 v3.5.0/go.mod h1:qqTTPUK/HZPFgFQ/TJ3BzvTpF/dPtFVJXdQbCmeMxwc=
