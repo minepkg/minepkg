@@ -3,7 +3,7 @@ module github.com/minepkg/minepkg
 require (
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/Tnze/go-mc v1.16.1
-	github.com/briandowns/spinner v1.13.0
+	github.com/briandowns/spinner v1.16.0
 	github.com/charmbracelet/bubbletea v0.14.0
 	github.com/charmbracelet/lipgloss v0.2.1
 	github.com/dchest/uniuri v0.0.0-20200228104902-7aecb25e1fe5
@@ -21,7 +21,7 @@ require (
 	github.com/mholt/archiver/v3 v3.5.0
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/muesli/termenv v0.8.1 // indirect
-	github.com/pbnjay/memory v0.0.0-20201129165224-b12e5d931931 // indirect
+	github.com/pbnjay/memory v0.0.0-20201129165224-b12e5d931931
 	github.com/pelletier/go-toml v1.9.1
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/cobra v1.1.3
