@@ -7,7 +7,6 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -136,8 +135,7 @@ type slpData struct {
 
 func resolveViaSLP(ip string, port string) *api.Release {
 	fmt.Println("Trying to query server modpack …")
-	intPort, _ := strconv.Atoi(port)
-	serverData, _, err := bot.PingAndListTimeout(ip, intPort, 10*time.Second)
+	serverData, _, err := bot.PingAndListTimeout(fmt.Sprintf("%s:%d", ip, port), 10*time.Second)
 	if err != nil {
 		fmt.Println("could not reach server")
 		return nil
