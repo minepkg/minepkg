@@ -142,16 +142,13 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 	// add/overwrite the wanted mod or modpack
 	instance.Manifest.AddDependency(release.Package.Name, release.Package.Version)
 
-	if viper.GetBool("useSystemJava") {
-		instance.UseSystemJava()
-	}
-
 	cliLauncher := launch.CLILauncher{
 		Instance:       instance,
 		ServerMode:     t.serverMode,
 		OfflineMode:    t.offlineMode,
 		MinepkgVersion: rootCmd.Version,
 		NonInteractive: viper.GetBool("nonInteractive"),
+		UseSystemJava:  viper.GetBool("useSystemJava"),
 	}
 	if err := cliLauncher.Prepare(); err != nil {
 		return err

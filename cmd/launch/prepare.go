@@ -13,6 +13,7 @@ import (
 	"github.com/jwalton/gchalk"
 	"github.com/minepkg/minepkg/internals/downloadmgr"
 	"github.com/minepkg/minepkg/internals/instances"
+	"github.com/minepkg/minepkg/internals/java"
 	"github.com/minepkg/minepkg/internals/minecraft"
 	"github.com/spf13/viper"
 )
@@ -41,6 +42,12 @@ type CLILauncher struct {
 	// NonInteractive determines if fancy spinners or prompts should be displayed
 	NonInteractive bool
 
+	// UseSystemJava sets the instance to use the system java
+	// instead of the internal installation. This skips downloading java
+	UseSystemJava bool
+
+	javaFactory         *java.Factory
+	java                *java.Java
 	introPrinted        bool
 	originalServerProps []byte
 }
@@ -56,17 +63,7 @@ func (c *CLILauncher) Prepare() error {
 	c.printIntro()
 	c.introPrinted = true
 
-	javaUpdate := make(chan error)
-
-	if !instance.HasJava() {
-		go func() {
-			javaUpdate <- instance.UpdateJava()
-		}()
-	} else {
-		go func() {
-			javaUpdate <- nil
-		}()
-	}
+	javaUpdate := make(chan error, 1)
 
 	// resolve requirements
 	outdatedReqs, err := instance.AreRequirementsOutdated()
@@ -84,6 +81,28 @@ func (c *CLILauncher) Prepare() error {
 		instance.SaveLockfile()
 	}
 	fmt.Println()
+
+	if c.UseSystemJava {
+		// nothing gets downloaded. this is a success
+		javaUpdate <- nil
+	} else {
+		// we check if we need to download java
+		java, err := instance.Java()
+		if err != nil {
+			return err
+		}
+
+		if java.NeedsDownloading() {
+			fmt.Printf("│ %s\n", gchalk.Gray("[i] Starting Java download …"))
+			go func() {
+				javaUpdate <- java.Update(ctx)
+			}()
+		} else {
+			// nothing to download
+			javaUpdate <- nil
+		}
+	}
+
 	req := gchalk.Gray(fmt.Sprintf(" resolved from %s", c.Instance.Manifest.Requirements.Minecraft))
 	fmt.Println("│ Minecraft " + c.Instance.Lockfile.MinecraftVersion() + req)
 	if instance.Manifest.PlatformString() == "fabric" {
@@ -243,33 +262,18 @@ func (c *CLILauncher) printIntro() {
 
 func (c *CLILauncher) printOutro() {
 	instance := c.Instance
+
+	javaDir := "(system java)"
+	if !c.UseSystemJava {
+		java, err := instance.Java()
+		if err != nil {
+			panic(err)
+		}
+		javaDir = java.Bin()
+	}
 	fmt.Println("│ minepkg " + c.MinepkgVersion)
-	fmt.Println("│ Java " + instance.JavaDir())
+	fmt.Println("│ Java " + javaDir)
 }
-
-// func (c *CLILauncher) newFetchDependencies(ctx context.Context) error {
-// 	instance := c.Instance
-
-// 	resolveStartTime := time.Now()
-// 	resolver, err := instance.GetResolver(ctx)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	p := tea.NewProgram(NewResolverUI(resolver))
-// 	if err := p.Start(); err != nil {
-// 		return err
-// 	}
-
-// 	timing := fmt.Sprintf(
-// 		"Resolved %d packages in %s",
-// 		len(resolver.BetterResolved),
-// 		time.Since(resolveStartTime),
-// 	)
-// 	fmt.Print("│ " + gchalk.Gray(timing) + ".\n")
-
-// 	return nil
-// }
 
 func (c *CLILauncher) newFetchDependencies(ctx context.Context) error {
 	instance := c.Instance

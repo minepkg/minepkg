@@ -1,104 +1,27 @@
 package instances
 
 import (
-	"errors"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"path/filepath"
-	"runtime"
+	"context"
 
-	"github.com/mholt/archiver/v3"
+	"github.com/Masterminds/semver/v3"
+	"github.com/minepkg/minepkg/internals/java"
 )
 
-// HasJava returns true if the internal java installation has been detected
-// for this instance
-func (i *Instance) HasJava() bool {
-	return i.javaBin() != ""
-}
+func (i *Instance) Java() (*java.Java, error) {
+	if i.java != nil {
+		return i.java, nil
+	}
+	v := uint8(8)
 
-// UseSystemJava sets the instance to use the system java
-// instead of the internal installation
-func (i *Instance) UseSystemJava() {
-	i.javaBinary = "java"
-}
+	mcSemver := semver.MustParse(i.Lockfile.MinecraftVersion())
+	if mcSemver.Equal(semver.MustParse("1.17.0")) || mcSemver.GreaterThan(semver.MustParse("1.17.0")) {
+		v = 16
+	}
 
-// UpdateJava updates the local java installation
-func (i *Instance) UpdateJava() error {
-	java, err := i.downloadJava()
+	java, err := i.JavaFactory.Version(context.TODO(), v)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	i.javaBinary = java
-	return nil
-}
-
-// javaBin returns the internal java binary
-// it caches the path if it finds a java installation
-func (i *Instance) javaBin() string {
-	if i.javaBinary != "" {
-		return i.javaBinary
-	}
-	localJava, err := ioutil.ReadDir(i.JavaDir())
-
-	if err == nil && len(localJava) != 0 {
-		bin := "bin/java" // linux. somehow also works with windows
-		switch runtime.GOOS {
-		case "windows":
-			bin = "bin/java.exe"
-		case "darwin": // macOS
-			bin = "Contents/Home/bin/java"
-		}
-		i.javaBinary = filepath.Join(i.JavaDir(), localJava[0].Name(), bin)
-		return i.javaBinary
-	}
-
-	return ""
-}
-
-// downloadJava downloads the internal java binary
-// TODO: version should not be static!
-func (i *Instance) downloadJava() (string, error) {
-	url := ""
-	ext := ".tar.gz"
-
-	os.MkdirAll(i.JavaDir(), os.ModePerm)
-	switch runtime.GOOS {
-	case "linux":
-		url = "https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u212-b03/OpenJDK8U-jre_x64_linux_hotspot_8u212b03.tar.gz"
-	case "windows":
-		ext = ".zip"
-		url = "https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u212-b03/OpenJDK8U-jre_x64_windows_hotspot_8u212b03.zip"
-	case "darwin": // macOS
-		url = "https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u212-b03/OpenJDK8U-jre_x64_mac_hotspot_8u212b03.tar.gz"
-	default:
-		return "", errors.New("unknown operating system. Can't download java for it")
-	}
-	res, err := http.Get(url)
-	if err != nil {
-		return "", err
-	}
-
-	target, err := ioutil.TempFile("", "minepkg-java.*"+ext)
-
-	if err != nil {
-		return "", err
-	}
-	_, err = io.Copy(target, res.Body)
-	if err != nil {
-		return "", err
-	}
-
-	err = archiver.Unarchive(target.Name(), i.JavaDir())
-	if err != nil {
-		return "", err
-	}
-
-	// macos tar contains some uneeded stuff that we need to remove
-	if runtime.GOOS == "darwin" {
-		os.Remove(filepath.Join(i.JavaDir(), "._jdk8u212-b03-jre"))
-	}
-
-	return i.javaBin(), nil
+	i.java = java
+	return java, nil
 }

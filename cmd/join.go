@@ -102,13 +102,10 @@ func (j *joinRunner) RunE(cmd *cobra.Command, args []string) error {
 		Instance:       instance,
 		ServerMode:     false,
 		MinepkgVersion: rootCmd.Version,
+		UseSystemJava:  viper.GetBool("useSystemJava"),
 	}
 	if err := cliLauncher.Prepare(); err != nil {
 		return err
-	}
-
-	if viper.GetBool("useSystemJava") {
-		instance.UseSystemJava()
 	}
 
 	opts := &instances.LaunchOptions{

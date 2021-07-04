@@ -94,10 +94,6 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 		logger.Fail("Can not launch forge modpacks for now. Sorry.")
 	}
 
-	if viper.GetBool("useSystemJava") {
-		l.instance.UseSystemJava()
-	}
-
 	// we need login credentials to launch the client
 	// the server needs no creds
 	if !l.serverMode {
@@ -115,6 +111,7 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 		ForceUpdate:    l.forceUpdate,
 		MinepkgVersion: rootCmd.Version,
 		NonInteractive: viper.GetBool("nonInteractive"),
+		UseSystemJava:  viper.GetBool("useSystemJava"),
 	}
 
 	if err := cliLauncher.Prepare(); err != nil {

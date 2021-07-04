@@ -32,8 +32,10 @@ var (
 	ErrNoCredentials = errors.New("can not launch without mojang credentials")
 	// ErrNoPaidAccount is returned when an instance is launched without `MojangProfile` beeing set
 	ErrNoPaidAccount = errors.New("you need to buy Minecraft to launch it")
-	// ErrorNoVersion is returned if no mc version was detected
-	ErrorNoVersion = errors.New("could not detect minecraft version")
+	// ErrNoVersion is returned if no mc version was detected
+	ErrNoVersion = errors.New("could not detect minecraft version")
+	// ErrNoJava is returned if no java runtime is available to launch
+	ErrNoJava = errors.New("no java runtime set to launch instance")
 )
 
 // GetLaunchManifest returns the merged manifest for the instance
@@ -136,15 +138,15 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 
 	// ensure some java binary is set
 	if opts.Java == "" {
-		opts.Java = i.javaBin()
-		// no local java installation
-		if opts.Java == "" {
-			// download java
-			if err := i.UpdateJava(); err != nil {
-				return nil, err
-			}
-			opts.Java = i.javaBinary
+		java, err := i.Java()
+		if err != nil {
+			return nil, err
 		}
+		if java.NeedsDownloading() {
+			return nil, ErrNoJava
+		}
+
+		opts.Java = java.Bin()
 	}
 
 	// Download assets if not skipped
@@ -439,7 +441,7 @@ func (i *Instance) fetchVanillaManifest(version string) (*minecraft.LaunchManife
 		}
 	}
 	if manifestURL == "" {
-		return nil, ErrorNoVersion
+		return nil, ErrNoVersion
 	}
 
 	manifest := minecraft.LaunchManifest{}

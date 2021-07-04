@@ -9,6 +9,7 @@ import (
 
 	"github.com/jwalton/gchalk"
 	"github.com/minepkg/minepkg/internals/commands"
+	"github.com/minepkg/minepkg/internals/java"
 
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/mojang"
@@ -57,10 +58,11 @@ type Instance struct {
 	Lockfile          *manifest.Lockfile
 	MojangCredentials *mojang.AuthResponse
 	MinepkgAPI        *api.MinepkgAPI
+	JavaFactory       *java.Factory
 
-	isFromWd   bool
-	launchCmd  string
-	javaBinary string
+	isFromWd  bool
+	launchCmd string
+	java      *java.Java
 }
 
 // LaunchCmd returns the cmd used to launch minecraft (if started)
@@ -164,8 +166,9 @@ func NewEmptyInstance() *Instance {
 	}
 
 	return &Instance{
-		GlobalDir: filepath.Join(userConfig, "minepkg"),
-		CacheDir:  filepath.Join(userCache, "minepkg"),
+		GlobalDir:   filepath.Join(userConfig, "minepkg"),
+		CacheDir:    filepath.Join(userCache, "minepkg"),
+		JavaFactory: java.NewFactory(filepath.Join(userCache, "minepkg", "java")),
 	}
 }
 
@@ -197,11 +200,12 @@ func NewInstanceFromWd() (*Instance, error) {
 	}
 
 	instance := &Instance{
-		Manifest:  &manifest,
-		Directory: dir,
-		GlobalDir: filepath.Join(userConfig, "minepkg"),
-		CacheDir:  filepath.Join(userCache, "minepkg"),
-		isFromWd:  true,
+		Manifest:    &manifest,
+		Directory:   dir,
+		GlobalDir:   filepath.Join(userConfig, "minepkg"),
+		CacheDir:    filepath.Join(userCache, "minepkg"),
+		isFromWd:    true,
+		JavaFactory: java.NewFactory(filepath.Join(userCache, "minepkg", "java")),
 	}
 
 	// initialize manifest
