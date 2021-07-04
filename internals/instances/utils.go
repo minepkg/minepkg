@@ -73,7 +73,7 @@ func existOrDownload(lib minecraft.Lib) {
 		panic(url + " did not return status code 200")
 	}
 	// create directory first
-	os.MkdirAll(filepath.Dir(path), 0755)
+	os.MkdirAll(filepath.Dir(path), os.ModePerm)
 	// file next
 	target, err := os.Create(path)
 	if err != nil {

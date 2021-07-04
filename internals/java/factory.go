@@ -29,6 +29,7 @@ func (j *Factory) SetHTTPClient(c *http.Client) {
 func (j *Factory) Version(ctx context.Context, featureRelease uint8) (*Java, error) {
 	fullName := fmt.Sprintf("%d-jre-openj9", featureRelease)
 
+	os.MkdirAll(j.baseDir, os.ModePerm)
 	entries, err := os.ReadDir(j.baseDir)
 	if err != nil {
 		return nil, err
