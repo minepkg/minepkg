@@ -134,8 +134,7 @@ type slpData struct {
 }
 
 func resolveViaSLP(ip string, port string) *api.Release {
-	fmt.Println("Trying to query server modpack …")
-	serverData, _, err := bot.PingAndListTimeout(fmt.Sprintf("%s:%d", ip, port), 10*time.Second)
+	serverData, _, err := bot.PingAndListTimeout(fmt.Sprintf("%s:%s", ip, port), 10*time.Second)
 	if err != nil {
 		fmt.Println("could not reach server")
 		return nil
