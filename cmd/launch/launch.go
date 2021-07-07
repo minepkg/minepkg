@@ -31,6 +31,10 @@ func (c *CLILauncher) Launch(opts *instances.LaunchOptions) error {
 		opts.Server = c.ServerMode
 	}
 
+	if c.UseSystemJava {
+		opts.Java = "java"
+	}
+
 	cmd, err := c.Instance.BuildLaunchCmd(opts)
 	if err != nil {
 		return err
