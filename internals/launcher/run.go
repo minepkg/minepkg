@@ -1,4 +1,4 @@
-package launch
+package launcher
 
 import (
 	"fmt"
@@ -12,9 +12,9 @@ import (
 	"github.com/minepkg/minepkg/internals/instances"
 )
 
-// Launch will launch the instance with the provided launchOptions
+// Run will launch the instance with the provided launchOptions
 // and will set some fallback values
-func (c *CLILauncher) Launch(opts *instances.LaunchOptions) error {
+func (c *Launcher) Run(opts *instances.LaunchOptions) error {
 	fmt.Println("│")
 	fmt.Println(
 		lipgloss.JoinHorizontal(
@@ -33,6 +33,8 @@ func (c *CLILauncher) Launch(opts *instances.LaunchOptions) error {
 
 	if c.UseSystemJava {
 		opts.Java = "java"
+	} else {
+		opts.Java = c.java.Bin()
 	}
 
 	cmd, err := c.Instance.BuildLaunchCmd(opts)

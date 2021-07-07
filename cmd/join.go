@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"github.com/Tnze/go-mc/bot"
-	"github.com/minepkg/minepkg/cmd/launch"
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/instances"
+	"github.com/minepkg/minepkg/internals/launcher"
 	"github.com/minepkg/minepkg/pkg/manifest"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -97,7 +97,7 @@ func (j *joinRunner) RunE(cmd *cobra.Command, args []string) error {
 	instance.Manifest = manifest.NewInstanceLike(resolvedModpack.Manifest)
 	fmt.Println("Using modpack " + resolvedModpack.Identifier())
 
-	cliLauncher := launch.CLILauncher{
+	cliLauncher := launcher.Launcher{
 		Instance:       instance,
 		ServerMode:     false,
 		MinepkgVersion: rootCmd.Version,
@@ -111,7 +111,7 @@ func (j *joinRunner) RunE(cmd *cobra.Command, args []string) error {
 		JoinServer: ip + ":" + port,
 		RamMiB:     j.ramMiB,
 	}
-	err = cliLauncher.Launch(opts)
+	err = cliLauncher.Run(opts)
 	if err != nil {
 		return err
 	}

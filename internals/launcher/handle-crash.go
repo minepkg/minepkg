@@ -1,4 +1,4 @@
-package launch
+package launcher
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 )
 
 // HandleCrash handles a crash by submitting it to minepkg.io and outputting some debug info
-func (c *CLILauncher) HandleCrash() error {
+func (c *Launcher) HandleCrash() error {
 	// exit code was not 130 or 0, we output error info and submit a crash report
 	man := c.Instance.Manifest
 	platform := man.PlatformString()

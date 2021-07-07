@@ -9,11 +9,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/minepkg/minepkg/cmd/launch"
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/instances"
+	"github.com/minepkg/minepkg/internals/launcher"
 	"github.com/minepkg/minepkg/pkg/manifest"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -38,7 +38,7 @@ It will be deleted after testing.
 	cmd.Flags().BoolVarP(&runner.plain, "plain", "p", false, "Do not include default mods for testing")
 	cmd.Flags().BoolVarP(&runner.photosession, "photosession", "", false, "Upload all screenshots (take with F2) to the project")
 
-	runner.overwrites = launch.CmdOverwriteFlags(cmd.Command)
+	runner.overwrites = launcher.CmdOverwriteFlags(cmd.Command)
 
 	rootCmd.AddCommand(cmd.Command)
 }
@@ -50,7 +50,7 @@ type tryRunner struct {
 	serverMode   bool
 	offlineMode  bool
 
-	overwrites *launch.OverwriteFlags
+	overwrites *launcher.OverwriteFlags
 }
 
 func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
@@ -123,7 +123,7 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 	fmt.Println("Creating temporary modpack with " + release.Identifier())
 
 	// overwrite some instance launch options with flags
-	launch.ApplyInstanceOverwrites(instance, t.overwrites)
+	launcher.ApplyInstanceOverwrites(instance, t.overwrites)
 
 	if t.overwrites.McVersion == "" {
 		fmt.Println("mc * resolved to: " + release.LatestTestedMinecraftVersion())
@@ -142,7 +142,7 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 	// add/overwrite the wanted mod or modpack
 	instance.Manifest.AddDependency(release.Package.Name, release.Package.Version)
 
-	cliLauncher := launch.CLILauncher{
+	cliLauncher := launcher.Launcher{
 		Instance:       instance,
 		ServerMode:     t.serverMode,
 		OfflineMode:    t.offlineMode,
@@ -162,7 +162,7 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 		StartSave:      startSave,
 		RamMiB:         t.overwrites.Ram,
 	}
-	err = cliLauncher.Launch(opts)
+	err = cliLauncher.Run(opts)
 	if err != nil {
 		return err
 	}

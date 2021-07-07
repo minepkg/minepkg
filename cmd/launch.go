@@ -12,11 +12,11 @@ import (
 	"time"
 
 	"github.com/jwalton/gchalk"
-	"github.com/minepkg/minepkg/cmd/launch"
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/instances"
+	"github.com/minepkg/minepkg/internals/launcher"
 	"github.com/minepkg/minepkg/pkg/manifest"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -42,7 +42,7 @@ Alternatively: Can be used in directories containing a minepkg.toml manifest to 
 	cmd.Flags().BoolVar(&runner.crashTest, "crashtest", false, "Stop server after it's online (can be used for testing)")
 	cmd.Flags().BoolVar(&runner.noBuild, "no-build", false, "Skip build (if any)")
 	cmd.Flags().BoolVar(&runner.demo, "demo", false, "Start Minecraft in demo mode (without auth)")
-	runner.overwrites = launch.CmdOverwriteFlags(cmd.Command)
+	runner.overwrites = launcher.CmdOverwriteFlags(cmd.Command)
 
 	rootCmd.AddCommand(cmd.Command)
 }
@@ -57,7 +57,7 @@ type launchRunner struct {
 	demo        bool
 	forceUpdate bool
 
-	overwrites *launch.OverwriteFlags
+	overwrites *launcher.OverwriteFlags
 
 	instance *instances.Instance
 }
@@ -79,7 +79,7 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		launch.ApplyInstanceOverwrites(l.instance, l.overwrites)
+		launcher.ApplyInstanceOverwrites(l.instance, l.overwrites)
 	} else {
 		l.instance, err = l.instanceFromModpack(args[0])
 		if err != nil {
@@ -104,7 +104,7 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 		l.instance.MojangCredentials = creds
 	}
 
-	cliLauncher := launch.CLILauncher{
+	cliLauncher := launcher.Launcher{
 		Instance:       l.instance,
 		ServerMode:     l.serverMode,
 		OfflineMode:    l.offlineMode,
@@ -158,7 +158,7 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	go func() {
 		// finally, start the instance
-		launchErr <- cliLauncher.Launch(opts)
+		launchErr <- cliLauncher.Run(opts)
 	}()
 
 	stopAfterCrashtest := func() {
@@ -280,7 +280,7 @@ func (l *launchRunner) instanceFromModpack(modpack string) (*instances.Instance,
 	instance.Directory = filepath.Join(instance.InstancesDir(), release.Package.Name+"_"+release.Package.Platform)
 
 	// overwrite some instance launch options with flags
-	launch.ApplyInstanceOverwrites(instance, l.overwrites)
+	launcher.ApplyInstanceOverwrites(instance, l.overwrites)
 
 	if l.overwrites.McVersion == "" {
 		fmt.Println("Minecraft version '*' resolved to: " + release.LatestTestedMinecraftVersion())

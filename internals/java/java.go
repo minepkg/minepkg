@@ -30,6 +30,7 @@ func (j *Java) Bin() string {
 	default:
 		bin = "bin/java"
 	}
+
 	return filepath.Join(j.dir, bin)
 }
 

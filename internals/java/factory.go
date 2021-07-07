@@ -3,10 +3,18 @@ package java
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
+)
+
+var (
+	ErrInvalidVersionString     = errors.New("invalid java version string. must consist of at most 3 parts separated by dashes")
+	ErrInvalidFeatureVersion    = errors.New("invalid feature version. must be a number between 1 and 65535")
+	ErrInvalidImageType         = errors.New("invalid image type. must be either jdk, jre, testimage or debugimage")
+	ErrInvalidJvmImplementation = errors.New("invalid jvm implementation. must be hotspot or openj9")
 )
 
 type Factory struct {
@@ -26,8 +34,12 @@ func (j *Factory) SetHTTPClient(c *http.Client) {
 	j.http = c
 }
 
-func (j *Factory) Version(ctx context.Context, featureRelease uint8) (*Java, error) {
-	fullName := fmt.Sprintf("%d-jre-openj9", featureRelease)
+func (j *Factory) Version(ctx context.Context, wantedVersion string) (*Java, error) {
+	wanted, err := newWantedVersion(wantedVersion)
+	if err != nil {
+		return nil, err
+	}
+	fullName := wanted.Identifier()
 
 	os.MkdirAll(j.baseDir, os.ModePerm)
 	entries, err := os.ReadDir(j.baseDir)
@@ -56,7 +68,7 @@ func (j *Factory) Version(ctx context.Context, featureRelease uint8) (*Java, err
 	}
 
 	// no cached version, downloading
-	assets, err := j.getAssets(ctx, &AdoptAssetRequest{version: featureRelease})
+	assets, err := j.getAssets(ctx, &wanted.AdoptAssetRequest)
 	if err != nil {
 		return nil, err
 	}

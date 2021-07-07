@@ -136,17 +136,9 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 		}
 	}
 
-	// ensure some java binary is set
+	// fallback to local java if nothing was set
 	if opts.Java == "" {
-		java, err := i.Java()
-		if err != nil {
-			return nil, err
-		}
-		if java.NeedsDownloading() {
-			return nil, ErrNoJava
-		}
-
-		opts.Java = java.Bin()
+		opts.Java = "java"
 	}
 
 	// Download assets if not skipped

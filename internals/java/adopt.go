@@ -24,7 +24,7 @@ type AdoptReleaseNamesRequest struct {
 }
 
 type AdoptAssetRequest struct {
-	featureVersion string
+	featureVersion uint16
 	releaseType    string
 	architecture   string
 	before         string
@@ -32,7 +32,6 @@ type AdoptAssetRequest struct {
 	imageType      string
 	jvmImpl        string
 	os             string
-	version        uint8
 	vendor         string
 }
 
@@ -122,8 +121,8 @@ func (j *Factory) getAssets(ctx context.Context, opts *AdoptAssetRequest) ([]Ado
 	if opts.jvmImpl == "" {
 		opts.jvmImpl = "openj9"
 	}
-	if opts.version == 0 {
-		opts.version = 8
+	if opts.featureVersion == 0 {
+		opts.featureVersion = 8
 	}
 	if opts.releaseType == "" {
 		opts.releaseType = "ga"
@@ -151,7 +150,7 @@ func (j *Factory) getAssets(ctx context.Context, opts *AdoptAssetRequest) ([]Ado
 	p := fmt.Sprintf(
 		"%s/assets/feature_releases/%d/%s?%s",
 		AdoptAPI,
-		opts.version,
+		opts.featureVersion,
 		opts.releaseType,
 		params.Encode(),
 	)
