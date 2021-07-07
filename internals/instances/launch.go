@@ -58,8 +58,6 @@ func (i *Instance) GetLaunchManifest() (*minecraft.LaunchManifest, error) {
 // LaunchOptions are options for launching
 type LaunchOptions struct {
 	LaunchManifest *minecraft.LaunchManifest
-	// SkipDownload will NOT download missing assets & libraries
-	SkipDownload bool
 	// Offline is not implemented
 	Offline bool
 	Java    string
@@ -141,11 +139,6 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 		opts.Java = "java"
 	}
 
-	// Download assets if not skipped
-	if !opts.SkipDownload {
-		i.ensureAssets(launchManifest)
-	}
-
 	// create tmp dir for instance
 	tmpName := i.Manifest.Package.Name + fmt.Sprintf("%d", time.Now().Unix())
 	tmpDir, err := ioutil.TempDir("", tmpName)
@@ -160,19 +153,12 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	var cpArgs []string
 
 	libs := launchManifest.Libraries.Required()
-
 	osName := runtime.GOOS
 	if osName == "darwin" {
 		osName = "osx"
 	}
 
 	for _, lib := range libs {
-
-		if !opts.SkipDownload {
-			// TODO: replace with method
-			existOrDownload(lib)
-		}
-
 		// copy natives. not sure if this implementation is complete
 		if len(lib.Natives) != 0 {
 			// extract native to temp dir
@@ -197,50 +183,9 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	mcJar := filepath.Join(i.VersionsDir(), launchManifest.MinecraftVersion(), launchManifest.JarName())
 	cpArgs = append(cpArgs, mcJar)
 
-	gameArgs := map[string]string{
-		// the minecraft version
-		"version_name": launchManifest.MinecraftVersion(),
-		// minecraft game dir that contains saves, worlds & mods
-		"game_directory": i.McDir(),
-		// asset dir contains some shared minecraft resources like sounds & some textures
-		"assets_root": i.AssetsDir(),
-		// asset index version tells the game which assets to load. this usually just is the same
-		// as the minecraft version
-		"assets_index_name": launchManifest.Assets,
-		// release / snapshot … etc
-		"version_type": launchManifest.Type,
-	}
-
-	// this is not a server, we need to set some more auth data
-	if !opts.Server && !opts.Demo {
-		profile, creds, err := i.getMojangData()
-		if err != nil {
-			return nil, err
-		}
-		gameArgs["auth_player_name"] = profile.Name
-		gameArgs["auth_uuid"] = profile.ID
-		gameArgs["auth_access_token"] = creds.AccessToken
-		gameArgs["user_type"] = "mojang" // unsure about this one (legacy mc login flag?)
-	}
-
-	finalGameArgs := make([]string, 0, len(gameArgs)*2)
-	launchArgsTemplate := launchManifest.LaunchArgs()
-	for i := 0; i < len(launchArgsTemplate)-1; i += 2 {
-		arg := launchArgsTemplate[i]
-		// looks something like ${version_name}
-		valueTemplate := launchArgsTemplate[i+1]
-		// cut to just version_name
-		valueName := valueTemplate[2 : len(valueTemplate)-1]
-
-		// found in our args map
-		if val, ok := gameArgs[valueName]; ok {
-			// append to final args
-			finalGameArgs = append(finalGameArgs, arg, val)
-		}
-	}
-
-	if opts.Demo {
-		finalGameArgs = append(finalGameArgs, "--demo")
+	gameArgs, err := i.gameArgs(launchManifest, opts)
+	if err != nil {
+		return nil, err
 	}
 
 	javaCpSeperator := ":"
@@ -294,7 +239,7 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	}
 
 	if !opts.Server {
-		cmdArgs = append(cmdArgs, finalGameArgs...)
+		cmdArgs = append(cmdArgs, gameArgs...)
 	} else {
 		// maybe don't use client args for server …
 		cmdArgs = append(cmdArgs, "nogui")
@@ -344,6 +289,51 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	cmd.Env = append(cmd.Env, "PWD="+i.McDir())
 
 	return cmd, nil
+}
+
+func (i *Instance) gameArgs(launchManifest *minecraft.LaunchManifest, opts *LaunchOptions) ([]string, error) {
+	gameArgs := map[string]string{
+		// the minecraft version
+		"version_name": launchManifest.MinecraftVersion(),
+		// minecraft game dir that contains saves, worlds & mods
+		"game_directory": i.McDir(),
+		// asset dir contains some shared minecraft resources like sounds & some textures
+		"assets_root": i.AssetsDir(),
+		// asset index version tells the game which assets to load. this usually just is the same
+		// as the minecraft version
+		"assets_index_name": launchManifest.Assets,
+		// release / snapshot … etc
+		"version_type": launchManifest.Type,
+	}
+
+	// this is not a server, we need to set some more auth data
+	if !opts.Server && !opts.Demo {
+		profile, creds, err := i.getMojangData()
+		if err != nil {
+			return nil, err
+		}
+		gameArgs["auth_player_name"] = profile.Name
+		gameArgs["auth_uuid"] = profile.ID
+		gameArgs["auth_access_token"] = creds.AccessToken
+		gameArgs["user_type"] = "mojang" // unsure about this one (legacy mc login flag?)
+	}
+
+	finalGameArgs := make([]string, 0, len(gameArgs)*2)
+	launchArgsTemplate := launchManifest.LaunchArgs()
+	for i := 0; i < len(launchArgsTemplate)-1; i += 2 {
+		arg := launchArgsTemplate[i]
+		// looks something like ${version_name}
+		valueTemplate := launchArgsTemplate[i+1]
+		// cut to just version_name
+		valueName := valueTemplate[2 : len(valueTemplate)-1]
+
+		// found in our args map
+		if val, ok := gameArgs[valueName]; ok {
+			// append to final args
+			finalGameArgs = append(finalGameArgs, arg, val)
+		}
+	}
+	return finalGameArgs, nil
 }
 
 func (i *Instance) launchManifest() (*minecraft.LaunchManifest, error) {
@@ -475,60 +465,4 @@ func (i *Instance) fetchVanillaManifest(version string) (*minecraft.LaunchManife
 	}
 
 	return &manifest, nil
-}
-
-// FindMissingLibraries returns all missing assets
-func (i *Instance) FindMissingLibraries(man *minecraft.LaunchManifest) (minecraft.Libraries, error) {
-	missing := minecraft.Libraries{}
-
-	libs := man.Libraries.Required()
-	globalDir := i.LibrariesDir()
-
-	for _, lib := range libs {
-		path := filepath.Join(globalDir, lib.Filepath())
-		if _, err := os.Stat(path); err == nil {
-			continue
-		}
-
-		missing = append(missing, lib)
-	}
-
-	return missing, nil
-}
-
-// FindMissingAssets returns all missing assets
-func (i *Instance) FindMissingAssets(man *minecraft.LaunchManifest) ([]minecraft.AssetObject, error) {
-	assets := minecraft.AssetIndex{}
-
-	assetJSONPath := filepath.Join(i.AssetsDir(), "indexes", man.Assets+".json")
-	buf, err := ioutil.ReadFile(assetJSONPath)
-	if err != nil {
-		res, err := http.Get(man.AssetIndex.URL)
-		if err != nil {
-			return nil, err
-		}
-
-		buf, err = ioutil.ReadAll(res.Body)
-		if err != nil {
-			return nil, err
-		}
-
-		os.MkdirAll(filepath.Join(i.AssetsDir(), "indexes"), os.ModePerm)
-		err = ioutil.WriteFile(assetJSONPath, buf, 0666)
-		if err != nil {
-			return nil, err
-		}
-	}
-	json.Unmarshal(buf, &assets)
-
-	missing := make([]minecraft.AssetObject, 0)
-
-	for _, asset := range assets.Objects {
-		file := filepath.Join(i.AssetsDir(), "objects", asset.UnixPath())
-		if _, err := os.Stat(file); os.IsNotExist(err) {
-			missing = append(missing, asset)
-		}
-	}
-
-	return missing, nil
 }

@@ -4,13 +4,9 @@ import (
 	"archive/zip"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
-
-	"github.com/minepkg/minepkg/internals/minecraft"
 )
 
 func extractNative(jar string, target string) error {
@@ -42,72 +38,6 @@ func extractNative(jar string, target string) error {
 
 		io.Copy(f, rc)
 	}
-	return nil
-}
-
-// TODO: remove
-func existOrDownload(lib minecraft.Lib) {
-	home, _ := os.UserHomeDir()
-	globalDir := filepath.Join(home, ".minepkg/libraries")
-	path := filepath.Join(globalDir, lib.Filepath())
-	url := lib.DownloadURL()
-	osName := runtime.GOOS
-	if osName == "darwin" {
-		osName = "osx"
-	}
-	if lib.Natives[osName] != "" {
-		nativeID := lib.Natives[osName]
-		native := lib.Downloads.Classifiers[nativeID]
-		url = native.URL
-		path = filepath.Join(globalDir, native.Path)
-	}
-	if _, err := os.Stat(path); err == nil {
-		return
-	}
-
-	res, err := http.Get(url)
-	if err != nil {
-		panic(err)
-	}
-	if res.StatusCode != http.StatusOK {
-		panic(url + " did not return status code 200")
-	}
-	// create directory first
-	os.MkdirAll(filepath.Dir(path), os.ModePerm)
-	// file next
-	target, err := os.Create(path)
-	if err != nil {
-		panic(err)
-	}
-	defer target.Close()
-	_, err = io.Copy(target, res.Body)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func (i *Instance) ensureAssets(man *minecraft.LaunchManifest) error {
-
-	missing, err := i.FindMissingAssets(man)
-	if err != nil {
-		return err
-	}
-
-	for _, asset := range missing {
-		// TODO: check status code and err!
-		fileRes, _ := http.Get(asset.DownloadURL())
-		os.MkdirAll(filepath.Join(i.GlobalDir, "assets/objects", asset.Hash[:2]), os.ModePerm)
-		dest, err := os.Create(filepath.Join(i.GlobalDir, "assets/objects", asset.UnixPath()))
-		if err != nil {
-			return err
-		}
-		defer dest.Close()
-		_, err = io.Copy(dest, fileRes.Body)
-		if err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 

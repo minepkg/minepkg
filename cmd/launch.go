@@ -140,7 +140,6 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	opts := &instances.LaunchOptions{
 		LaunchManifest: launchManifest,
-		SkipDownload:   true,
 		Server:         l.serverMode,
 		Debug:          l.debugMode,
 		Demo:           l.demo,
