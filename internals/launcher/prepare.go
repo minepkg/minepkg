@@ -47,7 +47,7 @@ func (l *Launcher) Prepare() error {
 		return err
 	}
 
-	if err := instance.LinkDependencies(); err != nil {
+	if err := instance.EnsureDependencies(ctx); err != nil {
 		return err
 	}
 
