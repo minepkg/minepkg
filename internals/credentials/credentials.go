@@ -2,6 +2,7 @@ package credentials
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -35,7 +36,7 @@ func New(globalDir string, serviceName string) (*Store, error) {
 	if store.MinepkgServiceName == "" {
 		store.MinepkgServiceName = minepkgAuthServiceFallback
 	}
-	// TODO: error handling!
+
 	err := store.Find()
 	if err != nil {
 		return nil, err
@@ -119,8 +120,16 @@ func (s *Store) readCredentialFile(location string, v interface{}) error {
 	rawCreds, err := ioutil.ReadFile(file)
 	switch {
 	case err == nil:
-		// parse json as expected
-		return json.Unmarshal(rawCreds, &v)
+		// parse json
+		if err := json.Unmarshal(rawCreds, &v); err != nil {
+			// ignore error. this usually happens if the disk runs out of space
+			// by ignoring it we can let the user login again after sufficient
+			// space exists again
+			fmt.Printf("WARNING: a credentials file was corrupted. ignoring")
+			return nil
+		}
+		// parsed as expected
+		return nil
 	case os.IsNotExist(err):
 		// no file is fine
 		return nil
