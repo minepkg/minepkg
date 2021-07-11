@@ -18,7 +18,7 @@ var removeCmd = &cobra.Command{
 	Short:   "Removes supplied package from the current directory & package",
 	Aliases: []string{"delete", "un", "uninstall", "rm"},
 	Run: func(cmd *cobra.Command, args []string) {
-		instance, err := instances.NewInstanceFromWd()
+		instance, err := instances.NewFromWd()
 		instance.MinepkgAPI = globals.ApiClient
 		if err != nil {
 			logger.Fail("Instance problem: " + err.Error())

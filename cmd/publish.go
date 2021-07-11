@@ -62,7 +62,7 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 	tasks.Step("📚", "Preparing Publish")
 
 	tasks.Log("Checking minepkg.toml")
-	instance, err := instances.NewInstanceFromWd()
+	instance, err := instances.NewFromWd()
 	if err != nil {
 		return err
 	}
@@ -72,7 +72,7 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 	switch {
 	case m.Requirements.Minecraft == "":
 		logger.Fail("Your minepkg.toml is missing a minecraft version under [requirements]")
-	case m.Requirements.Forge == "" && m.Requirements.Fabric == "":
+	case m.Requirements.ForgeLoader == "" && m.Requirements.FabricLoader == "":
 		logger.Fail("Your minepkg.toml is missing either forge or fabric in [requirements]")
 	}
 

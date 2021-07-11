@@ -14,7 +14,6 @@ import (
 	"github.com/minepkg/minepkg/internals/mojang"
 	"github.com/minepkg/minepkg/pkg/manifest"
 	"github.com/pelletier/go-toml"
-	strcase "github.com/stoewer/go-strcase"
 )
 
 var (
@@ -58,8 +57,9 @@ type Instance struct {
 	MojangCredentials *mojang.AuthResponse
 	MinepkgAPI        *api.MinepkgAPI
 
-	isFromWd  bool
-	launchCmd string
+	isFromWd                     bool
+	launchCmd                    string
+	lockfileNeedsRenameMigration bool
 }
 
 // LaunchCmd returns the cmd used to launch minecraft (if started)
@@ -120,19 +120,27 @@ func (i *Instance) ManifestPath() string {
 	return filepath.Join(i.Directory, "minepkg.toml")
 }
 
-// LockfilePath is the path to the `minepkg-lock.toml`. The file does not necessarily exist
+// LockfilePath is the path to the `.minepkg-lock.toml`. The file does not necessarily exist
 func (i *Instance) LockfilePath() string {
+	return filepath.Join(i.Directory, ".minepkg-lock.toml")
+}
+
+// legacyLockfilePath is the old path `minepkg-lock.toml` (no dot)
+func (i *Instance) legacyLockfilePath() string {
 	return filepath.Join(i.Directory, "minepkg-lock.toml")
 }
 
 // Platform returns the type of loader required to start this instance
 func (i *Instance) Platform() uint8 {
+	fmt.Println(i.Manifest.Requirements.FabricLoader)
 	switch {
-	case i.Manifest.Requirements.Fabric != "":
+	case i.Manifest.Requirements.FabricLoader != "":
+		fmt.Println("FABRIC")
 		return PlatformFabric
-	case i.Manifest.Requirements.Forge != "":
+	case i.Manifest.Requirements.ForgeLoader != "":
 		return PlatformForge
 	default:
+		fmt.Println("vanilla wat")
 		return PlatformVanilla
 	}
 }
@@ -150,9 +158,9 @@ func (i *Instance) Desc() string {
 	return strings.Join(build, "")
 }
 
-// NewEmptyInstance returns a new instance with the default settings
+// New returns a new instance with the default settings
 // panics if user config or cache directory can not be determined
-func NewEmptyInstance() *Instance {
+func New() *Instance {
 	userConfig, err := os.UserConfigDir()
 	if err != nil {
 		panic(err)
@@ -168,14 +176,8 @@ func NewEmptyInstance() *Instance {
 	}
 }
 
-// NewInstanceFromWd tries to detect a minecraft instance in the current working directory
-// returning it, if successful
-func NewInstanceFromWd() (*Instance, error) {
-	dir, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
-
+// NewFromDir tries to detect a instance in the given directory
+func NewFromDir(dir string) (*Instance, error) {
 	manifestToml, err := ioutil.ReadFile("./minepkg.toml")
 	if err != nil {
 		// TODO only for not found errors
@@ -184,6 +186,10 @@ func NewInstanceFromWd() (*Instance, error) {
 	manifest := manifest.Manifest{}
 	if err = toml.Unmarshal(manifestToml, &manifest); err != nil {
 		return nil, err
+	}
+
+	if manifest.Requirements.Minecraft == "" {
+		return nil, ErrMissingRequirementMinecraft
 	}
 
 	userConfig, err := os.UserConfigDir()
@@ -203,75 +209,53 @@ func NewInstanceFromWd() (*Instance, error) {
 		isFromWd:  true,
 	}
 
-	// initialize manifest
-	if err := instance.initManifest(); err != nil {
+	// initialize lockfile
+	if err := instance.initLockfile(); err != nil {
 		return nil, err
 	}
 
-	// initialize lockfile
-	if err := instance.initLockfile(); err != nil {
+	// run migrations
+	if err := instance.migrate(); err != nil {
 		return nil, err
 	}
 
 	return instance, nil
 }
 
-// initManifest sets the manifest file or creates one
-func (i *Instance) initManifest() error {
-	minepkg, err := ioutil.ReadFile(i.ManifestPath())
+// NewFromWd tries to detect a instance in the current working directory
+func NewFromWd() (*Instance, error) {
+	dir, err := os.Getwd()
 	if err != nil {
-		if !os.IsNotExist(err) {
-			return err
-		}
-		manifest := manifest.New()
-		wd, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-		name := filepath.Base(wd)
-
-		manifest.Package.Name = strcase.KebabCase(name)
-		i.Manifest = manifest
-
-		return nil
+		return nil, err
 	}
 
-	manifest := manifest.Manifest{}
-	err = toml.Unmarshal(minepkg, &manifest)
-	if err != nil {
-		return err
-	}
-
-	i.Manifest = &manifest
-
-	if i.Manifest.Requirements.Minecraft == "" {
-		return ErrMissingRequirementMinecraft
-	}
-	return nil
+	return NewFromDir(dir)
 }
 
 // initLockfile sets the lockfile or creates one
 func (i *Instance) initLockfile() error {
-	rawLockfile, err := ioutil.ReadFile(i.LockfilePath())
+	lockfile, err := LockfileFromPath(i.LockfilePath())
 	if err != nil {
-		// non existing lockfile is not bad
-		if os.IsNotExist(err) {
-			return nil
-		}
 		// this is bad
-		return err
+		if !os.IsNotExist(err) {
+			return err
+		}
+
+		// non existing lockfile is not bad
+
+		// try old name
+		if lockfile, err = LockfileFromPath(i.legacyLockfilePath()); err != nil {
+			if os.IsNotExist(err) {
+				return nil
+			} else {
+				return err
+			}
+		}
+		i.lockfileNeedsRenameMigration = true
+		fmt.Println("needs migration!")
 	}
 
-	lockfile := manifest.Lockfile{}
-	err = toml.Unmarshal(rawLockfile, &lockfile)
-	if err != nil {
-		return err
-	}
-	if lockfile.Dependencies == nil {
-		lockfile.Dependencies = make(map[string]*manifest.DependencyLock)
-	}
-
-	i.Lockfile = &lockfile
+	i.Lockfile = lockfile
 	return nil
 }
 

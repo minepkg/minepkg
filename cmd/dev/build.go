@@ -27,7 +27,7 @@ type buildRunner struct{}
 func (b *buildRunner) RunE(cmd *cobra.Command, args []string) error {
 	startTime := time.Now()
 
-	instance, err := instances.NewInstanceFromWd()
+	instance, err := instances.NewFromWd()
 	if err != nil {
 		return err
 	}

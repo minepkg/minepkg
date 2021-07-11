@@ -65,7 +65,7 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	instance := instances.NewEmptyInstance()
+	instance := instances.New()
 	instance.Directory = tempDir
 	instance.Lockfile = manifest.NewLockfile()
 	instance.MinepkgAPI = apiClient

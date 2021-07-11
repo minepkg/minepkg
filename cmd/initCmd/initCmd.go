@@ -152,9 +152,9 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 	switch man.Package.Platform {
 	case "fabric":
 		// fmt.Println("Leaving * here is usually fine")
-		man.Requirements.Fabric = utils.StringPrompt(&promptui.Prompt{
+		man.Requirements.FabricLoader = utils.StringPrompt(&promptui.Prompt{
 			Label:     "Supported Fabric version",
-			Default:   man.Requirements.Fabric,
+			Default:   man.Requirements.FabricLoader,
 			AllowEdit: true,
 			// TODO: validation
 		})
@@ -165,8 +165,8 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 			// TODO: validation
 		})
 	case "forge":
-		man.Requirements.Fabric = ""
-		man.Requirements.Forge = utils.StringPrompt(&promptui.Prompt{
+		man.Requirements.FabricLoader = ""
+		man.Requirements.ForgeLoader = utils.StringPrompt(&promptui.Prompt{
 			Label:     "Supported Forge version",
 			Default:   "*",
 			AllowEdit: true,
@@ -180,8 +180,8 @@ func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 			// TODO: validation
 		})
 	default:
-		man.Requirements.Fabric = ""
-		man.Requirements.Forge = ""
+		man.Requirements.FabricLoader = ""
+		man.Requirements.ForgeLoader = ""
 		man.Requirements.Minecraft = utils.StringPrompt(&promptui.Prompt{
 			Label:     "Supported Minecraft version",
 			Default:   "~1.16.2",

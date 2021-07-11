@@ -35,7 +35,7 @@ func (i *infoRunner) RunE(cmd *cobra.Command, args []string) error {
 	apiClient := globals.ApiClient
 
 	if len(args) == 0 {
-		instance, err := instances.NewInstanceFromWd()
+		instance, err := instances.NewFromWd()
 		if err != nil {
 			return err
 		}

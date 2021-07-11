@@ -88,7 +88,7 @@ func (i *Instance) resolveFabricRequirement(ctx context.Context) (*manifest.Fabr
 		reqMc = "*"
 	}
 
-	reqFabric := i.Manifest.Requirements.Fabric
+	reqFabric := i.Manifest.Requirements.FabricLoader
 	// latest is the same as '*' for this logic (it will return the latest version)
 	if reqFabric == "latest" {
 		reqFabric = "*"

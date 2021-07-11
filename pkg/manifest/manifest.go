@@ -2,59 +2,6 @@
 Package manifest defines the file format that describes a mod or modpack.
 The "minepkg.toml" manifest is the way minepkg defines packages. Packages can be mods or modpacks.
 
-Structure
-
-Example manifest.toml:
-
-  manifestVersion = 0
-  [package]
-    type = "modpack"
-    name = "examplepack"
-    version = "0.1.0"
-    authors = ["John Doe <example@example.com>"]
-
-  [requirements]
-    minecraft = "1.14.x"
-    # Only fabric OR forge can be set. never both
-    fabric = "0.1.0"
-    # forge = "0.1.0"
-
-  [dependencies]
-    # semver version range
-    rftools = "~1.4.2"
-
-    # exactly this version
-    ender-io = "=1.0.2"
-
-    # any version (you usually define the version instead)
-    # * is equal to "latest" for minepkg. So it will try to fetch the latest
-    # version that works
-    some-modpack = "*"
-
-  [dev]
-    buildCommand = "gradle build"
-
-Dependencies
-
-The dependencies map (map[string]string) contains all dependencies of a package.
-
-The "key" always is the package name. For example `test-utils`
-
-The "value" usually is a semver version number, like this: `^1.4.2`
-This will allow any update except major versions.
-
-The following semver formats are allowed:
-
-  test-utils = "^1.0.0" # caret operator (default)
-  test-utils = "~1.0.0" # tilde operator
-  test-utils = "2.0.1-beta.2" # prerelease
-  test-utils = "1.0.0 - 3.0.0" # range
-  test-utils = "1.x.x" # range
-https://github.com/npm/node-semver#ranges provides a good explanation of the operators mentioned above
-
-Other sources may be specified by using the `source:` syntax in the "value" like this: `raw:https://example.com/package.zip`.
-The "key" will still be the package name when using the source syntax.
-
 Learn More
 
 For more details visit https://minepkg.io/docs/manifest
@@ -125,17 +72,20 @@ type Manifest struct {
 		// Modpack & Mod Authors are encouraged to use semver to allow a broader install range.
 		// This field is REQUIRED
 		Minecraft string `toml:"minecraft" json:"minecraft"`
-		// Fabric is a semver version string describing the required Fabric version
-		// Only one of `Forge` or `Fabric` may be used
-		Fabric string `toml:"fabric,omitempty" json:"fabric,omitempty"`
-		// Forge is the minimum forge version required
+		// FabricLoader is a semver version string describing the required FabricLoader version
+		// Only one of `Forge` or `FabricLoader` may be used
+		FabricLoader string `toml:"fabricLoader,omitempty" json:"fabricLoader,omitempty"`
+		// ForgeLoader is the minimum forge version required
 		// no semver here, because forge does not follow semver
-		Forge string `toml:"forge,omitempty" json:"forge,omitempty"`
+		ForgeLoader string `toml:"forgeLoader,omitempty" json:"forgeLoader,omitempty"`
 		// MinepkgCompanion is the version of the minepkg companion plugin that is going to be added to modpacks.
 		// This has no effect on other types of packages
 		// `latest` is assumed if this field is omitted. `none` can be used to exclude the companion
 		// plugin from a modpack – but this is not recommended
 		MinepkgCompanion string `toml:"minepkgCompanion,omitempty" json:"minepkgCompanion,omitempty"`
+		// old names, are only here for migration
+		Fabric string `toml:"fabric,omitempty" json:"fabric,omitempty"`
+		Forge  string `toml:"forge,omitempty" json:"forge,omitempty"`
 	} `toml:"requirements" comment:"These are global requirements" json:"requirements"`
 	// Dependencies lists runtime dependencies of this package
 	// this list can contain mods and modpacks
@@ -152,15 +102,32 @@ type Manifest struct {
 	} `toml:"dev" json:"dev"`
 }
 
+// Migrate renames some requirements
+// method will be removed in a future release
+func (m *Manifest) Migrate() bool {
+	migrated := false
+	if m.Requirements.Fabric != "" {
+		m.Requirements.FabricLoader = m.Requirements.Fabric
+		m.Requirements.Fabric = ""
+		migrated = true
+	}
+	if m.Requirements.Forge != "" {
+		m.Requirements.FabricLoader = m.Requirements.Forge
+		m.Requirements.Forge = ""
+		migrated = true
+	}
+	return migrated
+}
+
 // Dependencies are the dependencies of a mod or modpack as a map
 type Dependencies map[string]string
 
 // PlatformString returns the required platform as a string (vanilla, fabric or forge)
 func (m *Manifest) PlatformString() string {
 	switch {
-	case m.Requirements.Fabric != "":
+	case m.Requirements.FabricLoader != "":
 		return "fabric"
-	case m.Requirements.Forge != "":
+	case m.Requirements.ForgeLoader != "":
 		return "forge"
 	default:
 		return "vanilla"
@@ -170,10 +137,10 @@ func (m *Manifest) PlatformString() string {
 // PlatformVersion returns the required platform version
 func (m *Manifest) PlatformVersion() string {
 	switch {
-	case m.Requirements.Fabric != "":
-		return m.Requirements.Fabric
-	case m.Requirements.Forge != "":
-		return m.Requirements.Forge
+	case m.Requirements.FabricLoader != "":
+		return m.Requirements.FabricLoader
+	case m.Requirements.ForgeLoader != "":
+		return m.Requirements.ForgeLoader
 	default:
 		return ""
 	}

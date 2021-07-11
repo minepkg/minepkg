@@ -69,7 +69,7 @@ func (j *joinRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	// looks like we can join this server, so we start initializing the instance stuff here
-	instance := instances.NewEmptyInstance()
+	instance := instances.New()
 	instance.Lockfile = manifest.NewLockfile()
 	instance.MinepkgAPI = globals.ApiClient
 

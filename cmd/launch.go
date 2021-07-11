@@ -238,7 +238,7 @@ func crashTest() error {
 
 func (l *launchRunner) instanceFromWd() (*instances.Instance, error) {
 	var err error
-	instance, err := instances.NewInstanceFromWd()
+	instance, err := instances.NewFromWd()
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +250,7 @@ func (l *launchRunner) instanceFromWd() (*instances.Instance, error) {
 func (l *launchRunner) instanceFromModpack(modpack string) (*instances.Instance, error) {
 	apiClient := globals.ApiClient
 
-	instance := instances.NewEmptyInstance()
+	instance := instances.New()
 	instance.MinepkgAPI = apiClient
 
 	// fetch modpack

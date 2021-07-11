@@ -28,7 +28,7 @@ func CmdOverwriteFlags(cmd *cobra.Command) *OverwriteFlags {
 
 func ApplyInstanceOverwrites(instance *instances.Instance, o *OverwriteFlags) {
 	if o.FabricVersion != "" {
-		instance.Manifest.Requirements.Fabric = o.FabricVersion
+		instance.Manifest.Requirements.FabricLoader = o.FabricVersion
 	}
 	if o.McVersion != "" {
 		fmt.Println("Minecraft version overwritten to version: " + o.McVersion)
