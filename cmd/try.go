@@ -122,9 +122,6 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 	instance.Manifest = manifest.NewInstanceLike(release.Manifest)
 	fmt.Println("Creating temporary modpack with " + release.Identifier())
 
-	// overwrite some instance launch options with flags
-	launcher.ApplyInstanceOverwrites(instance, t.overwrites)
-
 	if t.overwrites.McVersion == "" {
 		fmt.Println("mc * resolved to: " + release.LatestTestedMinecraftVersion())
 		instance.Manifest.Requirements.Minecraft = release.LatestTestedMinecraftVersion()
@@ -150,6 +147,9 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 		NonInteractive: viper.GetBool("nonInteractive"),
 		UseSystemJava:  viper.GetBool("useSystemJava"),
 	}
+
+	cliLauncher.ApplyOverWrites(t.overwrites)
+
 	if err := cliLauncher.Prepare(); err != nil {
 		return err
 	}

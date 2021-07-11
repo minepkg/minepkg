@@ -36,6 +36,9 @@ type Launcher struct {
 	// instead of the internal installation. This skips downloading java
 	UseSystemJava bool
 
+	// JavaVersion is the version to use
+	JavaVersion string
+
 	javaFactoryInstance *java.Factory
 	java                *java.Java
 	introPrinted        bool

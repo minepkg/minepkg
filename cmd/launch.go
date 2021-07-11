@@ -79,7 +79,6 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		launcher.ApplyInstanceOverwrites(l.instance, l.overwrites)
 	} else {
 		l.instance, err = l.instanceFromModpack(args[0])
 		if err != nil {
@@ -113,6 +112,8 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 		NonInteractive: viper.GetBool("nonInteractive"),
 		UseSystemJava:  viper.GetBool("useSystemJava"),
 	}
+
+	cliLauncher.ApplyOverWrites(l.overwrites)
 
 	if err := cliLauncher.Prepare(); err != nil {
 		return err
@@ -277,9 +278,6 @@ func (l *launchRunner) instanceFromModpack(modpack string) (*instances.Instance,
 
 	instance.MinepkgAPI = apiClient
 	instance.Directory = filepath.Join(instance.InstancesDir(), release.Package.Name+"_"+release.Package.Platform)
-
-	// overwrite some instance launch options with flags
-	launcher.ApplyInstanceOverwrites(instance, l.overwrites)
 
 	if l.overwrites.McVersion == "" {
 		fmt.Println("Minecraft version '*' resolved to: " + release.LatestTestedMinecraftVersion())
