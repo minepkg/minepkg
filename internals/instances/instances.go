@@ -132,15 +132,12 @@ func (i *Instance) legacyLockfilePath() string {
 
 // Platform returns the type of loader required to start this instance
 func (i *Instance) Platform() uint8 {
-	fmt.Println(i.Manifest.Requirements.FabricLoader)
 	switch {
 	case i.Manifest.Requirements.FabricLoader != "":
-		fmt.Println("FABRIC")
 		return PlatformFabric
 	case i.Manifest.Requirements.ForgeLoader != "":
 		return PlatformForge
 	default:
-		fmt.Println("vanilla wat")
 		return PlatformVanilla
 	}
 }
@@ -252,7 +249,6 @@ func (i *Instance) initLockfile() error {
 			}
 		}
 		i.lockfileNeedsRenameMigration = true
-		fmt.Println("needs migration!")
 	}
 
 	i.Lockfile = lockfile

@@ -40,11 +40,8 @@ func (i *Instance) migrateManifest() error {
 
 func (i *Instance) migrateLockfile() error {
 	if i.lockfileNeedsRenameMigration {
-		fmt.Println("migrating lockfile")
 		return os.Rename(i.legacyLockfilePath(), i.LockfilePath())
 	}
-
-	fmt.Println("ignored")
 
 	return nil
 }
