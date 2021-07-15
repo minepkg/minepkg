@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"io/fs"
 	"io/ioutil"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/minepkg/minepkg/internals/commands"
 )
@@ -85,7 +87,17 @@ func (i *Instance) FindModJar() ([]MatchedJar, error) {
 	}
 
 	sort.Slice(files, func(a int, b int) bool {
-		return files[a].stat.ModTime().After(files[b].stat.ModTime())
+		fileA := files[a]
+		fileB := files[b]
+		timeDiff := math.Abs(float64(fileA.stat.ModTime().UnixNano() - fileB.stat.ModTime().UnixNano()))
+
+		// 2 files written roughly at the same time. prefer the shorter one
+		if timeDiff <= float64(time.Millisecond*10) {
+			return len(fileA.Name()) < len(fileB.Name())
+		}
+
+		// times differ, pick the newer one
+		return fileA.stat.ModTime().After(fileB.stat.ModTime())
 	})
 
 	return files, nil
@@ -103,24 +115,21 @@ func (i *Instance) findModJarCandidatesFromPattern(pattern string) ([]MatchedJar
 		return nil, fmt.Errorf("aborting because of over 100 matched files")
 	}
 
-	files := make([]MatchedJar, 0, len(matches))
-	for _, file := range matches {
-		stat, err := os.Stat(file)
+	jars := make([]MatchedJar, 0, len(matches))
+	for _, match := range matches {
+		fi, err := os.Stat(match)
 		if err != nil {
 			return nil, err
 		}
-
-		// filter out directories
-		if !stat.IsDir() {
-			matched := MatchedJar{
-				path: file,
-				stat: stat,
-			}
-			files = append(files, matched)
+		if jarCandidate(fi) {
+			jars = append(jars, MatchedJar{
+				path: match,
+				stat: fi,
+			})
 		}
 	}
 
-	return files, nil
+	return jars, nil
 }
 
 func (i *Instance) findModJarCandidates() ([]MatchedJar, error) {
@@ -132,28 +141,41 @@ func (i *Instance) findModJarCandidates() ([]MatchedJar, error) {
 		return nil, ErrNoBuildFiles
 	}
 
-	preFiltered := []MatchedJar{}
-
-	for _, file := range files {
-		name := file.Name()
-		base := filepath.Base(name)
-
-		// filter out dirs, dev and sources jars
-		switch {
-		case file.IsDir():
-			continue
-		case strings.HasSuffix(base, "dev.jar"):
-			continue
-		case strings.HasSuffix(base, "sources.jar"):
-			continue
-		default:
-			matched := MatchedJar{
-				path: filepath.Join("./build/libs", name),
-				stat: file,
-			}
-			preFiltered = append(preFiltered, matched)
+	filtered := preFilteredFiles(files)
+	jars := make([]MatchedJar, len(filtered))
+	for ix, file := range filtered {
+		jars[ix] = MatchedJar{
+			path: filepath.Join("./build/libs", file.Name()),
+			stat: file,
 		}
 	}
 
-	return preFiltered, nil
+	return jars, nil
+}
+
+// preFilteredFiles filters out common dev files (dev, sources)
+func preFilteredFiles(files []fs.FileInfo) []fs.FileInfo {
+	filtered := []fs.FileInfo{}
+	for _, file := range files {
+		if jarCandidate(file) {
+			filtered = append(filtered, file)
+		}
+	}
+	return filtered
+}
+
+func jarCandidate(file fs.FileInfo) bool {
+	name := file.Name()
+	base := filepath.Base(name)
+	// filter out dirs, dev and sources jars
+	switch {
+	case file.IsDir():
+		return false
+	case strings.HasSuffix(base, "dev.jar"):
+		return false
+	case strings.HasSuffix(base, "sources.jar"):
+		return false
+	default:
+		return true
+	}
 }
