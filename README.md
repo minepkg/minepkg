@@ -64,27 +64,26 @@ Examples:
   minepkg join demo.minepkg.host
 
 Available Commands:
-  build               Runs the set buildCmd (falls back to gradle build)
+  bump                Bumps the version number of this package
+  config              Manage global config options
+  dev                 Advanced package dev related tasks (eg. build)
   help                Help about any command
   init                Creates a new mod or modpack in the current directory
   install             Installs one or more packages in your current modpack or mod
   join                Joins a compatible server without any setup
   launch              Launch the given or local modpack.
-  login               Sign in to Mojang in order to start Minecraft
-  minepkg-login       Sign in to minepkg.io (mainly for publishing)
-  publish             Publishes the local package in the current directory
-  remove              Removes specified package from the current package
+  publish             Publishes the local package in the current directory to minepkg.io
+  remove              Removes supplied package from the current directory & package
   selfupdate          Updates minepkg to the latest version
   try                 Lets you try a mod or modpack in Minecraft
   update              Updates all installed dependencies
   update-requirements Updates installed requirements (minecraft & loader version)
 
 Flags:
-  -a, --accept-minecraft-eula   Accept Minecraft's eula. […]
-      --config string           config file (default is $HOME/.minepkg/config.toml)
+  -a, --accept-minecraft-eula   Accept Minecraft's eula. See https://www.minecraft.net/en-us/eula/
+      --config string           config file (default is /home/fiws/.config/minepkg/config.toml)
   -h, --help                    help for minepkg
-      --no-color                disable color output
-      --system-java             Use system java instead […]
+      --non-interactive         Do not prompt for anything (use defaults instead)
       --verbose                 More verbose logging. Not really implemented yet
   -v, --version                 version for minepkg
 
