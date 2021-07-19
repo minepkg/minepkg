@@ -11,7 +11,7 @@ require (
 	github.com/dchest/uniuri v0.0.0-20200228104902-7aecb25e1fe5
 	github.com/fatih/color v1.12.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/google/uuid v1.2.0 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/jwalton/gchalk v1.0.3
 	github.com/klauspost/compress v1.13.1 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
@@ -32,7 +32,7 @@ require (
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/zalando/go-keyring v0.1.1
-	golang.org/x/net v0.0.0-20210614182718-04defd469f4e // indirect
+	golang.org/x/net v0.0.0-20210716203947-853a461950ff // indirect
 	golang.org/x/oauth2 v0.0.0-20210628180205-a41e5a781914
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
 	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b // indirect

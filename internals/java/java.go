@@ -53,7 +53,7 @@ func (j *Java) Update(ctx context.Context) error {
 	}
 	defer os.Remove(archive.Name()) // remove temporary download
 
-	// ugly hack to get root directory. it's someting like "jdk8u292-b10-jre"
+	// ugly hack to get root directory. it's something like "jdk8u292-b10-jre"
 	rootDirName := ""
 	err = archiver.Walk(archive.Name(), func(f archiver.File) error {
 		if f.IsDir() {

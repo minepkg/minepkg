@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/jwalton/gchalk"
 	"github.com/minepkg/minepkg/cmd/bump"
@@ -20,15 +21,16 @@ import (
 // TODO: this logger is not so great – also: it should not be global
 var logger = globals.Logger
 
-// Version is the current version. it should be set by goreleaser
-var Version string
-
-// nextVersion is a placeholder version. only used for local dev
-var nextVersion string = "0.1.0-dev-local"
-
 var (
 	cfgFile   string
 	globalDir = "/tmp"
+
+	// Version is the current version. it should be set by goreleaser
+	Version string
+	// commit is also set by goreleaser
+	commit string
+	// nextVersion is a placeholder version. only used for local dev
+	nextVersion string = "0.1.0-dev-local"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -57,6 +59,10 @@ func Execute() {
 }
 
 func initRoot() {
+	// include commit if this is next version
+	if strings.HasSuffix(Version, "-next") {
+		Version = nextVersion + "+" + commit
+	}
 	rootCmd.Version = Version
 	if rootCmd.Version == "" {
 		rootCmd.Version = nextVersion
