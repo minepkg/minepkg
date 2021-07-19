@@ -102,23 +102,6 @@ type Manifest struct {
 	} `toml:"dev" json:"dev"`
 }
 
-// Migrate renames some requirements
-// method will be removed in a future release
-func (m *Manifest) Migrate() bool {
-	migrated := false
-	if m.Requirements.Fabric != "" {
-		m.Requirements.FabricLoader = m.Requirements.Fabric
-		m.Requirements.Fabric = ""
-		migrated = true
-	}
-	if m.Requirements.Forge != "" {
-		m.Requirements.FabricLoader = m.Requirements.Forge
-		m.Requirements.Forge = ""
-		migrated = true
-	}
-	return migrated
-}
-
 // Dependencies are the dependencies of a mod or modpack as a map
 type Dependencies map[string]string
 

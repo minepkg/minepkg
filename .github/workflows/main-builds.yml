@@ -28,9 +28,10 @@ jobs:
           path: dist
       - run: |
           VERSION="$(git describe --abbrev=0)-next"
+          TIMESTAMP="$(date +%s)"
           echo -e '{
             "channel": "dev",
-            "version": "'$VERSION'",
+            "version": "'$VERSION'.'$TIMESTAMP'",
             "gitHash": "${{ github.sha }}",
             "binaries": {
               "win": "https://get.minepkg.io/dev/minepkg_windows_amd64/minepkg.exe",

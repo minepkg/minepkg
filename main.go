@@ -5,9 +5,14 @@ import (
 )
 
 // set by goreleaser
-var version string
+var (
+	version string
+	commit  string
+	Commit  string
+)
 
 func main() {
 	cmd.Version = version
+	cmd.Commit = commit
 	cmd.Execute()
 }
