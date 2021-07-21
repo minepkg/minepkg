@@ -50,13 +50,14 @@ func (i *installRunner) installFromMinepkg(mods []string) error {
 			version = comp[1]
 		}
 
-		reqs := &api.RequirementQuery{
-			Version:   version,
-			Minecraft: instance.Lockfile.MinecraftVersion(),
-			Platform:  instance.Manifest.PlatformString(),
+		reqs := &api.ReleasesQuery{
+			Name:         name,
+			VersionRange: version,
+			Minecraft:    instance.Lockfile.MinecraftVersion(),
+			Platform:     instance.Manifest.PlatformString(),
 		}
 
-		release, err := apiClient.FindRelease(context.TODO(), name, reqs)
+		release, err := apiClient.ReleasesQuery(context.TODO(), reqs)
 		if err != nil {
 
 			// package names have to be exact for multi-package installs
@@ -70,7 +71,13 @@ func (i *installRunner) installFromMinepkg(mods []string) error {
 			if mod == nil {
 				return err
 			}
-			release, err = apiClient.FindRelease(context.TODO(), mod.Name, reqs)
+			newQuery := &api.ReleasesQuery{
+				Name:         mod.Name,
+				VersionRange: version,
+				Minecraft:    reqs.Minecraft,
+				Platform:     reqs.Platform,
+			}
+			release, err = apiClient.ReleasesQuery(context.TODO(), newQuery)
 			if err != nil {
 				return prettyApiError(err)
 			}
