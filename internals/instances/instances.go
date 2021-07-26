@@ -257,6 +257,8 @@ func (i *Instance) initLockfile() error {
 
 // SaveManifest saves the manifest to the current directory
 func (i *Instance) SaveManifest() error {
+	// always remove the companion if it has been there (kinda hacky)
+	i.Manifest.RemoveDependency("minepkg-companion")
 	manifest := i.Manifest.Buffer()
 	return ioutil.WriteFile(i.ManifestPath(), manifest.Bytes(), 0644)
 }
