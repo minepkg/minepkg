@@ -180,7 +180,7 @@ func (m *Manifest) RemoveDevDependency(name string) {
 	if m.Dev.Dependencies == nil {
 		m.Dev.Dependencies = make(map[string]string)
 	}
-	delete(m.Dependencies, name)
+	delete(m.Dev.Dependencies, name)
 }
 
 // Buffer returns the manifest as toml in Buffer form
