@@ -66,8 +66,8 @@ func (j *Java) Update(ctx context.Context) error {
 		return err
 	}
 
-	// only extract root file. avoids crap files in mac archive
-	if err := archiver.Extract(archive.Name(), rootDirName, j.dir+".tmp"); err != nil {
+	// extract the whole archive. avoids https://github.com/mholt/archiver/issues/289
+	if err := archiver.Unarchive(archive.Name(), j.dir+".tmp"); err != nil {
 		return err
 	}
 	// another ugly hack because archiver can not extract without creating a directory
@@ -77,8 +77,9 @@ func (j *Java) Update(ctx context.Context) error {
 	}
 
 	// we moved the rootDir "jdk8u292-b10-jre" to j.dir ("8-jre-openj9")
-	// but the leftover .tmp dir is still here. but it should be empty!
-	if err := os.Remove(j.dir + ".tmp"); err != nil {
+	// but the leftover .tmp dir is still here. should be empty, but it's not
+	// for macos archives
+	if err := os.RemoveAll(j.dir + ".tmp"); err != nil {
 		return err
 	}
 

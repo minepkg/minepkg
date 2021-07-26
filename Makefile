@@ -6,6 +6,9 @@ build:
 test:
 	go test -v ./...
 
+build-win:
+	GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o ./out/minepkg.exe
+
 build-linux:
 	GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o ./out/minepkg-linux
 
