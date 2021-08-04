@@ -66,10 +66,10 @@ gcs release:
 
 .docker:
   stage: docker_release
-  image: docker:20.10.7
+  image: docker:20.10.8
   needs: ["gcs release"]
   services:
-    - docker:20.10.7-dind
+    - docker:20.10.8-dind
   variables:
     # Use TLS https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#tls-enabled
     DOCKER_HOST: tcp://docker:2376
