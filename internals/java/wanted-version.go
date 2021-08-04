@@ -13,14 +13,14 @@ type wantedVersion struct {
 
 func newWantedVersion(s string) (*wantedVersion, error) {
 	req := AdoptAssetRequest{featureVersion: 16}
-	parts := strings.Split("-", s)
+	parts := strings.Split(s, "-")
 
 	if len(parts) > 3 {
 		return nil, ErrInvalidVersionString
 	}
 
 	if len(parts) > 0 {
-		v, err := strconv.Atoi(s)
+		v, err := strconv.Atoi(parts[0])
 		if err != nil {
 			return nil, err
 		}
