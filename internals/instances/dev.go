@@ -175,6 +175,8 @@ func jarCandidate(file fs.FileInfo) bool {
 		return false
 	case strings.HasSuffix(base, "sources.jar"):
 		return false
+	case strings.HasSuffix(base, "javadoc.jar"):
+		return false
 	default:
 		return true
 	}
