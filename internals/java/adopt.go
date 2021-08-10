@@ -89,7 +89,7 @@ func (j *Factory) getAssets(ctx context.Context, opts *AdoptAssetRequest) ([]Ado
 		opts.os = osName
 	}
 	if opts.jvmImpl == "" {
-		opts.jvmImpl = "openj9"
+		opts.jvmImpl = "hotspot"
 	}
 	if opts.featureVersion == 0 {
 		opts.featureVersion = 8

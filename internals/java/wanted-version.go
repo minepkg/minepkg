@@ -60,7 +60,7 @@ func (w *wantedVersion) Identifier() string {
 	if w.imageType != "" {
 		imageType = w.imageType
 	}
-	jvmImpl := "openj9"
+	jvmImpl := "hotspot"
 	if w.jvmImpl != "" {
 		jvmImpl = w.jvmImpl
 	}

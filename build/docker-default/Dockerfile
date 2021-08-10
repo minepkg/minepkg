@@ -1,4 +1,4 @@
-FROM adoptopenjdk:16-jre-openj9
+FROM adoptopenjdk:16-jre
 
 # add minepkg
 ADD https://storage.googleapis.com/minepkg-client/latest/minepkg-linux-amd64 /usr/bin/minepkg
