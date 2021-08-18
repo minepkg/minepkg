@@ -1,4 +1,4 @@
-FROM gradle:7.1-jdk
+FROM gradle:7.2-jdk
 
 USER root
 
