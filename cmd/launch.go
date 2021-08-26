@@ -298,8 +298,8 @@ func (l *launchRunner) buildMod() error {
 			return fmt.Errorf("build step failed: %w", err)
 		}
 	}
-	// copy jar
 
+	// copy jar
 	jar, err := getJarFileForInstance(l.instance)
 	if err != nil {
 		return err

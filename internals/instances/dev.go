@@ -52,15 +52,12 @@ func (i *Instance) BuildMod() *exec.Cmd {
 		buildScript = buildCmd
 	}
 
-	// TODO: I don't think this is multi platform
 	build := exec.Command("sh", []string{"-c", buildScript}...)
 	build.Env = os.Environ()
 
 	if runtime.GOOS == "windows" {
 		// hack windows compatibility – space after gradlew ensures that this does not have .bat there anyway
-		if strings.Contains(buildScript, "gradlew ") {
-			buildScript = strings.Replace(buildScript, "gradlew ", "gradlew.bat ", 1)
-		}
+		buildScript = strings.Replace(buildScript, "gradlew ", "gradlew.bat ", 1)
 		build = exec.Command("powershell", []string{"-Command", buildScript}...)
 	}
 
@@ -93,6 +90,11 @@ func (i *Instance) FindModJar() ([]MatchedJar, error) {
 
 		// 2 files written roughly at the same time. prefer the shorter one
 		if timeDiff <= float64(time.Millisecond*10) {
+			// prefer jars ending in -fabric.jar if platform is fabric
+			if i.Platform() == PlatformFabric && strings.HasSuffix(fileA.Name(), "-fabric.jar") {
+				return true
+			}
+			// prefer shortest jar otherwise
 			return len(fileA.Name()) < len(fileB.Name())
 		}
 
@@ -176,6 +178,8 @@ func jarCandidate(file fs.FileInfo) bool {
 	case strings.HasSuffix(base, "sources.jar"):
 		return false
 	case strings.HasSuffix(base, "javadoc.jar"):
+		return false
+	case strings.HasSuffix(base, "-api.jar"):
 		return false
 	default:
 		return true
