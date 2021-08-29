@@ -128,10 +128,10 @@ func syncFabricMod(man *manifest.Manifest) error {
 	fabricManifest.Contact.Sources = man.Package.Source
 
 	if fabricV, ok := man.Dependencies["fabric"]; ok {
-		fabricManifest.Depends["fabric"] = fabricV
+		fabricManifest.Depends["fabric"] = []string{fabricV}
 	}
-	fabricManifest.Depends["fabricloader"] = man.Requirements.FabricLoader
-	fabricManifest.Depends["minecraft"] = man.Requirements.Minecraft
+	fabricManifest.Depends["fabricloader"] = []string{man.Requirements.FabricLoader}
+	fabricManifest.Depends["minecraft"] = []string{man.Requirements.Minecraft}
 
 	newFile, err := os.Create("./src/main/resources/fabric.mod.json")
 	if err != nil {

@@ -21,8 +21,8 @@ type Manifest struct {
 	Jars        []struct {
 		File string `json:"file"`
 	} `json:"jars,omitempty"`
-	LanguageAdapters map[string]string `json:"languageAdapters,omitempty"`
-	Mixins           []interface{}     `json:"mixins,omitempty"`
-	Depends          map[string]string `json:"depends,omitempty"`
-	Custom           interface{}       `json:"custom,omitempty"`
+	LanguageAdapters map[string]string   `json:"languageAdapters,omitempty"`
+	Mixins           []interface{}       `json:"mixins,omitempty"`
+	Depends          map[string]StrArray `json:"depends,omitempty"`
+	Custom           interface{}         `json:"custom,omitempty"`
 }

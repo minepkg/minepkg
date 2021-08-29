@@ -1,6 +1,8 @@
 package api
 
 import (
+	"time"
+
 	"github.com/Masterminds/semver/v3"
 	"github.com/minepkg/minepkg/pkg/manifest"
 )
@@ -40,9 +42,11 @@ type ProjectStats struct {
 
 // ReleaseMeta is metadata for a release. found in the `meta` field
 type ReleaseMeta struct {
-	IPFSHash  string `json:"ipfsHash,omitempty"`
-	Sha256    string `json:"sha256,omitempty"`
-	Published bool   `json:"published"`
+	IPFSHash   string     `json:"ipfsHash,omitempty"`
+	Sha256     string     `json:"sha256,omitempty"`
+	Published  bool       `json:"published"`
+	Unofficial *bool      `json:"unofficial,omitempty"`
+	CreatedAt  *time.Time `json:"createdAt,omitempty"`
 }
 
 // Release is a released version of a project

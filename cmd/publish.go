@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jwalton/gchalk"
 	"github.com/manifoldco/promptui"
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/commands"
@@ -69,11 +70,29 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	m := instance.Manifest
 
-	switch {
-	case m.Requirements.Minecraft == "":
-		logger.Fail("Your minepkg.toml is missing a minecraft version under [requirements]")
-	case m.Requirements.ForgeLoader == "" && m.Requirements.FabricLoader == "":
-		logger.Fail("Your minepkg.toml is missing either forge or fabric in [requirements]")
+	logger.Log("Validating minepkg.toml")
+	problems := m.Validate()
+	var fatal error = nil
+	for _, problem := range problems {
+		if problem.Level == manifest.ErrorLevelFatal {
+			fmt.Printf(
+				"%s%s %s\n",
+				commands.Emoji(" ❌ "),
+				gchalk.BgRed("  ERROR  "),
+				problem.Error(),
+			)
+			fatal = problem
+		} else {
+			fmt.Printf(
+				"%s%s %s\n",
+				commands.Emoji(" ⚠️  "),
+				gchalk.BgYellow(" WARNING "),
+				problem.Error(),
+			)
+		}
+	}
+	if fatal != nil {
+		return fmt.Errorf("minepkg.toml problem: %w", fatal)
 	}
 
 	tasks.Log("Checking Authentication")
@@ -162,13 +181,29 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	// check if version exists
 	logger.Log("Checking if release exists: ")
-
-	// TODO: static fabric is bad!
-	p.release, err = apiClient.GetRelease(context.TODO(), "fabric", m.Package.Name+"@"+m.Package.Version)
+	p.release, err = apiClient.GetRelease(context.TODO(), m.PlatformString(), m.Package.Name+"@"+m.Package.Version)
 
 	switch {
 	case err == nil && p.release.Meta.Published:
-		logger.Fail("Release already published!")
+		if time.Since(*p.release.Meta.CreatedAt) > time.Hour*24*2 {
+			logger.Fail("Release already published!")
+		}
+		logger.Info("Release already published but can be overwritten.")
+		logger.Warn("Overwriting might take some time to fully apply everywhere. (~30 minutes)")
+		overwrite := utils.BoolPrompt(&promptui.Prompt{
+			Label:     "Delete & overwrite the existing release",
+			Default:   "N",
+			IsConfirm: true,
+		})
+		if !overwrite {
+			logger.Info("Aborting")
+			os.Exit(0)
+		}
+		_, err := apiClient.DeleteRelease(context.TODO(), m.PlatformString(), m.Package.Name+"@"+m.Package.Version)
+		if err != nil {
+			return fmt.Errorf("could not delete old release: %w", err)
+		}
+		// no error, continue normally
 	case err != nil && err != api.ErrNotFound:
 		// unknown error
 		return err

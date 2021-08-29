@@ -45,24 +45,25 @@ func defaultManifest() *manifest.Manifest {
 		}
 
 		if mcDep, ok := fabricMan.Depends["minecraft"]; ok {
-			man.Requirements.Minecraft = mcDep
+			man.Requirements.Minecraft = mcDep[0]
 		} else {
 			man.Requirements.Minecraft = "~1.16.2"
 		}
 
 		if fabricReq, ok := fabricMan.Depends["fabricloader"]; ok {
-			man.Requirements.FabricLoader = fabricReq
+			man.Requirements.FabricLoader = fabricReq[0]
 		} else {
 			man.Requirements.FabricLoader = "*"
 		}
 
 		if fabricDep, ok := fabricMan.Depends["fabric"]; ok {
-			man.Dependencies["fabric"] = fabricDep
+			man.Dependencies["fabric"] = fabricDep[0]
 		} else {
 			man.Dependencies["fabric"] = "*"
 		}
 		return man
 	}
+	fmt.Println(err)
 
 	wd, _ := os.Getwd()
 	defaultName := strcase.KebabCase(filepath.Base(wd))
