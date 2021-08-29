@@ -203,6 +203,8 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("could not delete old release: %w", err)
 		}
+		// no release anymore, make sure it gets created
+		p.release = nil
 		// no error, continue normally
 	case err != nil && err != api.ErrNotFound:
 		// unknown error
