@@ -12,7 +12,7 @@ require (
 	github.com/fatih/color v1.12.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/uuid v1.3.0 // indirect
-	github.com/jwalton/gchalk v1.0.3
+	github.com/jwalton/gchalk v1.1.0
 	github.com/klauspost/compress v1.13.1 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/kr/text v0.2.0 // indirect
