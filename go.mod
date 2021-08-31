@@ -23,7 +23,7 @@ require (
 	github.com/mholt/archiver/v3 v3.5.0
 	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/muesli/termenv v0.9.0 // indirect
-	github.com/pbnjay/memory v0.0.0-20201129165224-b12e5d931931
+	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
 	github.com/pelletier/go-toml v1.9.3
 	github.com/pierrec/lz4/v4 v4.1.8 // indirect
 	github.com/spf13/cobra v1.2.1
