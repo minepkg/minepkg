@@ -25,7 +25,7 @@ func defaultManifest() *manifest.Manifest {
 	if err == nil {
 		fmt.Println("Detected Fabric mod! Using fabric.mod.json for default values")
 		if fabricMan.ID != "" {
-			man.Package.Name = fabricMan.ID
+			man.Package.Name = strcase.KebabCase(fabricMan.ID)
 		}
 		man.Package.Type = "mod"
 		man.Package.Platform = "fabric"
