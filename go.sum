@@ -57,6 +57,8 @@ github.com/briandowns/spinner v1.16.0/go.mod h1:QOuQk7x+EaDASo80FEXwlwiA+j/PPIcX
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/charmbracelet/bubbletea v0.14.1 h1:pD/bM5LBEH/nDo7nKcgNUgi4uRHQhpWTIHZbG5vuSlc=
 github.com/charmbracelet/bubbletea v0.14.1/go.mod h1:b5lOf5mLjMg1tRn1HVla54guZB+jvsyV0yYAQja95zE=
+github.com/charmbracelet/bubbletea v0.15.0 h1:7++QPke7CsjBs+tZl49x7KXTHsof+NUMhreAtwBXygE=
+github.com/charmbracelet/bubbletea v0.15.0/go.mod h1:YTZSs2p3odhwYZdhqJheYHVUjU37c9OLgS85kw6NGQY=
 github.com/charmbracelet/lipgloss v0.3.0 h1:5MysOD6sHr4RP4jkZNWGVIul5GKoOsP12NgbgXPvAlA=
 github.com/charmbracelet/lipgloss v0.3.0/go.mod h1:VkhdBS2eNAmRkTwRKLJCFhCOVkjntMusBDxv7TXahuk=
 github.com/chzyer/logex v1.1.10 h1:Swpa1K6QvQznwJRcfTfQJmTE72DqScAa40E+fbHEXEE=
