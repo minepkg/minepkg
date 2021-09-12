@@ -95,7 +95,7 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	// we need login credentials to launch the client
 	// the server needs no creds
-	if !l.serverMode {
+	if !l.serverMode && !l.demo {
 		creds, err := ensureMojangAuth()
 		if err != nil {
 			return err
