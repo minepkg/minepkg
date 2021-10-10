@@ -211,7 +211,6 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	}
 
 	cmdArgs := []string{
-		"-Xss128M",
 		"-Djava.library.path=" + tmpDir,
 		"-Dminecraft.launcher.brand=minepkg",
 		// "-Dminecraft.launcher.version=" + "0.0.2", // TODO: implement!
