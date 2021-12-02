@@ -1,4 +1,4 @@
-FROM adoptopenjdk:16-jre
+FROM eclipse-temurin:17
 
 # add minepkg
 ADD https://storage.googleapis.com/minepkg-client/latest/minepkg-linux-amd64 /usr/bin/minepkg

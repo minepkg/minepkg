@@ -12,7 +12,7 @@ type wantedVersion struct {
 }
 
 func newWantedVersion(s string) (*wantedVersion, error) {
-	req := AdoptAssetRequest{featureVersion: 17}
+	req := AdoptAssetRequest{featureVersion: 17, imageType: "jdk", jvmImpl: "hotspot"}
 	parts := strings.Split(s, "-")
 
 	if len(parts) > 3 {

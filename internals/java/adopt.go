@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const AdoptAPI = "https://api.adoptopenjdk.net/v3"
+const AdoptAPI = "https://api.adoptium.net/v3"
 
 type AdoptAssetRequest struct {
 	featureVersion uint16
