@@ -173,7 +173,6 @@ func (l *Launcher) prepareMinecraft(ctx context.Context) error {
 		return err
 	}
 	l.LaunchManifest = launchManifest
-	fmt.Println("manifest: %+v\n", launchManifest.JavaVersion)
 
 	// check for JAR
 	// TODO move more logic to internals

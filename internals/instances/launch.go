@@ -376,7 +376,7 @@ func (i *Instance) fetchFabricManifest(lock *manifest.FabricLock) (*minecraft.La
 	minecraft := lock.Minecraft
 
 	version := minecraft + "-fabric-" + loader
-	dir := filepath.Join(i.VersionsDir(), i.Manifest.Requirements.Minecraft+"-fabric-"+loader)
+	dir := filepath.Join(i.VersionsDir(), minecraft+"-fabric-"+loader)
 	file := filepath.Join(dir, version+".json")
 
 	// cached
