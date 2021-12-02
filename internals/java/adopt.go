@@ -102,7 +102,7 @@ func (j *Factory) getAssets(ctx context.Context, opts *AdoptAssetRequest) ([]Ado
 	}
 
 	if opts.imageType == "" {
-		opts.imageType = "jre"
+		opts.imageType = "jdk" // jre is deprecated. they stopped shipping them after 16
 	}
 
 	// url params

@@ -21,11 +21,15 @@ type LaunchManifest struct {
 		Client mcJarDownload `json:"client"`
 		Server mcJarDownload `json:"server"`
 	} `json:"downloads"`
-	Libraries  Libraries `json:"libraries"`
-	Type       string    `json:"type"`
-	MainClass  string    `json:"mainClass"`
-	Jar        string    `json:"jar"`
-	Assets     string    `json:"assets"`
+	Libraries   Libraries `json:"libraries"`
+	JavaVersion struct {
+		Component    string `json:"component"`    // "java-runtime-beta" currently not used
+		MajorVersion int    `json:"majorVersion"` // number like 16 or 17
+	} `json:"javaVersion"`
+	Type       string `json:"type"`
+	MainClass  string `json:"mainClass"`
+	Jar        string `json:"jar"`
+	Assets     string `json:"assets"`
 	AssetIndex struct {
 		ID        string `json:"id"`
 		Sha1      string `json:"sha1"`
@@ -102,6 +106,8 @@ func (l *LaunchManifest) MergeWith(merge *LaunchManifest) {
 	if len(l.Arguments.Game) == 0 {
 		l.Arguments = merge.Arguments
 	}
+
+	l.JavaVersion = merge.JavaVersion
 
 	// hack
 	l.Downloads = merge.Downloads

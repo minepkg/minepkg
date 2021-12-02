@@ -2,6 +2,7 @@ package launcher
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -29,10 +30,18 @@ func (l *Launcher) Java(ctx context.Context) (*java.Java, error) {
 		return java, nil
 	}
 
+	// default to java 8
 	v := "8"
-	mcSemver := semver.MustParse(l.Instance.Lockfile.MinecraftVersion())
-	if mcSemver.Equal(semver.MustParse("1.17.0")) || mcSemver.GreaterThan(semver.MustParse("1.17.0")) {
-		v = "16"
+
+	// but use java version from launcher json if set
+	if l.LaunchManifest.JavaVersion.MajorVersion != 0 {
+		v = fmt.Sprintf("%d", l.LaunchManifest.JavaVersion.MajorVersion)
+	} else {
+		// or fallback to v16 for 1.17
+		mcSemver := semver.MustParse(l.Instance.Lockfile.MinecraftVersion())
+		if mcSemver.Equal(semver.MustParse("1.17.0")) || mcSemver.GreaterThan(semver.MustParse("1.17.0")) {
+			v = "16"
+		}
 	}
 
 	java, err := javaFactory.Version(ctx, v)

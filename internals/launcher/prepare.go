@@ -30,16 +30,18 @@ func (l *Launcher) Prepare() error {
 		return err
 	}
 
+	// download minecraft (assets, libraries, main jar etc) if needed
+	// needs to happen before javaUpdate because launch manifest
+	// might contain wanted java version
+	if err := l.prepareMinecraft(ctx); err != nil {
+		return err
+	}
+
 	// update java in the background if needed
 	javaUpdate := l.prepareJavaBg(ctx)
 
 	// update dependencies
 	if err := l.prepareDependencies(ctx, outdatedReqs); err != nil {
-		return err
-	}
-
-	// download minecraft (assets, libraries, main jar etc) if needed
-	if err := l.prepareMinecraft(ctx); err != nil {
 		return err
 	}
 
@@ -117,7 +119,8 @@ func (l *Launcher) prepareJavaBg(ctx context.Context) chan error {
 		// we check if we need to download java
 		java, err := l.Java(ctx)
 		if err != nil {
-			javaUpdate <- err
+			javaUpdate <- fmt.Errorf("failed to download java: %w", err)
+			return javaUpdate
 		}
 
 		if java.NeedsDownloading() {
@@ -170,6 +173,7 @@ func (l *Launcher) prepareMinecraft(ctx context.Context) error {
 		return err
 	}
 	l.LaunchManifest = launchManifest
+	fmt.Println("manifest: %+v\n", launchManifest.JavaVersion)
 
 	// check for JAR
 	// TODO move more logic to internals
