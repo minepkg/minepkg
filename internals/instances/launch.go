@@ -372,7 +372,6 @@ func (i *Instance) getVanillaManifest(v string) (*minecraft.LaunchManifest, erro
 func (i *Instance) fetchFabricManifest(lock *manifest.FabricLock) (*minecraft.LaunchManifest, error) {
 	manifest := minecraft.LaunchManifest{}
 	loader := lock.FabricLoader
-	mappings := lock.Mapping
 	minecraft := lock.Minecraft
 
 	version := minecraft + "-fabric-" + loader
@@ -382,13 +381,19 @@ func (i *Instance) fetchFabricManifest(lock *manifest.FabricLock) (*minecraft.La
 	// cached
 	if rawMan, err := ioutil.ReadFile(file); err == nil {
 		err := json.Unmarshal(rawMan, &manifest)
-		if err != nil {
-			return nil, err
+		if err == nil {
+			return &manifest, nil
 		}
-		return &manifest, nil
+		fmt.Printf("WARNING: failed to parse cached manifest %s (this is a bug pls report)\n", file)
+		// corrupted manifest, try downloading
 	}
 
-	res, err := http.Get("https://fabricmc.net/download/vanilla?format=profileJson&loader=" + url.QueryEscape(loader) + "&yarn=" + url.QueryEscape(mappings))
+	profileURL := fmt.Sprintf(
+		"https://meta.fabricmc.net/v2/versions/loader/%s/%s/profile/json",
+		url.QueryEscape(minecraft),
+		url.QueryEscape(loader),
+	)
+	res, err := http.Get(profileURL)
 	if err != nil {
 		return nil, err
 	}

@@ -27,14 +27,14 @@ func (l *Launcher) Prepare() error {
 	// update requirements if needed
 	outdatedReqs, err := l.prepareRequirements()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to update requirements: %w", err)
 	}
 
 	// download minecraft (assets, libraries, main jar etc) if needed
 	// needs to happen before javaUpdate because launch manifest
 	// might contain wanted java version
 	if err := l.prepareMinecraft(ctx); err != nil {
-		return err
+		return fmt.Errorf("failed to download minecraft: %w", err)
 	}
 
 	// update java in the background if needed
@@ -170,7 +170,7 @@ func (l *Launcher) prepareMinecraft(ctx context.Context) error {
 
 	launchManifest, err := instance.GetLaunchManifest()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get launch manifest: %w", err)
 	}
 	l.LaunchManifest = launchManifest
 
