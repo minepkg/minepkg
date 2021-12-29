@@ -124,7 +124,11 @@ func initRoot() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	if viper.GetBool("noColor") || os.Getenv("CI") != "" {
+	if viper.GetBool("noColor") {
+		gchalk.ForceLevel(gchalk.LevelNone)
+	}
+
+	if os.Getenv("CI") != "" {
 		gchalk.ForceLevel(gchalk.LevelNone)
 		viper.Set("nonInteractive", true)
 	}
