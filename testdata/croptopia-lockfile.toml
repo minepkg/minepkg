@@ -12,7 +12,7 @@ lockfileVersion = 1
 
   [dependencies.fabric]
     name = "fabric"
-    version = "0.43.1-1.18.mpkg.2"
+    version = "0.43.1+1.18.mpkg.2"
     type = "mod"
     ipfsHash = ""
     Sha256 = "3951bf0fbf2fdf330689445076dab809a9e0d396906d39612d56517fe42d9179"
@@ -32,10 +32,11 @@ lockfileVersion = 1
 
   [dependencies.modmenu]
     name = "modmenu"
-    version = "3.0.0-0.mpkg.1"
+    version = "3.0.0+0.mpkg.1"
     type = "mod"
     ipfsHash = ""
     Sha256 = "a747d582c3185c3e781eaf53231c8dbcd7b76b63241e62088cddb505cecec42a"
     url = "https://api.preview.minepkg.io/v1/releases/fabric/modmenu@3.0.0-0.mpkg.1/download"
     provider = "minepkg"
     dependend = ""
+    isDev = true

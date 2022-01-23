@@ -95,12 +95,15 @@ func areDependenciesInLockfileOutdated(lock *manifest.Lockfile, mani *manifest.M
 
 	// check for removed dependencies
 	for _, lock := range lock.Dependencies {
+		// ignore dev dependencies for now
+		if lock.IsDev {
+			continue
+		}
 		if lock.Dependend == "" || lock.Dependend == mani.Package.Name {
 			if lock.Name == "minepkg-companion" {
 				continue
 			}
 			if _, ok := mani.Dependencies[lock.Name]; !ok {
-				fmt.Println("removed dependency", lock.Name)
 				return true, nil
 			}
 		}

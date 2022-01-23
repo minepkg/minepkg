@@ -141,6 +141,7 @@ func (l *Launcher) prepareJavaBg(ctx context.Context) chan error {
 func (l *Launcher) prepareDependencies(ctx context.Context, force bool) error {
 	instance := l.Instance
 	// resolve dependencies
+	// TODO: check dev dependencies!
 	outdatedDependencies, err := instance.AreDependenciesOutdated()
 	if err != nil {
 		return err
