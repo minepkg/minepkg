@@ -42,7 +42,7 @@ jobs:
             }
           }' > dist/latest-version.json
       - name: setup gcloud sdk
-        uses: google-github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@v0
         with:
           service_account_key: ${{ secrets.gcp_credentials }}
           export_default_credentials: true
