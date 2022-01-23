@@ -1,0 +1,26 @@
+manifestVersion = 0
+
+[package]
+  type = "mod"
+  name = "croptopia"
+  description = ""
+  version = "1.8.0-1.18.mpkg.1"
+  platform = "fabric"
+  license = "MIT"
+  source = "https://github.com/ExcessiveAmountsOfZombies/Croptopia"
+  author = "ExcessiveAmountsOfZombies"
+
+# These are global requirements
+[requirements]
+  minecraft = "1.18.x"
+  fabricLoader = "*"
+
+[dependencies]
+  fabric = "*"
+
+[dev]
+  buildCommand = "./gradlew :fabric:build -Plaunch_mod=c"
+	jar = "build/libs/Croptopia-*-FABRIC-*.jar"
+
+  [dev.dependencies]
+    modmenu = "*"

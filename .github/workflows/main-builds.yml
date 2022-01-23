@@ -21,6 +21,8 @@ jobs:
         with:
           version: latest
           args: release --rm-dist --snapshot --skip-publish
+      - name: Test
+        run: go test -v ./...
       - name: Archive binaries
         uses: actions/upload-artifact@v2
         with:

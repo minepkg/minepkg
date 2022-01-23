@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 
 	"github.com/pelletier/go-toml"
@@ -205,4 +206,18 @@ func (l *Lockfile) ClearDependencies() {
 func NewLockfile() *Lockfile {
 	manifest := Lockfile{LockfileVersion: LockfileVersion, Dependencies: make(map[string]*DependencyLock)}
 	return &manifest
+}
+
+// NewFromFile tries to parse a local lockfile file
+func NewLockfileFromFile(filename string) (*Lockfile, error) {
+	rawLockfile, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+	lockfile := Lockfile{}
+	if err = toml.Unmarshal(rawLockfile, &lockfile); err != nil {
+		return nil, err
+	}
+
+	return &lockfile, nil
 }

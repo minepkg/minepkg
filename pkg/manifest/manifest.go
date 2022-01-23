@@ -10,6 +10,7 @@ package manifest
 
 import (
 	"bytes"
+	"io/ioutil"
 	"log"
 	"net/mail"
 
@@ -201,6 +202,20 @@ func New() *Manifest {
 	manifest := Manifest{}
 	manifest.Dependencies = make(Dependencies)
 	return &manifest
+}
+
+// NewFromFile tries to parse a local manifest file
+func NewFromFile(filename string) (*Manifest, error) {
+	rawManifest, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+	manifest := Manifest{}
+	if err = toml.Unmarshal(rawManifest, &manifest); err != nil {
+		return nil, err
+	}
+
+	return &manifest, nil
 }
 
 // NewInstanceLike takes an existing manifest and copies most fields

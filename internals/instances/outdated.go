@@ -1,18 +1,18 @@
 package instances
 
 import (
+	"fmt"
+
 	"github.com/Masterminds/semver/v3"
 	"github.com/minepkg/minepkg/pkg/manifest"
 )
 
-// AreRequirementsOutdated returns true if the requirements of this instance do not
-// match what is currently set in the lockfile. Requirements should be updated with
-// "UpdateLockfileRequirements" in most cases if this is true
-func (i *Instance) AreRequirementsOutdated() (bool, error) {
-	lock := i.Lockfile
-	mani := i.Manifest
+func areRequirementsInLockfileOutdated(lock *manifest.Lockfile, mani *manifest.Manifest) (bool, error) {
+	if mani == nil {
+		return false, fmt.Errorf("manifest is nil")
+	}
 
-	// no lockfile yet or requirements are missing
+	// no lockfile or requirements are missing
 	if lock == nil || !lock.HasRequirements() {
 		return true, nil
 	}
@@ -46,12 +46,10 @@ func (i *Instance) AreRequirementsOutdated() (bool, error) {
 	return false, nil
 }
 
-// AreDependenciesOutdated returns true if the dependencies of this instance do not
-// match what is currently set in the lockfile. Dependencies should be updated with
-// "UpdateLockfileDependencies" in most cases if this is true
-func (i *Instance) AreDependenciesOutdated() (bool, error) {
-	lock := i.Lockfile
-	mani := i.Manifest
+func areDependenciesInLockfileOutdated(lock *manifest.Lockfile, mani *manifest.Manifest) (bool, error) {
+	if mani == nil {
+		return false, fmt.Errorf("manifest is nil")
+	}
 
 	// no lockfile yet or dependencies are missing
 	if lock == nil || lock.Dependencies == nil {
@@ -68,10 +66,6 @@ func (i *Instance) AreDependenciesOutdated() (bool, error) {
 			return true, nil
 		}
 
-		packageDep, err := semver.NewConstraint(dep.Source)
-		if err != nil {
-			return false, err
-		}
 		lockEntry, ok := lock.Dependencies[dep.Name]
 		// missing dependency
 		if !ok {
@@ -81,6 +75,11 @@ func (i *Instance) AreDependenciesOutdated() (bool, error) {
 		// might not even be semver, but versions match, next!
 		if dep.Source == lockEntry.Version {
 			continue
+		}
+
+		packageDep, err := semver.NewConstraint(dep.Source)
+		if err != nil {
+			return false, err
 		}
 
 		sVersion, err := semver.NewVersion(lockEntry.Version)
@@ -96,15 +95,30 @@ func (i *Instance) AreDependenciesOutdated() (bool, error) {
 
 	// check for removed dependencies
 	for _, lock := range lock.Dependencies {
-		if lock.Dependend == "" || lock.Dependend == i.Manifest.Package.Name {
+		if lock.Dependend == "" || lock.Dependend == mani.Package.Name {
 			if lock.Name == "minepkg-companion" {
 				continue
 			}
 			if _, ok := mani.Dependencies[lock.Name]; !ok {
+				fmt.Println("removed dependency", lock.Name)
 				return true, nil
 			}
 		}
 	}
 
 	return false, nil
+}
+
+// AreDependenciesOutdated returns true if the dependencies of this instance do not
+// match what is currently set in the lockfile. Dependencies should be updated with
+// "UpdateLockfileDependencies" in most cases if this is true
+func (i *Instance) AreDependenciesOutdated() (bool, error) {
+	return areDependenciesInLockfileOutdated(i.Lockfile, i.Manifest)
+}
+
+// AreRequirementsOutdated returns true if the requirements of this instance do not
+// match what is currently set in the lockfile. Requirements should be updated with
+// "UpdateLockfileRequirements" in most cases if this is true
+func (i *Instance) AreRequirementsOutdated() (bool, error) {
+	return areRequirementsInLockfileOutdated(i.Lockfile, i.Manifest)
 }

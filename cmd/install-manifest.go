@@ -14,6 +14,7 @@ func installManifest(instance *instances.Instance) error {
 		Instance:       instance,
 		MinepkgVersion: rootCmd.Version,
 		NonInteractive: viper.GetBool("nonInteractive"),
+		UseSystemJava:  viper.GetBool("useSystemJava"),
 	}
 
 	if err := cliLauncher.Prepare(); err != nil {
