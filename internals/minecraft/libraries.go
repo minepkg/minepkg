@@ -23,10 +23,10 @@ func (l Libraries) Required() Libraries {
 
 		include := true
 		for _, rule := range lib.Rules {
-			// skip here rules do not apply
 			include = rule.Applies()
 		}
-		if include == false {
+		// did some rules not apply? skip this library
+		if !include {
 			continue
 		}
 
@@ -34,19 +34,19 @@ func (l Libraries) Required() Libraries {
 		if len(lib.Natives) != 0 {
 			_, ok := lib.Natives[osName]
 			// skip native not available for this platform
-			if ok != true {
+			if !ok {
 				continue
 			}
 		}
 
-		// not skipped. append this
+		// not skipped. append this library
 		required = append(required, lib)
 	}
 
 	return required
 }
 
-// Lib is one minecraft library
+// Lib is a minecraft library
 type Lib struct {
 	Name      string `json:"name"`
 	Downloads struct {
@@ -67,7 +67,7 @@ func (l *Lib) Filepath() string {
 	}
 
 	if l.Natives[osName] != "" {
-		nativeID, _ := l.Natives[osName]
+		nativeID := l.Natives[osName]
 		native := l.Downloads.Classifiers[nativeID]
 		return native.Path
 	}
@@ -93,7 +93,7 @@ func (l *Lib) DownloadURL() string {
 
 	switch {
 	case l.Natives[osName] != "":
-		nativeID, _ := l.Natives[osName]
+		nativeID := l.Natives[osName]
 		return l.Downloads.Classifiers[nativeID].URL
 	case l.Downloads.Artifact.URL != "":
 		return l.Downloads.Artifact.URL

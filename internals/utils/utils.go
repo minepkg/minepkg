@@ -27,7 +27,7 @@ func SimpleGitExec(args string) (string, error) {
 func OpenBrowser(url string) {
 	var err error
 
-	fmt.Println("opening ", url)
+	fmt.Println("Opening ", url)
 
 	switch runtime.GOOS {
 	case "linux":
