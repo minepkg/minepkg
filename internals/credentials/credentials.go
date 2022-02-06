@@ -11,12 +11,13 @@ import (
 	"github.com/zalando/go-keyring"
 )
 
+var NoKeyRingMode = false
+
 // Store stores any credentials
 type Store struct {
 	globalDir string
 	// Name is the name of this credentials store
-	Name          string
-	NoKeyRingMode bool
+	Name string
 }
 
 // New creates a new credentials store
@@ -36,8 +37,8 @@ func (s *Store) Get(target interface{}) error {
 		// empty result
 		return nil
 	default:
-		log.Println("Could not use key store, will default to file store for secrets")
-		s.NoKeyRingMode = true
+		log.Println("Could not use key store, will default to file store for secrets.", err)
+		NoKeyRingMode = true
 		return s.findFromFiles(target)
 	}
 }
@@ -58,7 +59,7 @@ func (s *Store) Set(data interface{}) error {
 	if err != nil {
 		return err
 	}
-	if s.NoKeyRingMode {
+	if NoKeyRingMode {
 		return s.writeCredentialFile(s.localFilename(), jsonBlob)
 	}
 	return keyring.Set("minepkg_auth_data", s.Name, string(jsonBlob))

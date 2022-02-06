@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"time"
 
 	"github.com/minepkg/minepkg/internals/credentials"
 	"github.com/minepkg/minepkg/internals/minecraft"
 	"github.com/minepkg/minepkg/internals/minecraft/microsoft"
+	"golang.org/x/oauth2"
 )
 
 type Microsoft struct {
@@ -16,9 +18,29 @@ type Microsoft struct {
 	Store    *credentials.Store
 }
 
-func (m *Microsoft) SetAuthState(authData *microsoft.Credentials) error {
+// MicrosoftCredentialStorage is used to trim down the auth data to the minimum required
+// otherwise the windows keyring will return an error ("The stub received bad data.")
+type MicrosoftCredentialStorage struct {
+	MicrosoftAuth oauth2.Token `json:"ms"`
+	PlayerName    string       `json:"pn"`
+	UUID          string       `json:"id"`
+	AccessToken   string       `json:"at"`
+	ExpiresAt     time.Time    `json:"exp"`
+}
+
+func (m *Microsoft) SetAuthState(authData *MicrosoftCredentialStorage) error {
 	log.Printf("Restoring MS auth state")
-	m.authData = authData
+	m.authData = &microsoft.Credentials{
+		ExpiresAt:     authData.ExpiresAt,
+		MicrosoftAuth: authData.MicrosoftAuth,
+		MinecraftAuth: &microsoft.XboxLoginResponse{
+			AccessToken: authData.AccessToken,
+		},
+		MinecraftProfile: &microsoft.GetProfileResponse{
+			ID:   authData.UUID,
+			Name: authData.PlayerName,
+		},
+	}
 	m.SetOauthToken(&authData.MicrosoftAuth)
 	return nil
 }
@@ -65,7 +87,17 @@ func (m *Microsoft) refreshAuthData() (*microsoft.Credentials, error) {
 
 func (m *Microsoft) persist() error {
 	log.Println("Persisting MS auth data")
-	data, _ := json.Marshal(m.authData)
+	trimmedData := &MicrosoftCredentialStorage{
+		ExpiresAt:     m.authData.ExpiresAt,
+		MicrosoftAuth: m.authData.MicrosoftAuth,
+		AccessToken:   m.authData.MinecraftAuth.AccessToken,
+		UUID:          m.authData.MinecraftProfile.ID,
+		PlayerName:    m.authData.MinecraftProfile.Name,
+	}
+	data, err := json.Marshal(trimmedData)
+	if err != nil {
+		return err
+	}
 	return m.Store.Set(&PersistentCredentials{
 		Provider: "microsoft",
 		Data:     data,

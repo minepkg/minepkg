@@ -41,7 +41,7 @@ func (r *Root) restoreAuth() {
 		}
 		r.useMojangAuth().SetAuthState(state)
 	case "microsoft":
-		state := &microsoft.Credentials{}
+		state := &auth.MicrosoftCredentialStorage{}
 		if err := json.Unmarshal(authData.Data, state); err != nil {
 			log.Println("Failed to restore auth data:", err)
 		}
