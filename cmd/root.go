@@ -2,6 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,20 +14,18 @@ import (
 	"github.com/minepkg/minepkg/cmd/config"
 	"github.com/minepkg/minepkg/cmd/dev"
 	"github.com/minepkg/minepkg/cmd/initCmd"
+	"github.com/minepkg/minepkg/internals/auth"
+	"github.com/minepkg/minepkg/internals/cmdlog"
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/credentials"
 	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"golang.org/x/oauth2"
 )
 
-// TODO: this logger is not so great – also: it should not be global
-var logger = globals.Logger
-
 var (
-	cfgFile   string
-	globalDir = "/tmp"
-
+	cfgFile string
 	// Version is the current version. it should be set by goreleaser
 	Version string
 	// commit is also set by goreleaser (in main.go)
@@ -32,6 +33,28 @@ var (
 	// nextVersion is a placeholder version. only used for local dev
 	nextVersion string = "0.1.0-dev-local"
 )
+
+type Root struct {
+	HTTPClient         *http.Client
+	authProvider       auth.AuthProvider
+	minecraftAuthStore *credentials.Store
+	minepkgAuthStore   *credentials.Store
+	globalDir          string
+	logger             *cmdlog.Logger
+}
+
+var root = &Root{
+	HTTPClient: globals.HTTPClient,
+	logger:     globals.Logger,
+}
+
+func (r *Root) setMinepkgAuth(token *oauth2.Token) error {
+	// TODO: no use of globals!
+	globals.ApiClient.JWT = token.AccessToken
+	return r.minepkgAuthStore.Set(token)
+}
+
+var logger = root.logger
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -67,32 +90,6 @@ func initRoot() {
 	if rootCmd.Version == "" {
 		rootCmd.Version = nextVersion
 	}
-	homeConfigs, err := os.UserConfigDir()
-	if err != nil {
-		panic(err)
-	}
-	apiKey := os.Getenv("MINEPKG_API_KEY")
-	globalDir = filepath.Join(homeConfigs, "minepkg")
-	credStore, err := credentials.New(globalDir, globals.ApiClient.APIUrl)
-	if err != nil {
-		if apiKey != "" {
-			logger.Warn("Could not initialize credential store: " + err.Error())
-		} else {
-			logger.Fail("Could not initialize credential store: " + err.Error())
-		}
-	}
-	globals.CredStore = credStore
-
-	if credStore.MinepkgAuth != nil {
-		globals.ApiClient.JWT = credStore.MinepkgAuth.AccessToken
-	}
-
-	if apiKey != "" {
-		globals.ApiClient.APIKey = apiKey
-		fmt.Println("Using MINEPKG_API_KEY for authentication")
-	}
-
-	cobra.OnInitialize(initConfig)
 
 	configDir, err := os.UserConfigDir()
 	if err != nil {
@@ -112,7 +109,7 @@ func initRoot() {
 	viper.BindPFlag("acceptMinecraftEula", rootCmd.PersistentFlags().Lookup("accept-minecraft-eula"))
 	viper.BindPFlag("verboseLogging", rootCmd.PersistentFlags().Lookup("verbose"))
 	viper.BindPFlag("nonInteractive", rootCmd.PersistentFlags().Lookup("non-interactive"))
-
+	cobra.OnInitialize(initConfig)
 	// viper.SetDefault("init.defaultSource", "https://github.com/")
 
 	// subcommands
@@ -126,6 +123,12 @@ func initRoot() {
 func initConfig() {
 	if viper.GetBool("noColor") {
 		gchalk.ForceLevel(gchalk.LevelNone)
+	}
+
+	if !viper.GetBool("verboseLogging") {
+		log.Default().SetOutput(ioutil.Discard)
+	} else {
+		log.Println("Verbose logging enabled")
 	}
 
 	if os.Getenv("CI") != "" {
@@ -154,11 +157,42 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil && viper.GetBool("verboseLogging") {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+		log.Println("Using config file:", viper.ConfigFileUsed())
 	}
 
 	if viper.GetString("apiUrl") != "" {
 		logger.Warn("NOT using default minepkg API URL: " + viper.GetString("apiUrl"))
 		globals.ApiClient.APIUrl = viper.GetString("apiUrl")
+	}
+
+	homeConfigs, err := os.UserConfigDir()
+	if err != nil {
+		panic(err)
+	}
+	apiKey := os.Getenv("MINEPKG_API_KEY")
+	root.globalDir = filepath.Join(homeConfigs, "minepkg")
+	root.minecraftAuthStore = credentials.New(root.globalDir, "minecraft_auth")
+	root.minepkgAuthStore = credentials.New(root.globalDir, globals.ApiClient.APIUrl)
+	if err != nil {
+		if apiKey != "" {
+			logger.Warn("Could not initialize credential store: " + err.Error())
+		} else {
+			logger.Fail("Could not initialize credential store: " + err.Error())
+		}
+	}
+
+	var minepkgAuth *oauth2.Token
+	root.minepkgAuthStore.Get(&minepkgAuth)
+
+	if minepkgAuth != nil {
+		log.Println("Using minepkg JWT")
+		globals.ApiClient.JWT = minepkgAuth.AccessToken
+	} else {
+		log.Println("No minepkg JWT found")
+	}
+
+	if apiKey != "" {
+		globals.ApiClient.APIKey = apiKey
+		fmt.Println("Using MINEPKG_API_KEY for authentication")
 	}
 }

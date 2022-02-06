@@ -4,114 +4,64 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 
-	"github.com/minepkg/minepkg/internals/mojang"
 	"github.com/zalando/go-keyring"
-	"golang.org/x/oauth2"
 )
 
-var (
-	minepkgAuthServiceFallback = "minepkg"
-	minepkgAuthUser            = "minepkg_auth_data"
-
-	mojangAuthService = "minepkg"
-	mojangAuthUser    = "mojang_auth_data"
-)
-
-// Store stures the minepkg & mojang tokens
+// Store stores any credentials
 type Store struct {
 	globalDir string
-	// MinepkgServiceName should be different for each api env
-	MinepkgServiceName string
-	NoKeyRingMode      bool
-	MinepkgAuth        *oauth2.Token
-	MojangAuth         *mojang.AuthResponse
+	// Name is the name of this credentials store
+	Name          string
+	NoKeyRingMode bool
 }
 
 // New creates a new credentials store
-func New(globalDir string, serviceName string) (*Store, error) {
-	store := &Store{globalDir: globalDir, MinepkgServiceName: serviceName}
-	if store.MinepkgServiceName == "" {
-		store.MinepkgServiceName = minepkgAuthServiceFallback
-	}
-
-	err := store.Find()
-	if err != nil {
-		return nil, err
-	}
-	return store, nil
+func New(globalDir string, name string) *Store {
+	store := &Store{globalDir: globalDir, Name: name}
+	return store
 }
 
-// Find tries to find existing credentials
-func (s *Store) Find() error {
+// Get tries to find existing credentials
+func (s *Store) Get(target interface{}) error {
 	// find minepkg credentials
-	minepkgAuth, err := keyring.Get(s.MinepkgServiceName, minepkgAuthUser)
+	minepkgAuth, err := keyring.Get("minepkg_auth_data", s.Name)
 	switch err {
 	case nil:
-		err := json.Unmarshal([]byte(minepkgAuth), &s.MinepkgAuth)
-		if err != nil {
-			return err
-		}
+		return json.Unmarshal([]byte(minepkgAuth), target)
 	case keyring.ErrNotFound:
-		// wo do nothing here, because mojang credentials might be there
-	default:
-		// TODO: output should be here in debug mode only
-		// fmt.Println("Could not use key store, will default to file store for secrets")
-		s.NoKeyRingMode = true
-		return s.findFromFiles()
-	}
-
-	// find mojang credentials
-	mojangAuth, err := keyring.Get(mojangAuthService, mojangAuthUser)
-	switch err {
-	case nil:
-		return json.Unmarshal([]byte(mojangAuth), &s.MojangAuth)
-	case keyring.ErrNotFound:
-		// no credentials (yet) is fine
+		// empty result
 		return nil
 	default:
-		return err
+		log.Println("Could not use key store, will default to file store for secrets")
+		s.NoKeyRingMode = true
+		return s.findFromFiles(target)
 	}
+}
+
+func (s *Store) localFilename() string {
+	return "minepkg-credentials-" + s.Name + ".json"
 }
 
 // findFromFiles is the same as Find but reads from plain files instead
-func (s *Store) findFromFiles() error {
-	err := s.readCredentialFile("minepkg-credentials.json", &s.MinepkgAuth)
-	if err != nil {
-		return err
-	}
-
-	return s.readCredentialFile("mojang-credentials.json", &s.MojangAuth)
+func (s *Store) findFromFiles(target interface{}) error {
+	return s.readCredentialFile(s.localFilename(), &target)
 }
 
-// SetMojangAuth sets `MojangAuth` and persists it to disk
-func (s *Store) SetMojangAuth(auth *mojang.AuthResponse) error {
-	s.MojangAuth = auth
-
-	authJSONBlob, err := json.Marshal(s.MojangAuth)
+// Set sets the credentials and persists it to disk
+func (s *Store) Set(data interface{}) error {
+	// maybe set in struct?
+	jsonBlob, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
 	if s.NoKeyRingMode {
-		return s.writeCredentialFile("mojang-credentials.json", authJSONBlob)
+		return s.writeCredentialFile(s.localFilename(), jsonBlob)
 	}
-	return keyring.Set(mojangAuthService, mojangAuthUser, string(authJSONBlob))
-}
-
-// SetMinepkgAuth sets `MinepkgAuth` and persists it to disk
-func (s *Store) SetMinepkgAuth(auth *oauth2.Token) error {
-	s.MinepkgAuth = auth
-
-	authJSONBlob, err := json.Marshal(s.MinepkgAuth)
-	if err != nil {
-		return err
-	}
-	if s.NoKeyRingMode {
-		return s.writeCredentialFile("minepkg-credentials.json", authJSONBlob)
-	}
-	return keyring.Set(s.MinepkgServiceName, minepkgAuthUser, string(authJSONBlob))
+	return keyring.Set("minepkg_auth_data", s.Name, string(jsonBlob))
 }
 
 // readCredentialFile is a helper that reads a file from the minepkg config dir

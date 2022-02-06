@@ -7,9 +7,7 @@ import (
 	"os/exec"
 
 	"github.com/minepkg/minepkg/internals/commands"
-	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/instances"
-	"github.com/minepkg/minepkg/internals/mojang"
 )
 
 // MinepkgMapping is a server mapping (very unfinished)
@@ -29,42 +27,6 @@ func HumanUint32(num uint32) string {
 		return fmt.Sprintf("%v K", num/1000)
 	}
 	return fmt.Sprintf("%v", num)
-}
-
-func ensureMojangAuth() (*mojang.AuthResponse, error) {
-	var loginData = &mojang.AuthResponse{}
-	credStore := globals.CredStore
-	mojangClient := globals.MojangClient
-
-	if credStore.MojangAuth == nil || credStore.MojangAuth.AccessToken == "" {
-		loginData = login()
-		if err := credStore.SetMojangAuth(loginData); err != nil {
-			return nil, err
-		}
-		return credStore.MojangAuth, nil
-	}
-
-	loginData, err := mojangClient.MojangEnsureToken(
-		credStore.MojangAuth.AccessToken,
-		credStore.MojangAuth.ClientToken,
-	)
-	if err != nil {
-		// TODO: check if expired or other problem!
-		logger.Info("Your token maybe expired. Please login again")
-		// TODO: error handling!
-		loginData = login()
-	}
-
-	// only update access token and client token
-	// because `SelectedProfile` is omited here
-	credStore.MojangAuth.AccessToken = loginData.AccessToken
-	credStore.MojangAuth.ClientToken = loginData.ClientToken
-
-	// HACK: maybe not pass credstore its own field
-	if err := credStore.SetMojangAuth(credStore.MojangAuth); err != nil {
-		return nil, err
-	}
-	return credStore.MojangAuth, nil
 }
 
 // CopyFile copies a file from src to dst. If src and dst files exist, and are

@@ -52,7 +52,7 @@ func (i *mpkgLoginRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	token := globals.ApiClient.OAuthLogin(&oAuthConfig)
 
-	if err := globals.CredStore.SetMinepkgAuth(token); err != nil {
+	if err := root.setMinepkgAuth(token); err != nil {
 		return err
 	}
 	fmt.Println(`Login to minepkg successful. You should now be able to publish packages!`)

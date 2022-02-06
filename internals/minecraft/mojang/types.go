@@ -1,11 +1,15 @@
 package mojang
 
-// AuthResponse is the response returned by a succefully mojang login
+// AuthResponse is the response returned by a successful mojang login
 type AuthResponse struct {
 	AccessToken     string   `json:"accessToken"`
 	ClientToken     string   `json:"clientToken"`
 	SelectedProfile *Profile `json:"selectedProfile"`
 }
+
+func (a *AuthResponse) GetAccessToken() string { return a.AccessToken }
+func (a *AuthResponse) GetPlayerName() string  { return a.SelectedProfile.Name }
+func (a *AuthResponse) GetUUID() string        { return a.SelectedProfile.ID }
 
 // Profile is a profile that potentially can be used to launch minecraft
 type Profile struct {

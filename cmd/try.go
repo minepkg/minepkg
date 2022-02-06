@@ -70,11 +70,11 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 	instance.Lockfile = manifest.NewLockfile()
 	instance.MinepkgAPI = apiClient
 
-	creds, err := ensureMojangAuth()
+	creds, err := root.getLaunchCredentialsOrLogin()
 	if err != nil {
 		return err
 	}
-	instance.MojangCredentials = creds
+	instance.SetLaunchCredentials(creds)
 
 	comp := strings.Split(args[0], "@")
 	name := comp[0]

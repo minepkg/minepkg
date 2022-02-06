@@ -17,32 +17,24 @@ var (
 	ErrorBadRequest = errors.New("bad Request")
 )
 
-// Client contains credentials and methods to talk
+// MojangClient contains credentials and methods to talk
 // to the mojang api
-type Client struct {
+type MojangClient struct {
 	// HTTP is the internal http client
 	HTTP *http.Client
 }
 
 // New returns a new MojangAPI instance
-func New() *Client {
-	return &Client{
-		HTTP: http.DefaultClient,
-	}
-}
-
-// NewWithClient returns a new MojangAPI instance using a custom http client
-// supplied as a first parameter
-func NewWithClient(client *http.Client) *Client {
-	return &Client{
-		HTTP: client,
+func New(httpClient *http.Client) *MojangClient {
+	return &MojangClient{
+		HTTP: httpClient,
 	}
 }
 
 // Login is a convenient method that uses username/password credentials
-// to fetch a token from Mojangs Authentication Server. It then uses (only) that token
+// to fetch a token from Mojang's Authentication Server. It then uses (only) that token
 // to login to minepkg
-func (m *Client) Login(username string, password string) (*AuthResponse, error) {
+func (m *MojangClient) Login(username string, password string) (*AuthResponse, error) {
 	payload := mojangLogin{
 		Agent:       mojangAgent{Name: "Minecraft", Version: 1},
 		Username:    username,
@@ -71,7 +63,7 @@ func (m *Client) Login(username string, password string) (*AuthResponse, error) 
 }
 
 // MojangEnsureToken checks if the token need to be refreshed and does so it required. it returns a valid token
-func (m *Client) MojangEnsureToken(accessToken string, clientToken string) (*AuthResponse, error) {
+func (m *MojangClient) MojangEnsureToken(accessToken string, clientToken string) (*AuthResponse, error) {
 	ok, _ := m.mojangCheckValid(accessToken, clientToken)
 	if ok {
 		return &AuthResponse{AccessToken: accessToken, ClientToken: clientToken}, nil
@@ -79,7 +71,7 @@ func (m *Client) MojangEnsureToken(accessToken string, clientToken string) (*Aut
 	return m.MojangRefreshToken(accessToken, clientToken)
 }
 
-func (m *Client) mojangCheckValid(accessToken string, clientToken string) (bool, error) {
+func (m *MojangClient) mojangCheckValid(accessToken string, clientToken string) (bool, error) {
 	loginData := struct {
 		AccessToken string `json:"accessToken"`
 		ClientToken string `json:"clientToken"`
@@ -99,7 +91,7 @@ func (m *Client) mojangCheckValid(accessToken string, clientToken string) (bool,
 }
 
 // MojangRefreshToken refreshed the given token
-func (m *Client) MojangRefreshToken(accessToken string, clientToken string) (*AuthResponse, error) {
+func (m *MojangClient) MojangRefreshToken(accessToken string, clientToken string) (*AuthResponse, error) {
 	loginData := struct {
 		AccessToken string `json:"accessToken"`
 		ClientToken string `json:"clientToken"`
@@ -113,7 +105,7 @@ func (m *Client) MojangRefreshToken(accessToken string, clientToken string) (*Au
 	if res.StatusCode != http.StatusOK {
 		minepkgErr := &mojangError{}
 		if err := parseJSON(res, minepkgErr); err != nil {
-			return nil, errors.New("mojang API did response with unexpected status " + res.Status)
+			return nil, errors.New("mojang API did respond with unexpected status " + res.Status)
 		}
 		return nil, minepkgErr
 	}
@@ -127,7 +119,7 @@ func (m *Client) MojangRefreshToken(accessToken string, clientToken string) (*Au
 }
 
 // postJSON posts json
-func (m *Client) postJSON(ctx context.Context, url string, data interface{}) (*http.Response, error) {
+func (m *MojangClient) postJSON(ctx context.Context, url string, data interface{}) (*http.Response, error) {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
@@ -143,7 +135,7 @@ func (m *Client) postJSON(ctx context.Context, url string, data interface{}) (*h
 }
 
 // decorate decorates a request with the User-Agent header and a auth header if set
-func (m *Client) decorate(req *http.Request) {
+func (m *MojangClient) decorate(req *http.Request) {
 	req.Header.Set("User-Agent", "minepkg (https://github.com/minepkg/minepkg)")
 	if req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", "application/json")
@@ -151,7 +143,7 @@ func (m *Client) decorate(req *http.Request) {
 }
 
 // DecorateRequest decorates a provided http request with the User-Agent header and a auth header if set
-func (m *Client) DecorateRequest(req *http.Request) {
+func (m *MojangClient) DecorateRequest(req *http.Request) {
 	m.decorate(req)
 }
 

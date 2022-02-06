@@ -18,7 +18,7 @@ import (
 )
 
 func init() {
-	runner := &publishRunner{}
+	runner := &unpublishRunner{}
 	cmd := commands.New(&cobra.Command{
 		Use:   "unpublish",
 		Short: "Deletes a release from minepkg.io",

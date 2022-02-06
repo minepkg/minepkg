@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/minepkg/minepkg/internals/minecraft"
-	"github.com/minepkg/minepkg/internals/mojang"
 	"github.com/minepkg/minepkg/pkg/manifest"
 	"github.com/pbnjay/memory"
 )
@@ -97,27 +96,6 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 	}
 	// and return the error otherwise
 	return err
-}
-
-func (i *Instance) getMojangData() (*mojang.Profile, *mojang.AuthResponse, error) {
-	var (
-		profile *mojang.Profile
-		creds   *mojang.AuthResponse
-	)
-
-	creds = i.MojangCredentials
-	if creds == nil {
-		return nil, nil, ErrNoCredentials
-	}
-
-	profile = creds.SelectedProfile
-	// do not allow non paid accounts to start minecraft
-	// unpaid accounts should not have a profile
-	if profile == nil {
-		return nil, creds, ErrNoPaidAccount
-	}
-
-	return profile, creds, nil
 }
 
 // BuildLaunchCmd returns a go cmd ready to start minecraft
@@ -307,12 +285,12 @@ func (i *Instance) gameArgs(launchManifest *minecraft.LaunchManifest, opts *Laun
 
 	// this is not a server, we need to set some more auth data
 	if !opts.Server && !opts.Demo {
-		profile, creds, err := i.getMojangData()
+		creds, err := i.getLaunchCredentials()
 		if err != nil {
 			return nil, err
 		}
-		gameArgs["auth_player_name"] = profile.Name
-		gameArgs["auth_uuid"] = profile.ID
+		gameArgs["auth_player_name"] = creds.PlayerName
+		gameArgs["auth_uuid"] = creds.UUID
 		gameArgs["auth_access_token"] = creds.AccessToken
 		gameArgs["user_type"] = "mojang" // unsure about this one (legacy mc login flag?)
 	}

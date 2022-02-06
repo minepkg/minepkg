@@ -2,14 +2,15 @@ package globals
 
 import (
 	"github.com/minepkg/minepkg/internals/api"
+	"github.com/minepkg/minepkg/internals/auth"
 	"github.com/minepkg/minepkg/internals/cmdlog"
-	"github.com/minepkg/minepkg/internals/credentials"
-	"github.com/minepkg/minepkg/internals/mojang"
+	"github.com/minepkg/minepkg/internals/ownhttp"
 )
 
 var (
-	CredStore    *credentials.Store
-	ApiClient    = api.New()
-	MojangClient = mojang.New()
-	Logger       = cmdlog.New()
+	GlobalDir  string
+	Auth       auth.AuthProvider
+	HTTPClient = ownhttp.New()
+	ApiClient  = api.New()
+	Logger     = cmdlog.New()
 )

@@ -88,11 +88,11 @@ func (j *joinRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	defer os.Chdir(wd) // move back to working directory
 
-	creds, err := ensureMojangAuth()
+	creds, err := root.getLaunchCredentialsOrLogin()
 	if err != nil {
 		return err
 	}
-	instance.MojangCredentials = creds
+	instance.SetLaunchCredentials(creds)
 
 	instance.Manifest = manifest.NewInstanceLike(resolvedModpack.Manifest)
 	fmt.Println("Using modpack " + resolvedModpack.Identifier())

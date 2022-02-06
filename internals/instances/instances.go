@@ -11,7 +11,6 @@ import (
 	"github.com/minepkg/minepkg/internals/commands"
 
 	"github.com/minepkg/minepkg/internals/api"
-	"github.com/minepkg/minepkg/internals/mojang"
 	"github.com/minepkg/minepkg/pkg/manifest"
 	"github.com/pelletier/go-toml"
 )
@@ -50,12 +49,12 @@ type Instance struct {
 	// like java binaries, libraries, assets, versions & mod cache
 	// on linux this usually is $HOME/.cache/minepkg
 	CacheDir string
-	// Directory is the path of the instance. defaults to current working directory
-	Directory         string
-	Manifest          *manifest.Manifest
-	Lockfile          *manifest.Lockfile
-	MojangCredentials *mojang.AuthResponse
-	MinepkgAPI        *api.MinepkgAPI
+	// Directory is the path of this instance. defaults to current working directory
+	Directory       string
+	Manifest        *manifest.Manifest
+	Lockfile        *manifest.Lockfile
+	MinepkgAPI      *api.MinepkgAPI
+	AuthCredentials *LaunchCredentials
 
 	isFromWd                     bool
 	launchCmd                    string

@@ -108,6 +108,9 @@ type Dependencies map[string]string
 
 // PlatformString returns the required platform as a string (vanilla, fabric or forge)
 func (m *Manifest) PlatformString() string {
+	if m.Package.Platform == PlatformFabric {
+		return PlatformFabric
+	}
 	switch {
 	case m.Requirements.FabricLoader != "":
 		return "fabric"
