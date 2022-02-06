@@ -14,11 +14,13 @@ import (
 	"github.com/minepkg/minepkg/cmd/config"
 	"github.com/minepkg/minepkg/cmd/dev"
 	"github.com/minepkg/minepkg/cmd/initCmd"
+	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/auth"
 	"github.com/minepkg/minepkg/internals/cmdlog"
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/credentials"
 	"github.com/minepkg/minepkg/internals/globals"
+	"github.com/minepkg/minepkg/internals/ownhttp"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/oauth2"
@@ -36,6 +38,7 @@ var (
 
 type Root struct {
 	HTTPClient         *http.Client
+	MinepkgAPI         *api.MinepkgAPI
 	authProvider       auth.AuthProvider
 	minecraftAuthStore *credentials.Store
 	minepkgAuthStore   *credentials.Store
@@ -43,10 +46,16 @@ type Root struct {
 	logger             *cmdlog.Logger
 }
 
-var root = &Root{
-	HTTPClient: globals.HTTPClient,
-	logger:     globals.Logger,
+func newRoot() *Root {
+	http := ownhttp.New()
+	return &Root{
+		HTTPClient: http,
+		MinepkgAPI: api.NewWithClient(http),
+		logger:     globals.Logger,
+	}
 }
+
+var root = newRoot()
 
 func (r *Root) setMinepkgAuth(token *oauth2.Token) error {
 	// TODO: no use of globals!
