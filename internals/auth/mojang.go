@@ -56,7 +56,9 @@ func (m *Mojang) Prompt() error {
 		return fmt.Errorf("probably invalid credentials. not sure: %w", err)
 	}
 	m.AuthData = auth
-
+	if err := m.persist(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -65,11 +67,12 @@ func (m *Mojang) LaunchAuthData() (minecraft.LaunchAuthData, error) {
 	if err != nil {
 		return nil, err
 	}
-	m.AuthData = auth
+	m.AuthData.AccessToken = auth.AccessToken
+	m.AuthData.ClientToken = auth.ClientToken
 	if err := m.persist(); err != nil {
 		return nil, err
 	}
-	return auth, nil
+	return m.AuthData, nil
 }
 
 func (m *Mojang) persist() error {
