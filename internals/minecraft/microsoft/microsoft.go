@@ -70,6 +70,17 @@ func New(httpClient *http.Client, config *oauth2.Config) *MicrosoftClient {
 }
 
 func (m *MicrosoftClient) GetMinecraftCredentials(ctx context.Context) (*Credentials, error) {
+	if m.Token == nil {
+		return nil, fmt.Errorf("no token set")
+	}
+
+	// refresh token if needed
+	newToken, err := m.Config.TokenSource(ctx, m.Token).Token()
+	if err != nil {
+		return nil, err
+	}
+	m.Token = newToken
+
 	// 1. Authenticate with XBL
 	xblAuth, err := m.xblAuth(ctx, m.Token.AccessToken)
 	if err != nil {
@@ -81,14 +92,14 @@ func (m *MicrosoftClient) GetMinecraftCredentials(ctx context.Context) (*Credent
 		return nil, err
 	}
 
-	token := xstsAuth.Token
+	xstsToken := xstsAuth.Token
 	if len(xstsAuth.DisplayClaims.Xui) == 0 {
 		return nil, fmt.Errorf("XBL auth failed: no XUI claim")
 	}
 	userHash := xstsAuth.DisplayClaims.Xui[0].Uhs
 
 	// 3. Get Minecraft token
-	minecraftAuth, err := m.minecraftLoginWithXbox(ctx, userHash, token)
+	minecraftAuth, err := m.minecraftLoginWithXbox(ctx, userHash, xstsToken)
 	if err != nil {
 		return nil, err
 	}
