@@ -14,13 +14,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/erikgeiser/promptkit/confirmation"
 	"github.com/jwalton/gchalk"
-	"github.com/manifoldco/promptui"
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/instances"
-	"github.com/minepkg/minepkg/internals/utils"
 	"github.com/minepkg/minepkg/pkg/manifest"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -109,16 +108,13 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	if err == api.ErrNotFound {
 		if !nonInteractive {
-			createText := "Project " + m.Package.Name + " does not exist. Do you want to create it"
+			createText := "Project " + m.Package.Name + " does not exist. Do you want to create it?"
 			if p.unofficial {
-				createText += " as unofficial"
+				createText += " (as unofficial)"
 			}
-			create := utils.BoolPrompt(&promptui.Prompt{
-				Label:     createText,
-				Default:   "Y",
-				IsConfirm: true,
-			})
-			if !create {
+			input := confirmation.New(createText, confirmation.Yes)
+			create, err := input.RunPrompt()
+			if !create || err != nil {
 				logger.Info("Aborting")
 				os.Exit(0)
 			}
@@ -190,16 +186,13 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 		}
 		logger.Info("Release already published but can be overwritten.")
 		logger.Warn("Overwriting might take some time to fully apply everywhere. (~30 minutes)")
-		overwrite := utils.BoolPrompt(&promptui.Prompt{
-			Label:     "Delete & overwrite the existing release",
-			Default:   "N",
-			IsConfirm: true,
-		})
+		input := confirmation.New("Delete & overwrite the existing release?", confirmation.Yes)
+		overwrite, err := input.RunPrompt()
 		if !overwrite {
 			logger.Info("Aborting")
 			os.Exit(0)
 		}
-		_, err := apiClient.DeleteRelease(context.TODO(), m.PlatformString(), m.Package.Name+"@"+m.Package.Version)
+		_, err = apiClient.DeleteRelease(context.TODO(), m.PlatformString(), m.Package.Name+"@"+m.Package.Version)
 		if err != nil {
 			return fmt.Errorf("could not delete old release: %w", err)
 		}

@@ -7,12 +7,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/manifoldco/promptui"
+	"github.com/erikgeiser/promptkit/confirmation"
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/instances"
-	"github.com/minepkg/minepkg/internals/utils"
 	"github.com/minepkg/minepkg/pkg/manifest"
 	"github.com/spf13/cobra"
 )
@@ -83,27 +82,35 @@ func (p *unpublishRunner) RunE(cmd *cobra.Command, args []string) error {
 	// check if version exists
 	logger.Log("Checking if release exists: ")
 	p.release, err = apiClient.GetRelease(context.TODO(), m.PlatformString(), m.Package.Name+"@"+m.Package.Version)
+	if err != nil {
+		// typo or already unpublished
+		if err == api.ErrNotFound {
+			logger.Warn("Release not found")
+			return nil
+		}
 
-	switch {
-	case err == nil && p.release.Meta.Published:
-		if time.Since(*p.release.Meta.CreatedAt) > time.Hour*24*2 {
-			logger.Fail("Release is older than 2 days and can not be deleted anymore.")
-		}
-		logger.Info(fmt.Sprintf("Release %s@%s can be deleted.", m.Package.Name, m.Package.Version))
-		logger.Warn("People already using this release will get problems. Publishing a new version is less destructive.")
-		overwrite := utils.BoolPrompt(&promptui.Prompt{
-			Label:     "Delete the existing release",
-			Default:   "N",
-			IsConfirm: true,
-		})
-		if !overwrite {
-			logger.Info("Aborting")
-			os.Exit(0)
-		}
-	case err != nil:
-		// unknown error
+		// unexpected error
 		return err
 	}
 
-	return nil
+	if time.Since(*p.release.Meta.CreatedAt) > time.Hour*24*2 {
+		logger.Fail("Release is older than 2 days and can not be deleted anymore.")
+	}
+	logger.Info(fmt.Sprintf("Release %s@%s can be deleted.", m.Package.Name, m.Package.Version))
+	logger.Warn("People already using this release might get problems. Publishing a new version is less destructive.")
+
+	// ask for confirmation
+	input := confirmation.New("Delete the existing release anyways?", confirmation.No)
+	overwrite, err := input.RunPrompt()
+	if !overwrite || err != nil {
+		logger.Info("Aborting")
+		os.Exit(0)
+	}
+
+	logger.Info("Deleting release")
+	timeout, cancel = context.WithTimeout(context.Background(), time.Minute*2)
+	defer cancel()
+	_, err = apiClient.DeleteRelease(timeout, m.PlatformString(), m.Package.Name+"@"+m.Package.Version)
+
+	return err
 }

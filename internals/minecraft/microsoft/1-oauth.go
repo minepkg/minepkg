@@ -78,6 +78,7 @@ func (m *MicrosoftClient) Oauth(ctx context.Context) error {
 	utils.OpenBrowser(url)
 	// todo: error handling!
 	server.ListenAndServe()
+	defer server.Shutdown(ctx)
 
 	if responseErr != nil {
 		fmt.Println("Could not login:\n  " + responseErr.Error())
