@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
+	"github.com/erikgeiser/promptkit/confirmation"
 	"github.com/jwalton/gchalk"
 	"github.com/manifoldco/promptui"
 	"github.com/minepkg/minepkg/internals/api"
@@ -92,15 +93,10 @@ func (i *installRunner) installFromMinepkg(mods []string) error {
 	if len(releases) == 1 {
 		logger.Info("Installing " + releases[0].Package.Name + "@" + releases[0].Package.Version)
 	} else {
-		// TODO: list mods
-		prompt := promptui.Prompt{
-			Label:     fmt.Sprintf("Install %d mods", len(releases)),
-			IsConfirm: true,
-			Default:   "Y",
-		}
+		input := confirmation.New(fmt.Sprintf("Install %d mods?", len(releases)), confirmation.Yes)
 
-		_, err := prompt.Run()
-		if err != nil {
+		choice, err := input.RunPrompt()
+		if err != nil || choice == false {
 			logger.Info("Aborting installation")
 			os.Exit(0)
 		}
