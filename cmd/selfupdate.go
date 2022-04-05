@@ -27,9 +27,10 @@ func init() {
 	runner := &selfupdateRunner{}
 
 	cmd := commands.New(&cobra.Command{
-		Use:   "selfupdate",
-		Short: "Updates minepkg to the latest version",
-		Args:  cobra.ExactArgs(0),
+		Use:     "selfupdate",
+		Aliases: []string{"self-update"},
+		Short:   "Updates minepkg to the latest version",
+		Args:    cobra.ExactArgs(0),
 	}, runner)
 
 	cmd.Flags().BoolVar(&runner.force, "force", false, "Force update")
