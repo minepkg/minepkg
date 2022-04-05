@@ -64,7 +64,7 @@ type Manifest struct {
 		// Savegame can be the name of the primary savegame on this modpack. Not applicable for other package types.
 		// This savegame will be used when launching this package via `minepkg try`.
 		// This should be the folder name of the savegame
-		Savegame string `toml:"build,omitempty" json:"build,omitempty"`
+		Savegame string `toml:"savegame,omitempty" json:"savegame,omitempty"`
 	} `toml:"package" json:"package"`
 	Requirements struct {
 		// Minecraft is a semver version string describing the required Minecraft version
