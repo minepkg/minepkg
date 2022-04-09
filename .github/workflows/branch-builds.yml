@@ -1,0 +1,28 @@
+name: branch builds
+
+on:
+  push:
+    # everything but the main branch
+    branches: [ "*", "!main" ]
+
+jobs:
+  branchBuilds:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.18
+      - name: build
+        run: go build -o out/minepkg
+      - name: Test
+        run: go test -v ./...
+      - name: Archive binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-binary
+          path: out/minepkg
