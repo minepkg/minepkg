@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"math"
 	"net/http"
 	"net/url"
@@ -57,6 +58,8 @@ func (i *Instance) GetLaunchManifest() (*minecraft.LaunchManifest, error) {
 // LaunchOptions are options for launching
 type LaunchOptions struct {
 	LaunchManifest *minecraft.LaunchManifest
+	Stdout         io.Writer
+	Stderr         io.Writer
 	// Offline is not implemented
 	Offline bool
 	Java    string
@@ -71,6 +74,8 @@ type LaunchOptions struct {
 	// RamMiB can be set to the amount of ram in MiB to start Minecraft with
 	// 0 determins the amount by modcount + available system ram
 	RamMiB int
+	// Environment variables to set
+	Env []string
 }
 
 // Launch will launch the minecraft instance
@@ -237,10 +242,12 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 
 	cmd.Env = os.Environ()
 	if opts.JoinServer != "" {
+		log.Println("joinServer", opts.StartSave)
 		cmd.Env = append(cmd.Env, "MINEPKG_COMPANION_PLAY=server://"+opts.JoinServer)
 	}
 
 	if opts.StartSave != "" {
+		log.Println("startSave", opts.StartSave)
 		cmd.Env = append(cmd.Env, "MINEPKG_COMPANION_PLAY=local://"+opts.StartSave)
 	}
 
@@ -257,12 +264,23 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 		cmd.Process.Signal(syscall.SIGTERM)
 	}()
 
-	cmd.Stdout = os.Stdout
+	if opts.Stdout != nil {
+		cmd.Stdout = opts.Stdout
+	} else {
+		cmd.Stdout = os.Stdout
+	}
+	if opts.Stderr != nil {
+		cmd.Stderr = opts.Stderr
+	} else {
+		cmd.Stderr = os.Stderr
+	}
+
 	cmd.Stderr = os.Stderr
 
 	// Set the process directory to our minecraft dir
 	cmd.Dir = i.McDir()
 	// some things may rely on PWD
+	cmd.Env = append(cmd.Env, opts.Env...)
 	cmd.Env = append(cmd.Env, "PWD="+i.McDir())
 
 	return cmd, nil

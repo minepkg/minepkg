@@ -25,7 +25,7 @@ func (l *Launcher) Prepare() error {
 	l.introPrinted = true
 
 	// update requirements if needed
-	outdatedReqs, err := l.prepareRequirements()
+	outdatedReqs, err := l.PrepareRequirements()
 	if err != nil {
 		return fmt.Errorf("failed to update requirements: %w", err)
 	}
@@ -33,15 +33,15 @@ func (l *Launcher) Prepare() error {
 	// download minecraft (assets, libraries, main jar etc) if needed
 	// needs to happen before javaUpdate because launch manifest
 	// might contain wanted java version
-	if err := l.prepareMinecraft(ctx); err != nil {
+	if err := l.PrepareMinecraft(ctx); err != nil {
 		return fmt.Errorf("failed to download minecraft: %w", err)
 	}
 
 	// update java in the background if needed
-	javaUpdate := l.prepareJavaBg(ctx)
+	javaUpdate := l.PrepareJavaBg(ctx)
 
 	// update dependencies
-	if err := l.prepareDependencies(ctx, outdatedReqs); err != nil {
+	if err := l.PrepareDependencies(ctx, outdatedReqs); err != nil {
 		return err
 	}
 
@@ -75,9 +75,9 @@ func (l *Launcher) Prepare() error {
 	return nil
 }
 
-// prepareRequirements will update the requirements section
+// PrepareRequirements will update the requirements section
 // in the lockfile if needed
-func (l Launcher) prepareRequirements() (bool, error) {
+func (l Launcher) PrepareRequirements() (bool, error) {
 	instance := l.Instance
 	// resolve requirements
 	outdatedReqs, err := instance.AreRequirementsOutdated()
@@ -110,7 +110,7 @@ func (l Launcher) prepareRequirements() (bool, error) {
 }
 
 // prepareJava downloads java if needed and returns an error channel
-func (l *Launcher) prepareJavaBg(ctx context.Context) chan error {
+func (l *Launcher) PrepareJavaBg(ctx context.Context) chan error {
 	javaUpdate := make(chan error, 1)
 	if l.UseSystemJava {
 		// nothing gets downloaded. this is a success
@@ -136,9 +136,9 @@ func (l *Launcher) prepareJavaBg(ctx context.Context) chan error {
 	return javaUpdate
 }
 
-// prepareDependencies downloads missing dependencies if needed
+// PrepareDependencies downloads missing dependencies if needed
 // passing true as the second parameter will make sure to check for available updates
-func (l *Launcher) prepareDependencies(ctx context.Context, force bool) error {
+func (l *Launcher) PrepareDependencies(ctx context.Context, force bool) error {
 	instance := l.Instance
 	// resolve dependencies
 	// TODO: check dev dependencies!
@@ -165,7 +165,7 @@ func (l *Launcher) prepareDependencies(ctx context.Context, force bool) error {
 	return nil
 }
 
-func (l *Launcher) prepareMinecraft(ctx context.Context) error {
+func (l *Launcher) PrepareMinecraft(ctx context.Context) error {
 	instance := l.Instance
 	mgr := downloadmgr.New()
 

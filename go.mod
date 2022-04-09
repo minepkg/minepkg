@@ -26,6 +26,8 @@ require (
 	github.com/pelletier/go-toml v1.9.4
 	github.com/pierrec/lz4/v4 v4.1.14 // indirect
 	github.com/pion/webrtc/v3 v3.1.24 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
+	github.com/shirou/gopsutil/v3 v3.22.2 // indirect
 	github.com/spf13/afero v1.8.1 // indirect
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/viper v1.10.1
