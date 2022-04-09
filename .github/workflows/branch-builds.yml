@@ -3,7 +3,7 @@ name: branch builds
 on:
   push:
     # everything but the main branch
-    branches: [ "!main" ]
+    branches: [ "*", "!main" ]
 
 jobs:
   branchBuilds:
