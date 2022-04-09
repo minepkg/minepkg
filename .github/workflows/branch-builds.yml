@@ -17,15 +17,12 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: 1.18
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v2
-        with:
-          version: latest
-          args: release --rm-dist --snapshot --skip-publish
+      - name: build
+        run: go build -o out/minepkg
       - name: Test
         run: go test -v ./...
-      - name: Archive binaries
+      - name: Archive binary
         uses: actions/upload-artifact@v3
         with:
-          name: binaries
-          path: dist/*
+          name: linux-binary
+          path: out/minepkg
