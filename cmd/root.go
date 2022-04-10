@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -181,7 +182,12 @@ func initConfig() {
 	apiKey := os.Getenv("MINEPKG_API_KEY")
 	root.globalDir = filepath.Join(homeConfigs, "minepkg")
 	root.minecraftAuthStore = credentials.New(root.globalDir, "minecraft_auth")
-	root.minepkgAuthStore = credentials.New(root.globalDir, globals.ApiClient.APIUrl)
+	parsedUrl, err := url.Parse(globals.ApiClient.APIUrl)
+	if err != nil {
+		panic(fmt.Errorf("Invalid minepkg API URL: %w", err))
+	}
+	// use the host part of the url as the minepkg auth store key (eg. api.minepkg.io)
+	root.minepkgAuthStore = credentials.New(root.globalDir, parsedUrl.Host)
 	if err != nil {
 		if apiKey != "" {
 			logger.Warn("Could not initialize credential store: " + err.Error())
