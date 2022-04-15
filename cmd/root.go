@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -22,6 +23,7 @@ import (
 	"github.com/minepkg/minepkg/internals/credentials"
 	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/ownhttp"
+	"github.com/minepkg/minepkg/pkg/manifest"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/oauth2"
@@ -62,6 +64,32 @@ func (r *Root) setMinepkgAuth(token *oauth2.Token) error {
 	// TODO: no use of globals!
 	globals.ApiClient.JWT = token.AccessToken
 	return r.minepkgAuthStore.Set(token)
+}
+
+func (r *Root) validateManifest(man *manifest.Manifest) error {
+	logger.Log("Validating minepkg.toml")
+	problems := man.Validate()
+	fatal := false
+	for _, problem := range problems {
+		if problem.Level == manifest.ErrorLevelFatal {
+			fmt.Printf(
+				"%s ERROR: %s\n",
+				commands.Emoji("❌"),
+				problem.Error(),
+			)
+			fatal = true
+		} else {
+			fmt.Printf(
+				"%s WARNING: %s\n",
+				commands.Emoji("⚠️"),
+				problem.Error(),
+			)
+		}
+	}
+	if fatal {
+		return errors.New("validation of minepkg.toml failed")
+	}
+	return nil
 }
 
 var logger = root.logger

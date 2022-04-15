@@ -60,7 +60,7 @@ func ErrorBox(errorString string, helpText string) string {
 		),
 	)
 	if helpText != "" {
-		rendered += styleErrBox.Render(fmt.Sprintf("%sError: %s", Emoji("❔ "), errorString))
+		rendered += styleErrBox.Render(fmt.Sprint(Emoji("❔ "), helpText))
 	}
 
 	return rendered

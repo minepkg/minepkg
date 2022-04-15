@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/erikgeiser/promptkit/confirmation"
@@ -12,16 +12,25 @@ import (
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/instances"
-	"github.com/minepkg/minepkg/pkg/manifest"
+	"github.com/minepkg/minepkg/internals/pkgid"
 	"github.com/spf13/cobra"
 )
 
 func init() {
 	runner := &unpublishRunner{}
 	cmd := commands.New(&cobra.Command{
-		Use:   "unpublish",
+		Use:   "unpublish [version]",
 		Short: "Deletes a release from minepkg.io",
-		Args:  cobra.MaximumNArgs(1),
+		Long: `
+"unpublish" deletes a release from minepkg.io.
+Uses the version specified in the minepkg.toml file if not set.
+		`,
+		Example: strings.Join([]string{
+			"minepkg unpublish",
+			"minepkg unpublish 1.0.0",
+			"minepkg unpublish demo-mod@2.1.0",
+		}, "\n"),
+		Args: cobra.MaximumNArgs(1),
 	}, runner)
 
 	rootCmd.AddCommand(cmd.Command)
@@ -35,34 +44,68 @@ func (p *unpublishRunner) RunE(cmd *cobra.Command, args []string) error {
 	apiClient := globals.ApiClient
 	// nonInteractive := viper.GetBool("nonInteractive")
 
-	instance, err := instances.NewFromWd()
-	if err != nil {
-		return err
-	}
+	var mID *pkgid.ID
+	var err error
 
-	m := instance.Manifest
+	instance, instanceErr := instances.NewFromWd()
 
-	logger.Log("Validating minepkg.toml")
-	problems := m.Validate()
-	fatal := false
-	for _, problem := range problems {
-		if problem.Level == manifest.ErrorLevelFatal {
-			fmt.Printf(
-				"%s ERROR: %s\n",
-				commands.Emoji("❌"),
-				problem.Error(),
-			)
-			fatal = true
-		} else {
-			fmt.Printf(
-				"%s WARNING: %s\n",
-				commands.Emoji("⚠️"),
-				problem.Error(),
-			)
+	if len(args) == 0 {
+		if instanceErr != nil {
+			return err
+		}
+
+		mani := instance.Manifest
+		// we validate the local manifest
+		if err := root.validateManifest(mani); err != nil {
+			return err
+		}
+		mID = pkgid.NewFromManifest(mani)
+	} else {
+		mID = pkgid.ParseLikeVersion(args[0])
+
+		if mID.Version == "" && instanceErr == nil && instance.Manifest.Package.Version != "" {
+			mID.Version = instance.Manifest.Package.Version
+		}
+
+		// use manifest platform, but only if name is not set
+		// if the user sets the name they probably don't want to inherit the platform from the manifest
+		if mID.Platform == "" && mID.Name == "" && instanceErr == nil && instance.Manifest.Package.Platform != "" {
+			mID.Platform = instance.Manifest.Package.Platform
+		}
+
+		if mID.Name == "" && instanceErr == nil && instance.Manifest.Package.Name != "" {
+			mID.Name = instance.Manifest.Package.Name
 		}
 	}
-	if fatal {
-		return errors.New("validation of minepkg.toml failed")
+
+	// no version passed or found in the manifest
+	if mID.Version == "" {
+		suggestions := []string{`Use a full ID like this: "minepkg unpublish fabric/my-modpack@0.5.1"`}
+		if instanceErr == nil {
+			suggestions = append(
+				suggestions,
+				`Pass the version like this: "minepkg unpublish 2.1.0"`,
+				`Make sure the minepkg.toml file has package.version set`,
+			)
+		} else {
+			suggestions = append(suggestions, `Move into a directory with a minepkg.toml file`)
+		}
+		return &commands.CliError{
+			Text:        "You did not specify a version",
+			Suggestions: suggestions,
+		}
+	}
+
+	// no platform passed or found in the manifest
+	if mID.Platform == "" {
+		suggestions := []string{`Use a full ID like this: "minepkg unpublish fabric/my-modpack@0.5.1"`}
+		if instanceErr == nil {
+			suggestions = append(suggestions, `Set the "package.platform" field in your minepkg.toml`)
+		}
+		return &commands.CliError{
+			Text:        "You did not specify a platform",
+			Suggestions: suggestions,
+		}
 	}
 
 	if !globals.ApiClient.HasCredentials() {
@@ -71,17 +114,15 @@ func (p *unpublishRunner) RunE(cmd *cobra.Command, args []string) error {
 		runner.RunE(cmd, args)
 	}
 
-	logger.Log("Checking access rights")
+	// check if release exists
 	timeout, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
-	_, err = apiClient.GetProject(timeout, m.Package.Name)
-	if err != nil {
-		return err
-	}
-
-	// check if version exists
-	logger.Log("Checking if release exists: ")
-	p.release, err = apiClient.GetRelease(context.TODO(), m.PlatformString(), m.Package.Name+"@"+m.Package.Version)
+	logger.Log(fmt.Sprintf("Checking if release %s exists", mID.LegacyID()))
+	p.release, err = apiClient.GetRelease(
+		timeout,
+		mID.Platform,
+		mID.LegacyID(),
+	)
 	if err != nil {
 		// typo or already unpublished
 		if err == api.ErrNotFound {
@@ -94,23 +135,28 @@ func (p *unpublishRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	if time.Since(*p.release.Meta.CreatedAt) > time.Hour*24*2 {
-		logger.Fail("Release is older than 2 days and can not be deleted anymore.")
+		logger.Fail("Release is older than 2 days and can not be deleted. Try publishing a higher version.")
 	}
-	logger.Info(fmt.Sprintf("Release %s@%s can be deleted.", m.Package.Name, m.Package.Version))
-	logger.Warn("People already using this release might get problems. Publishing a new version is less destructive.")
+	logger.Info(fmt.Sprintf("Release %s@%s can be deleted.", mID.Name, mID.Version))
+	logger.Warn("People already using this release might get problems.")
+	logger.Info("Publishing a new version instead often is less destructive.\n")
 
 	// ask for confirmation
-	input := confirmation.New("Delete the existing release anyways?", confirmation.No)
+	input := confirmation.New("Delete the existing release anyway?", confirmation.No)
 	overwrite, err := input.RunPrompt()
 	if !overwrite || err != nil {
 		logger.Info("Aborting")
 		os.Exit(0)
 	}
 
-	logger.Info("Deleting release")
+	logger.Info("Deleting release " + mID.LegacyID())
 	timeout, cancel = context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
-	_, err = apiClient.DeleteRelease(timeout, m.PlatformString(), m.Package.Name+"@"+m.Package.Version)
+	_, err = apiClient.DeleteRelease(timeout, mID.Platform, mID.LegacyID())
+	if err != nil {
+		return err
+	}
 
-	return err
+	logger.Info("Release deleted")
+	return nil
 }
