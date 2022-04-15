@@ -79,6 +79,10 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
+		// we validate the local manifest
+		if err := root.validateManifest(l.instance.Manifest); err != nil {
+			return err
+		}
 	} else {
 		l.instance, err = l.instanceFromModpack(args[0])
 		if err != nil {

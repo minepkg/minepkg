@@ -17,19 +17,24 @@ var removeCmd = &cobra.Command{
 	Use:     "remove <package>",
 	Short:   "Removes supplied package from the current directory & package",
 	Aliases: []string{"delete", "un", "uninstall", "rm"},
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		instance, err := instances.NewFromWd()
 		instance.MinepkgAPI = globals.ApiClient
 		if err != nil {
-			logger.Fail("Instance problem: " + err.Error())
+			return err
+		}
+
+		// we validate the local manifest
+		if err := root.validateManifest(instance.Manifest); err != nil {
+			return err
 		}
 
 		if instance.Manifest == nil {
-			logger.Fail("No minepkg.toml manifest in the current directory")
+			return fmt.Errorf("no manifest found in current directory")
 		}
 
 		if len(args) == 0 {
-			logger.Fail("You have to supply a package to remove.")
+			return fmt.Errorf("no package name supplied")
 		}
 
 		fmt.Printf("Removing %s\n", args[0])
@@ -38,5 +43,7 @@ var removeCmd = &cobra.Command{
 		instance.UpdateLockfileDependencies(context.TODO())
 		instance.SaveManifest()
 		instance.SaveLockfile()
+
+		return nil
 	},
 }

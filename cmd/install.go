@@ -38,6 +38,10 @@ func (i *installRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 	instance.MinepkgAPI = globals.ApiClient
 	i.instance = instance
+	// we validate the local manifest
+	if err := root.validateManifest(instance.Manifest); err != nil {
+		return err
+	}
 	fmt.Printf("Installing to %s\n\n", instance.Desc())
 
 	// no args: installing minepkg.toml dependencies

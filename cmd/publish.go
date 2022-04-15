@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/erikgeiser/promptkit/confirmation"
-	"github.com/jwalton/gchalk"
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/globals"
@@ -68,30 +67,9 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	m := instance.Manifest
-
-	logger.Log("Validating minepkg.toml")
-	problems := m.Validate()
-	var fatal error = nil
-	for _, problem := range problems {
-		if problem.Level == manifest.ErrorLevelFatal {
-			fmt.Printf(
-				"%s%s %s\n",
-				commands.Emoji(" ❌ "),
-				gchalk.BgRed("  ERROR  "),
-				problem.Error(),
-			)
-			fatal = problem
-		} else {
-			fmt.Printf(
-				"%s%s %s\n",
-				commands.Emoji(" ⚠️  "),
-				gchalk.BgYellow(" WARNING "),
-				problem.Error(),
-			)
-		}
-	}
-	if fatal != nil {
-		return fmt.Errorf("minepkg.toml problem: %w", fatal)
+	// we validate the local manifest
+	if err := root.validateManifest(m); err != nil {
+		return err
 	}
 
 	tasks.Log("Checking Authentication")
