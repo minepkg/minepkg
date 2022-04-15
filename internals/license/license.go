@@ -24,9 +24,9 @@ type GithubLicense struct {
 }
 
 // GetLincense fetches the given license from githubs api
-func GetLicense(licenceName string) (*GithubLicense, error) {
+func GetLicense(licenseName string) (*GithubLicense, error) {
 	var license GithubLicense
-	r, err := http.Get("https://api.github.com/licenses/" + licenceName)
+	r, err := http.Get("https://api.github.com/licenses/" + licenseName)
 	if err != nil {
 		return nil, err
 	}
