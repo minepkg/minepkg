@@ -292,14 +292,14 @@ func protoLaunch(pack string) {
 		case event := <-event:
 			fmt.Println(event)
 			switch event.Event {
-			case "focus":
-				launch.Cmd.Process.Signal(syscall.SIGUSR1)
-			case "pause":
-				launch.Cmd.Process.Signal(syscall.SIGSTOP)
-				connection.SendEvent("GamePaused", nil)
-			case "resume":
-				launch.Cmd.Process.Signal(syscall.SIGCONT)
-				connection.SendEvent("GameResumed", nil)
+			// case "focus":
+			// 	launch.Cmd.Process.Signal(syscall.SIGUSR1)
+			// case "pause":
+			// 	launch.Cmd.Process.Signal(syscall.SIGSTOP)
+			// 	connection.SendEvent("GamePaused", nil)
+			// case "resume":
+			// 	launch.Cmd.Process.Signal(syscall.SIGCONT)
+			// 	connection.SendEvent("GameResumed", nil)
 			case "stop":
 				waitChan := make(chan error)
 				go func() {
