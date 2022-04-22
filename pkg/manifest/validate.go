@@ -108,7 +108,7 @@ func validateMinecraftRequirement(mcVersion string) Problems {
 
 	if strings.HasPrefix(mcVersion, "*") || strings.HasPrefix(mcVersion, ">") || strings.HasPrefix(mcVersion, "^") {
 		problems = append(problems, ValidationError{
-			message: "minecraft requirement is very broad, prefer patch requirement like ~1.17.0",
+			message: "Minecraft requirement is very broad, prefer patch requirement like ~1.17.0",
 			Path:    "requirements.minecraft",
 			Level:   ErrorLevelWarn,
 		})

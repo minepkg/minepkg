@@ -380,7 +380,7 @@ func (i *Instance) fetchFabricManifest(lock *manifest.FabricLock) (*minecraft.La
 		if err == nil {
 			return &manifest, nil
 		}
-		fmt.Printf("WARNING: failed to parse cached manifest %s (this is a bug pls report)\n", file)
+		fmt.Printf("WARNING: Failed to parse cached manifest %s (this is a bug pls report)\n", file)
 		// corrupted manifest, try downloading
 	}
 

@@ -76,7 +76,7 @@ func (s *Store) readCredentialFile(location string, v interface{}) error {
 			// ignore error. this usually happens if the disk runs out of space
 			// by ignoring it we can let the user login again after sufficient
 			// space exists again
-			fmt.Printf("WARNING: a credentials file was corrupted. ignoring")
+			fmt.Printf("WARNING: A credentials file was corrupted. ignoring")
 			return nil
 		}
 		// parsed as expected

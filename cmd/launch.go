@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/erikgeiser/promptkit/confirmation"
 	"github.com/jwalton/gchalk"
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/commands"
@@ -41,7 +42,7 @@ Alternatively: Can be used in directories containing a minepkg.toml manifest to 
 	cmd.Flags().BoolVar(&runner.onlyPrepare, "only-prepare", false, "Only prepare, skip launching")
 	cmd.Flags().BoolVar(&runner.crashTest, "crashtest", false, "Stop server after it's online (can be used for testing)")
 	cmd.Flags().BoolVar(&runner.noBuild, "no-build", false, "Skip build (if any)")
-	cmd.Flags().BoolVar(&runner.demo, "demo", false, "Start Minecraft in demo mode (without auth)")
+	cmd.Flags().BoolVar(&runner.clean, "clean", false, "Removes any instance data except for savegames")
 	runner.overwrites = launcher.CmdOverwriteFlags(cmd.Command)
 
 	rootCmd.AddCommand(cmd.Command)
@@ -54,8 +55,8 @@ type launchRunner struct {
 	onlyPrepare bool
 	crashTest   bool
 	noBuild     bool
-	demo        bool
 	forceUpdate bool
+	clean       bool
 
 	overwrites *launcher.OverwriteFlags
 
@@ -99,12 +100,30 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	// we need login credentials to launch the client
 	// the server needs no creds
-	if !l.serverMode && !l.demo {
+	if !l.serverMode {
 		creds, err := root.getLaunchCredentialsOrLogin()
 		if err != nil {
 			return err
 		}
 		l.instance.SetLaunchCredentials(creds)
+	}
+
+	if l.clean {
+		if !root.NonInteractive {
+			input := confirmation.New(
+				"Removing ALL local data from this modpack except savegames. Continue?",
+				confirmation.Yes,
+			)
+			overwrite, err := input.RunPrompt()
+			if !overwrite || err != nil {
+				logger.Info("Aborting")
+				return nil
+			}
+		}
+		err = l.instance.Clean()
+		if err != nil {
+			return err
+		}
 	}
 
 	cliLauncher := launcher.Launcher{
@@ -147,7 +166,6 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 		LaunchManifest: launchManifest,
 		Server:         l.serverMode,
 		Debug:          l.debugMode,
-		Demo:           l.demo,
 		RamMiB:         l.overwrites.Ram,
 	}
 

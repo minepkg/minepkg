@@ -47,14 +47,16 @@ type Root struct {
 	minepkgAuthStore   *credentials.Store
 	globalDir          string
 	logger             *cmdlog.Logger
+	NonInteractive     bool
 }
 
 func newRoot() *Root {
 	http := ownhttp.New()
 	return &Root{
-		HTTPClient: http,
-		MinepkgAPI: api.NewWithClient(http),
-		logger:     globals.Logger,
+		HTTPClient:     http,
+		MinepkgAPI:     api.NewWithClient(http),
+		logger:         globals.Logger,
+		NonInteractive: viper.GetBool("nonInteractive"),
 	}
 }
 
@@ -81,7 +83,7 @@ func (r *Root) validateManifest(man *manifest.Manifest) error {
 		} else {
 			fmt.Printf(
 				"%s WARNING: %s\n",
-				commands.Emoji("⚠️"),
+				commands.Emoji("⚠️ "),
 				problem.Error(),
 			)
 		}
