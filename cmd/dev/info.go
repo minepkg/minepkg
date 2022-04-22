@@ -11,6 +11,7 @@ import (
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/instances"
+	"github.com/minepkg/minepkg/pkg/manifest"
 	"github.com/spf13/cobra"
 )
 
@@ -24,6 +25,7 @@ func init() {
 	cmd.Flags().String("minecraft", "*", "Overwrite the required Minecraft version")
 	cmd.Flags().String("platform", "fabric", "Overwrite the wanted platform")
 	cmd.Flags().Bool("lockfile", false, "Output lockfile instead of manifest")
+	cmd.Flags().Bool("combined", false, "Output Combined manifest & lockfile")
 	cmd.Flags().Bool("json", false, "Output json")
 
 	SubCmd.AddCommand(cmd.Command)
@@ -41,6 +43,7 @@ func (i *infoRunner) RunE(cmd *cobra.Command, args []string) error {
 		}
 
 		wantsJson, _ := cmd.Flags().GetBool("json")
+		wantsCombined, _ := cmd.Flags().GetBool("combined")
 		wantsLockfile, _ := cmd.Flags().GetBool("lockfile")
 
 		if wantsJson {
@@ -49,9 +52,18 @@ func (i *infoRunner) RunE(cmd *cobra.Command, args []string) error {
 			enc.SetEscapeHTML(false)
 
 			var toEncode interface{}
-			if wantsLockfile {
+			switch {
+			case wantsCombined:
+				toEncode = &struct {
+					Manifest *manifest.Manifest `json:"manifest"`
+					Lockfile *manifest.Lockfile `json:"lockfile"`
+				}{
+					Manifest: instance.Manifest,
+					Lockfile: instance.Lockfile,
+				}
+			case wantsLockfile:
 				toEncode = instance.Lockfile
-			} else {
+			default:
 				toEncode = instance.Manifest
 			}
 
