@@ -5,7 +5,7 @@ require (
 	github.com/Tnze/go-mc v1.18.1
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/briandowns/spinner v1.18.1
-	github.com/charmbracelet/bubbletea v0.20.0
+	github.com/charmbracelet/bubbletea v0.21.0
 	github.com/charmbracelet/lipgloss v0.5.0
 	github.com/danieljoos/wincred v1.1.2 // indirect
 	github.com/dchest/uniuri v0.0.0-20200228104902-7aecb25e1fe5
