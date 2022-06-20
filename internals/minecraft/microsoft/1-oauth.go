@@ -18,8 +18,7 @@ import (
 func (m *MicrosoftClient) SetOauthToken(token *oauth2.Token) {
 	m.Token = token
 	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, m.xblClient)
-	authedHttpClient := m.Config.Client(ctx, token)
-	m.xblClient = authedHttpClient
+	m.xblClient = m.Config.Client(ctx, token)
 }
 
 func (m *MicrosoftClient) Oauth(ctx context.Context) error {
