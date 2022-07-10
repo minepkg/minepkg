@@ -65,8 +65,27 @@ type CrashEvent struct {
 	Stack   string `json:"stack"`
 }
 
+type InitialStatusEvent struct {
+	Status string `json:"status"`
+	Logs   string `json:"logs"`
+}
+
 type LogForwarder struct {
 	Remote *remote.Connection
+}
+
+type StatsState struct {
+	Memory []float32 `json:"memory"`
+	CPU    []float32 `json:"cpu"`
+}
+
+type LocalState struct {
+	Stats StatsState `json:"stats"`
+}
+
+type TheThing struct {
+	*remote.Connection
+	State *LocalState
 }
 
 func (f *LogForwarder) Write(p []byte) (n int, err error) {
@@ -74,6 +93,7 @@ func (f *LogForwarder) Write(p []byte) (n int, err error) {
 		return 0, nil
 	}
 	// log.Println("[LOG]", string(p))
+	fmt.Print(string(p))
 	f.Remote.SendEvent("GameLog", string(p))
 	return len(p), nil
 }
@@ -90,6 +110,11 @@ func protoLaunch(pack string) {
 		// this is very bad, but we can't do anything about it
 		// TODO: write error to logfile
 		panic(err)
+	}
+
+	theThing := &TheThing{
+		Connection: connection,
+		State:      &LocalState{Stats: StatsState{}},
 	}
 
 	mpkgLogForwarder := LogForwarder{Remote: connection}
@@ -158,7 +183,7 @@ func protoLaunch(pack string) {
 	connection.SendEvent("GameAuthenticated", nil)
 
 	err := connection.SendEvent("progress", &ProgressEvent{
-		Progress: 0.10,
+		Progress: 0.01,
 		Message:  "Querying minepkg for " + pack,
 	})
 	if err != nil {
@@ -170,7 +195,7 @@ func protoLaunch(pack string) {
 		panic(err)
 	}
 	err = connection.SendEvent("progress", &ProgressEvent{
-		Progress: 0.20,
+		Progress: 0.05,
 		Message:  "Setting up instance for " + release.Package.Name,
 	})
 	if err != nil {
@@ -190,7 +215,7 @@ func protoLaunch(pack string) {
 	ctx := context.Background()
 
 	connection.SendEvent("progress", &ProgressEvent{
-		Progress: 0.30,
+		Progress: 0.15,
 		Message:  "Preparing Requirements",
 	})
 
@@ -202,7 +227,7 @@ func protoLaunch(pack string) {
 	}
 
 	connection.SendEvent("progress", &ProgressEvent{
-		Progress: 0.60,
+		Progress: 0.30,
 		Message:  "Preparing Minecraft",
 	})
 
@@ -218,7 +243,7 @@ func protoLaunch(pack string) {
 	javaUpdate := launch.PrepareJavaBg(ctx)
 
 	connection.SendEvent("progress", &ProgressEvent{
-		Progress: 0.80,
+		Progress: 0.45,
 		Message:  "Preparing Mods",
 	})
 
@@ -228,7 +253,7 @@ func protoLaunch(pack string) {
 	}
 
 	connection.SendEvent("progress", &ProgressEvent{
-		Progress: 0.90,
+		Progress: 0.50,
 		Message:  "Preparing for launch",
 	})
 
@@ -249,13 +274,13 @@ func protoLaunch(pack string) {
 	}
 
 	connection.SendEvent("progress", &ProgressEvent{
-		Progress: 1,
-		Message:  "Launching …",
+		Progress: 0.5,
+		Message:  "Starting Minecraft …",
 	})
 
 	event := connection.ReceiveChannel()
 
-	collector := statsCollector{Remote: connection, stop: make(chan struct{})}
+	collector := statsCollector{Thing: theThing, stop: make(chan struct{})}
 	forwarder := &LogForwarder{Remote: connection}
 	forwarder.Write([]byte("[LOG] Starting logger\n"))
 
@@ -290,8 +315,9 @@ func protoLaunch(pack string) {
 	for {
 		select {
 		case event := <-event:
-			fmt.Println(event)
 			switch event.Event {
+			case "requestState":
+				connection.SendEvent("State", theThing.State)
 			// case "focus":
 			// 	launch.Cmd.Process.Signal(syscall.SIGUSR1)
 			// case "pause":
@@ -300,6 +326,8 @@ func protoLaunch(pack string) {
 			// case "resume":
 			// 	launch.Cmd.Process.Signal(syscall.SIGCONT)
 			// 	connection.SendEvent("GameResumed", nil)
+			case "ping":
+				connection.SendEvent("pong", nil)
 			case "stop":
 				waitChan := make(chan error)
 				go func() {
@@ -315,6 +343,10 @@ func protoLaunch(pack string) {
 					launch.Cmd.Process.Kill()
 				}
 				return
+			case "heartbeat":
+				// TODO
+			default:
+				fmt.Println("Unknown event:", event.Event)
 			}
 		case err := <-launchErr:
 			if err != nil {
@@ -326,8 +358,8 @@ func protoLaunch(pack string) {
 }
 
 type statsCollector struct {
-	stop   chan struct{}
-	Remote *remote.Connection
+	stop  chan struct{}
+	Thing *TheThing
 }
 
 type StatsEvent struct {
@@ -357,7 +389,10 @@ func (s *statsCollector) Watch(p *os.Process) {
 			return
 		}
 
-		s.Remote.SendEvent("GameStats", &StatsEvent{
+		s.Thing.State.Stats.Memory = append(s.Thing.State.Stats.Memory, float32(memInfo.RSS/1024/1024))
+		s.Thing.State.Stats.CPU = append(s.Thing.State.Stats.CPU, float32(cpuWAT))
+
+		s.Thing.SendEvent("GameStats", &StatsEvent{
 			Memory:               v,
 			ProcessMemoryPercent: memP,
 			ProcessMemoryMiB:     float32(memInfo.RSS / 1024 / 1024),

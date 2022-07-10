@@ -15,6 +15,11 @@ func (w *Connection) ReceiveChannel() <-chan WebEvent {
 		if err != nil {
 			panic(err)
 		}
+
+		if event.Event == "bye" {
+			w.handleDisconnect()
+		}
+
 		channel <- event
 	})
 	return channel

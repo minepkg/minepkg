@@ -45,6 +45,17 @@ func New() *Connection {
 	}
 }
 
+func (c *Connection) handleDisconnect() {
+	c.Close()
+
+	peerConnection, err := webrtc.NewPeerConnection(webrtc.Configuration{})
+	if err != nil {
+		panic(err)
+	}
+	c.PeerConnection = peerConnection
+	c.ListenForHandshake(context.Background())
+}
+
 func (w *Connection) ListenForHandshake(ctx context.Context) error {
 	peerConnection := w.PeerConnection
 
@@ -52,6 +63,9 @@ func (w *Connection) ListenForHandshake(ctx context.Context) error {
 	// This will notify you when the peer has connected/disconnected
 	peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
 		log.Printf("ICE Connection State has changed: %s\n", connectionState.String())
+		if connectionState == webrtc.ICEConnectionStateDisconnected {
+			w.handleDisconnect()
+		}
 	})
 
 	dataChannelOpen := make(chan struct{})
