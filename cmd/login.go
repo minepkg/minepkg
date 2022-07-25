@@ -136,6 +136,8 @@ func (r *Root) login() error {
 		return fmt.Errorf("mojang login failed: %w", err)
 	}
 
+	fmt.Println("Login successful")
+
 	return nil
 }
 
