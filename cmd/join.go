@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Tnze/go-mc/bot"
+	"github.com/erikgeiser/promptkit/confirmation"
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/globals"
@@ -33,12 +34,14 @@ func init() {
 	}, runner)
 
 	cmd.Flags().IntVar(&runner.ramMiB, "ram", 0, "Overwrite the amount of RAM in MiB to use")
+	cmd.Flags().BoolVar(&runner.clean, "clean", false, "Removes any instance data before launching")
 
 	rootCmd.AddCommand(cmd.Command)
 }
 
 type joinRunner struct {
 	ramMiB int
+	clean  bool
 }
 
 func (j *joinRunner) RunE(cmd *cobra.Command, args []string) error {
@@ -84,6 +87,24 @@ func (j *joinRunner) RunE(cmd *cobra.Command, args []string) error {
 	// change dir to the instance
 	if err := os.Chdir(instanceDir); err != nil {
 		return err
+	}
+
+	if j.clean {
+		if !root.NonInteractive {
+			input := confirmation.New(
+				"Removing ALL local data from this modpack. Continue?",
+				confirmation.Yes,
+			)
+			overwrite, err := input.RunPrompt()
+			if !overwrite || err != nil {
+				logger.Info("Aborting")
+				return nil
+			}
+		}
+		err = instance.Clean()
+		if err != nil {
+			return err
+		}
 	}
 
 	defer os.Chdir(wd) // move back to working directory
