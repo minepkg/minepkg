@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
@@ -12,9 +14,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/auth"
-	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/minepkg/minepkg/internals/launcher"
 	"github.com/minepkg/minepkg/internals/remote"
@@ -30,6 +30,13 @@ func init() {
 }
 
 const prefixLength = len("minepkg://")
+
+var (
+	StatusIdle           = "idle"
+	StatusStarting       = "starting"
+	StatusRunningLoading = "running:loading"
+	StatusRunningReady   = "running:ready"
+)
 
 var protoHandlerCmd = &cobra.Command{
 	Use:    "proto-handler",
@@ -70,8 +77,14 @@ type InitialStatusEvent struct {
 	Logs   string `json:"logs"`
 }
 
+type GameLogEvent struct {
+	Log string `json:"log"`
+	Tag string `json:"tag,omitempty"`
+}
+
 type LogForwarder struct {
-	Remote *remote.Connection
+	TheThing *TheThing
+	tag      string
 }
 
 type StatsState struct {
@@ -80,81 +93,58 @@ type StatsState struct {
 }
 
 type LocalState struct {
-	Stats StatsState `json:"stats"`
+	Status string     `json:"status"`
+	Stats  StatsState `json:"stats"`
+}
+
+type StateResponse struct {
+	Status   string             `json:"status,omitempty"`
+	Stats    StatsState         `json:"stats,omitempty"`
+	Manifest *manifest.Manifest `json:"manifest,omitempty"`
+	Logs     []*GameLogEvent    `json:"logs,omitempty"`
 }
 
 type TheThing struct {
 	*remote.Connection
-	State *LocalState
+	State      *LocalState
+	launcher   *launcher.Launcher
+	logsBuffer []*GameLogEvent
 }
 
-func (f *LogForwarder) Write(p []byte) (n int, err error) {
-	if len(p) == 0 {
-		return 0, nil
+// writes log stores the last 100 lines of logs in `logsBuffer`
+func (t *TheThing) WriteLog(log *GameLogEvent) {
+
+	// check readyness
+	if strings.Contains(log.Log, "Sound engine started") {
+		t.State.Status = StatusRunningReady
+		// send status update
+		t.SendState()
 	}
-	// log.Println("[LOG]", string(p))
-	fmt.Print(string(p))
-	f.Remote.SendEvent("GameLog", string(p))
-	return len(p), nil
+
+	t.logsBuffer = append(t.logsBuffer, log)
+	if len(t.logsBuffer) > 100 {
+		t.logsBuffer = t.logsBuffer[1:]
+	}
+	t.Send("GameLog", log)
 }
 
-func protoLaunch(pack string) {
-	log.Println("Launching via protocol: " + pack)
-	// connect to web client
-	connection := remote.New()
-	log.Println("Wait for handshake")
-	// context with 5m timeout
-	handshakeCtx, cancel := context.WithTimeout(context.Background(), time.Minute*5)
-	defer cancel()
-	if err := connection.ListenForHandshake(handshakeCtx); err != nil {
-		// this is very bad, but we can't do anything about it
-		// TODO: write error to logfile
-		panic(err)
+func (t *TheThing) SendState() {
+	state := &StateResponse{
+		Status: t.State.Status,
+		Stats:  t.State.Stats,
+		Logs:   t.logsBuffer,
 	}
 
-	theThing := &TheThing{
-		Connection: connection,
-		State:      &LocalState{Stats: StatsState{}},
+	if t.launcher != nil {
+		state.Manifest = t.launcher.Instance.Manifest
 	}
 
-	mpkgLogForwarder := LogForwarder{Remote: connection}
-	mpkgLogForwarder.Write([]byte("Starting minepkg logger\n"))
-	log.SetOutput(&mpkgLogForwarder)
+	t.Send("State", state)
+}
 
-	log.Println("Handshake complete")
-
-	// recovery handler, we need this because there is no other output
-	defer func() {
-		if err := recover(); err != nil {
-			// send crash progress
-			connection.SendEvent("progress", &ProgressEvent{
-				Progress: 0,
-				Message:  "Client crashed!",
-			})
-			// build crash event
-			crashEvent := &CrashEvent{
-				Message: "Client crashed!",
-			}
-			if err.(error) != nil {
-				crashEvent.Error = err.(error)
-				crashEvent.Stack = string(debug.Stack())
-				// try to get stacktrace from error directly
-				if err, ok := err.(stackTracer); ok {
-					for _, f := range err.StackTrace() {
-						crashEvent.Stack += fmt.Sprintf("%+s:%d\n", f, f)
-					}
-				}
-			}
-			connection.SendEvent("ClientCrash", crashEvent)
-			// wait until event is sent (kinda hacky)
-			time.Sleep(time.Second * 1)
-			// output for local debugging
-			fmt.Println("Client crashed!")
-			fmt.Println(crashEvent.Error)
-			fmt.Println(crashEvent.Stack)
-			os.Exit(1)
-		}
-	}()
+func (t *TheThing) Launch(man *manifest.Manifest) error {
+	connection := t.Connection
+	t.State.Status = StatusStarting
 
 	if root.authProvider == nil {
 		root.restoreAuth()
@@ -168,65 +158,51 @@ func protoLaunch(pack string) {
 	default:
 		fmt.Println("No auth provider detected")
 		// Trigger Microsoft auth provider
-		connection.SendEvent("GameAuthRequired", nil)
+		connection.Send("GameAuthRequired", nil)
 		log.Println("Waiting for auth!")
 
-		timeoutContext, cancel := context.WithTimeout(context.Background(), time.Minute*5)
-		defer cancel()
-		connection.WaitFor(timeoutContext, "GameAuthAction")
+		var waitChan chan error
+
+		connection.HandleFunc("GameAuthAction", func(req *remote.Message) *remote.Response {
+			waitChan <- nil
+			return nil
+		})
+
+		// TODO: timeout
+		<-waitChan
 		root.useMicrosoftAuth()
 		if err := root.authProvider.Prompt(); err != nil {
 			panic(err)
 		}
 	}
 
-	connection.SendEvent("GameAuthenticated", nil)
+	connection.Send("GameAuthenticated", nil)
 
-	err := connection.SendEvent("progress", &ProgressEvent{
-		Progress: 0.01,
-		Message:  "Querying minepkg for " + pack,
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	release, err := findLatestRelease(pack)
-	if err != nil {
-		panic(err)
-	}
-	err = connection.SendEvent("progress", &ProgressEvent{
-		Progress: 0.05,
-		Message:  "Setting up instance for " + release.Package.Name,
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	instance, err := newInstanceFromRelease(release)
+	instance, err := newInstanceFromManifest(man)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Printf("%+v\n", instance.Manifest.Package.Name)
 
-	launch := launcher.Launcher{
+	t.launcher = &launcher.Launcher{
 		Instance: instance,
 	}
 
 	ctx := context.Background()
 
-	connection.SendEvent("progress", &ProgressEvent{
+	connection.Send("progress", &ProgressEvent{
 		Progress: 0.15,
 		Message:  "Preparing Requirements",
 	})
 
 	// update requirements if needed
-	outdatedReqs, err := launch.PrepareRequirements()
+	outdatedReqs, err := t.launcher.PrepareRequirements()
 	if err != nil {
 		panic(err)
 		// return fmt.Errorf("failed to update requirements: %w", err)
 	}
 
-	connection.SendEvent("progress", &ProgressEvent{
+	connection.Send("progress", &ProgressEvent{
 		Progress: 0.30,
 		Message:  "Preparing Minecraft",
 	})
@@ -234,25 +210,25 @@ func protoLaunch(pack string) {
 	// download minecraft (assets, libraries, main jar etc) if needed
 	// needs to happen before javaUpdate because launch manifest
 	// might contain wanted java version
-	if err := launch.PrepareMinecraft(ctx); err != nil {
+	if err := t.launcher.PrepareMinecraft(ctx); err != nil {
 		panic(err)
 		// return fmt.Errorf("failed to download minecraft: %w", err)
 	}
 
 	// update java in the background if needed
-	javaUpdate := launch.PrepareJavaBg(ctx)
+	javaUpdate := t.launcher.PrepareJavaBg(ctx)
 
-	connection.SendEvent("progress", &ProgressEvent{
+	connection.Send("progress", &ProgressEvent{
 		Progress: 0.45,
 		Message:  "Preparing Mods",
 	})
 
 	// update dependencies
-	if err := launch.PrepareDependencies(ctx, outdatedReqs); err != nil {
+	if err := t.launcher.PrepareDependencies(ctx, outdatedReqs); err != nil {
 		panic(err)
 	}
 
-	connection.SendEvent("progress", &ProgressEvent{
+	connection.Send("progress", &ProgressEvent{
 		Progress: 0.50,
 		Message:  "Preparing for launch",
 	})
@@ -273,88 +249,186 @@ func protoLaunch(pack string) {
 		panic(err)
 	}
 
-	connection.SendEvent("progress", &ProgressEvent{
+	connection.Send("progress", &ProgressEvent{
 		Progress: 0.5,
 		Message:  "Starting Minecraft …",
 	})
 
-	event := connection.ReceiveChannel()
-
-	collector := statsCollector{Thing: theThing, stop: make(chan struct{})}
-	forwarder := &LogForwarder{Remote: connection}
+	collector := statsCollector{Thing: t, stop: make(chan struct{})}
+	forwarder := &LogForwarder{TheThing: t, tag: "internal"}
+	forwarderStdout := &LogForwarder{TheThing: t, tag: "game/stdout"}
+	forwarderStderr := &LogForwarder{TheThing: t, tag: "game/stderr"}
 	forwarder.Write([]byte("[LOG] Starting logger\n"))
 
-	launchErr := make(chan error)
 	go func() {
 		fmt.Printf("savegame: %s", instance.Manifest.Package.Savegame)
-		launchErr <- launch.Run(&instances.LaunchOptions{
-			Stdout: forwarder,
-			Stderr: forwarder,
+		t.State.Status = StatusRunningLoading
+		t.launcher.Run(&instances.LaunchOptions{
+			Stdout: forwarderStdout,
+			Stderr: forwarderStderr,
 			Env: []string{
 				"MINEPKG_COMPANION_START_MINIMIZED=1",
 			},
 			StartSave: instance.Manifest.Package.Savegame,
 		})
+		log.Println("Minecraft was stopped")
+		t.State.Status = StatusIdle
+		connection.Send("GameStopped", nil)
+		collector.Stop()
+		time.Sleep(1 * time.Second)
 	}()
 
 	go func() {
 		// TODO: remove this hack
 		time.Sleep(time.Millisecond * 100)
-		collector.Watch(launch.Cmd.Process)
-	}()
-
-	defer connection.Close()
-	defer func() {
-		connection.SendEvent("GameStopped", nil)
-		collector.Stop()
-		time.Sleep(1 * time.Second)
+		collector.Watch(t.launcher.Cmd.Process)
 	}()
 
 	runtime.GC()
 
-	for {
-		select {
-		case event := <-event:
-			switch event.Event {
-			case "requestState":
-				connection.SendEvent("State", theThing.State)
-			// case "focus":
-			// 	launch.Cmd.Process.Signal(syscall.SIGUSR1)
-			// case "pause":
-			// 	launch.Cmd.Process.Signal(syscall.SIGSTOP)
-			// 	connection.SendEvent("GamePaused", nil)
-			// case "resume":
-			// 	launch.Cmd.Process.Signal(syscall.SIGCONT)
-			// 	connection.SendEvent("GameResumed", nil)
-			case "ping":
-				connection.SendEvent("pong", nil)
-			case "stop":
-				waitChan := make(chan error)
-				go func() {
-					waitChan <- launch.Cmd.Wait()
-				}()
-				// signal stop now, wait for exit and kill if unresponsive for 5 seconds
-				go launch.Cmd.Process.Signal(syscall.SIGINT)
-				select {
-				case <-waitChan:
-					break
-				case <-time.After(5 * time.Second):
-					log.Println("Minecraft did not exit, stopping forcefully")
-					launch.Cmd.Process.Kill()
-				}
-				return
-			case "heartbeat":
-				// TODO
-			default:
-				fmt.Println("Unknown event:", event.Event)
-			}
-		case err := <-launchErr:
-			if err != nil {
-				panic(err)
-			}
-			return
-		}
+	// TODO: figure out when minecraft is ready
+	return nil
+}
+
+func (t *TheThing) Stop() error {
+	if t.launcher == nil {
+		return errors.New("no launcher running")
 	}
+
+	waitChan := make(chan error)
+	go func() {
+		waitChan <- t.launcher.Cmd.Wait()
+	}()
+	// signal stop now, wait for exit and kill if unresponsive for 5 seconds
+	go t.launcher.Cmd.Process.Signal(syscall.SIGINT)
+	select {
+	case <-waitChan:
+		break
+	case <-time.After(5 * time.Second):
+		log.Println("Minecraft did not exit, stopping forcefully")
+		t.launcher.Cmd.Process.Kill()
+	}
+
+	return <-waitChan
+}
+
+func (f *LogForwarder) Write(p []byte) (n int, err error) {
+	if len(p) == 0 {
+		return 0, nil
+	}
+
+	fmt.Print(string(p))
+	f.TheThing.WriteLog(&GameLogEvent{Log: string(p), Tag: f.tag})
+	return len(p), nil
+}
+
+func protoLaunch(pack string) {
+	log.Println("Launching via protocol: " + pack)
+	// connect to web client
+	connection := remote.New()
+	log.Println("Wait for handshake")
+
+	theThing := &TheThing{
+		Connection: connection,
+		State:      &LocalState{Stats: StatsState{}, Status: StatusIdle},
+	}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<-c
+		log.Println("Interrupt received, shutting down")
+		connection.Stop()
+	}()
+
+	connection.HandleFunc("requestState", func(event *remote.Message) *remote.Response {
+		log.Println("GameState:", theThing.State)
+
+		state := &StateResponse{
+			Status: theThing.State.Status,
+			Stats:  theThing.State.Stats,
+			Logs:   theThing.logsBuffer,
+		}
+
+		if theThing.launcher != nil {
+			state.Manifest = theThing.launcher.Instance.Manifest
+		}
+
+		return &remote.Response{
+			Data: state,
+		}
+	})
+
+	connection.HandleFunc("launch", func(event *remote.Message) *remote.Response {
+		log.Println("============== LAUNCH ===============")
+		// get data as manifest
+		var man manifest.Manifest
+		if err := json.Unmarshal(event.Data, &man); err != nil {
+			panic(err)
+		}
+		theThing.Launch(&man)
+
+		return &remote.Response{Data: theThing.State}
+	})
+
+	connection.HandleFunc("stop", func(event *remote.Message) *remote.Response {
+		log.Println("============== STOP STOP STOP STOP ===============")
+		if err := theThing.Stop(); err != nil {
+			// TODO: return error, not nil
+			log.Println("failed to stop:", err)
+			return nil
+		}
+
+		return &remote.Response{Data: theThing.State}
+	})
+
+	mpkgLogForwarder := LogForwarder{TheThing: theThing, tag: "internal/log"}
+	// mpkgLogForwarder.Write([]byte("Starting minepkg logger\n"))
+	log.SetOutput(&mpkgLogForwarder)
+
+	// log.Println("Handshake complete")
+
+	// recovery handler, we need this because there is no other output
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("Recovering from panic:", err)
+			// send crash progress
+			connection.Send("progress", &ProgressEvent{
+				Progress: 0,
+				Message:  "minepkg crashed!",
+			})
+			// build crash event
+			crashEvent := &CrashEvent{
+				Message: "minepkg crashed!",
+			}
+			if err.(error) != nil {
+				crashEvent.Error = err.(error)
+				crashEvent.Stack = string(debug.Stack())
+				// try to get stacktrace from error directly
+				if err, ok := err.(stackTracer); ok {
+					for _, f := range err.StackTrace() {
+						crashEvent.Stack += fmt.Sprintf("%+s:%d\n", f, f)
+					}
+				}
+			}
+			connection.Send("ClientCrash", crashEvent)
+			// wait until event is sent (kinda hacky)
+			time.Sleep(time.Second * 1)
+			// output for local debugging
+			fmt.Println("Client crashed!")
+			fmt.Println(crashEvent.Error)
+			fmt.Println(crashEvent.Stack)
+			os.Exit(1)
+		}
+	}()
+
+	// serve
+	log.Println("serving")
+	connection.ListenAndServe()
+
+	fmt.Println("DONE")
+	os.Exit(0)
+
 }
 
 type statsCollector struct {
@@ -392,7 +466,7 @@ func (s *statsCollector) Watch(p *os.Process) {
 		s.Thing.State.Stats.Memory = append(s.Thing.State.Stats.Memory, float32(memInfo.RSS/1024/1024))
 		s.Thing.State.Stats.CPU = append(s.Thing.State.Stats.CPU, float32(cpuWAT))
 
-		s.Thing.SendEvent("GameStats", &StatsEvent{
+		s.Thing.Send("GameStats", &StatsEvent{
 			Memory:               v,
 			ProcessMemoryPercent: memP,
 			ProcessMemoryMiB:     float32(memInfo.RSS / 1024 / 1024),
@@ -415,33 +489,10 @@ func (s *statsCollector) Stop() {
 	close(s.stop)
 }
 
-func findLatestRelease(name string) (*api.Release, error) {
-	parts := strings.Split(name, "@")
-	if len(parts) != 2 {
-		return nil, fmt.Errorf("invalid release specifier: %s", name)
-	}
-	query := &api.ReleasesQuery{
-		Name:         parts[0],
-		Platform:     "fabric",
-		VersionRange: parts[1],
-	}
-
-	release, err := globals.ApiClient.ReleasesQuery(context.TODO(), query)
-	if err != nil {
-		return nil, err
-	}
-
-	if release.Package.Type == "mod" {
-		return nil, errCanOnlyLaunchModpacks
-	}
-
-	return release, nil
-}
-
-func newInstanceFromRelease(release *api.Release) (*instances.Instance, error) {
+func newInstanceFromManifest(release *manifest.Manifest) (*instances.Instance, error) {
 	// set instance details
 	instance := instances.New()
-	instance.Manifest = manifest.NewInstanceLike(release.Manifest)
+	instance.Manifest = manifest.NewInstanceLike(release)
 	instance.Directory = filepath.Join(instance.InstancesDir(), release.Package.Name+"_"+release.Package.Platform)
 
 	creds, err := root.getLaunchCredentialsOrLogin()

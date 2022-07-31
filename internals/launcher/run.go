@@ -13,7 +13,8 @@ import (
 )
 
 // Run will launch the instance with the provided launchOptions
-// and will set some fallback values
+// and will set some fallback values. It will block until the
+// instance is stopped.
 func (c *Launcher) Run(opts *instances.LaunchOptions) error {
 	fmt.Println("│")
 	fmt.Println(
