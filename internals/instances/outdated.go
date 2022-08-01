@@ -99,7 +99,7 @@ func areDependenciesInLockfileOutdated(lock *manifest.Lockfile, mani *manifest.M
 		if lock.IsDev {
 			continue
 		}
-		if lock.Dependend == "" || lock.Dependend == mani.Package.Name {
+		if lock.Dependent == "" || lock.Dependent == mani.Package.Name {
 			if lock.Name == "minepkg-companion" {
 				continue
 			}

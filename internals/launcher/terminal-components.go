@@ -23,6 +23,10 @@ func dependencyLine(dependency *manifest.DependencyLock) string {
 		prettyVersion += gchalk.Gray("-" + version[1])
 	}
 
+	if len(prettyVersion) >= 30 {
+		prettyVersion = prettyVersion[:18] + " …"
+	}
+
 	name := dependency.Name
 	if dependency.Version == "none" {
 		name = gchalk.Gray(name)

@@ -22,6 +22,7 @@ import (
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/credentials"
 	"github.com/minepkg/minepkg/internals/globals"
+	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/minepkg/minepkg/internals/ownhttp"
 	"github.com/minepkg/minepkg/pkg/manifest"
 	"github.com/spf13/cobra"
@@ -94,6 +95,17 @@ func (r *Root) validateManifest(man *manifest.Manifest) error {
 	return nil
 }
 
+func (r *Root) LocalInstance() (*instances.Instance, error) {
+	var err error
+	instance, err := instances.NewFromWd()
+	if err != nil {
+		return nil, err
+	}
+	instance.MinepkgAPI = globals.ApiClient
+
+	return instance, err
+}
+
 var logger = root.logger
 
 // rootCmd represents the base command when called without any subcommands
@@ -141,7 +153,6 @@ func initRoot() {
 	// Global flags
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf("config file (default is %s/config.toml)", configPath))
 	rootCmd.PersistentFlags().BoolP("accept-minecraft-eula", "a", false, "Accept Minecraft's eula. See https://www.minecraft.net/en-us/eula/")
-	// rootCmd.PersistentFlags().BoolP("system-java", "", false, "Use system java instead of internal installation for launching Minecraft server or client")
 	rootCmd.PersistentFlags().BoolP("verbose", "", false, "More verbose logging. Not really implemented yet")
 	rootCmd.PersistentFlags().BoolP("non-interactive", "", false, "Do not prompt for anything (use defaults instead)")
 
@@ -214,7 +225,7 @@ func initConfig() {
 	root.minecraftAuthStore = credentials.New(root.globalDir, "minecraft_auth")
 	parsedUrl, err := url.Parse(globals.ApiClient.APIUrl)
 	if err != nil {
-		panic(fmt.Errorf("Invalid minepkg API URL: %w", err))
+		panic(fmt.Errorf("invalid minepkg API URL: %w", err))
 	}
 	// use the host part of the url as the minepkg auth store key (eg. api.minepkg.io)
 	root.minepkgAuthStore = credentials.New(root.globalDir, parsedUrl.Host)

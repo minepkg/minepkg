@@ -49,13 +49,16 @@ func (m *Manifest) InterpretedDevDependencies() []*InterpretedDependency {
 
 func interpretSingleDependency(name string, source string) *InterpretedDependency {
 	switch {
-	case strings.HasPrefix(source, "github:"):
-		return &InterpretedDependency{Name: name, Provider: "github", Source: source}
 	case strings.HasPrefix(source, "https://"):
 		return &InterpretedDependency{Name: name, Provider: "https", Source: source}
 	case source == "none":
 		return &InterpretedDependency{Name: name, Provider: "dummy", Source: "none"}
 	default:
-		return &InterpretedDependency{Name: name, Provider: "minepkg", Source: source}
+		sourceParts := strings.SplitN(source, ":", 2)
+		if len(sourceParts) == 1 {
+			return &InterpretedDependency{Name: name, Provider: "minepkg", Source: source}
+		}
+
+		return &InterpretedDependency{Name: name, Provider: sourceParts[0], Source: sourceParts[1]}
 	}
 }

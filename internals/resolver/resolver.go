@@ -4,14 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/globals"
+	"github.com/minepkg/minepkg/internals/modrinth"
 	"github.com/minepkg/minepkg/internals/resolver/providers"
 	"github.com/minepkg/minepkg/pkg/manifest"
 )
@@ -23,7 +22,7 @@ var (
 	ErrProviderDidNotResolve = errors.New("provider did not return a result")
 )
 
-// ErrNoMatchingRelease is returned if a wanted releaseendency (package) could not be resolved given the requirements
+// ErrNoMatchingRelease is returned if a wanted release dependency (package) could not be resolved given the requirements
 type ErrNoMatchingRelease struct {
 	// Package is the name of the package that can not be resolved
 	Package string
@@ -77,7 +76,7 @@ func New(man *manifest.Manifest, platformLock manifest.PlatformLock) *Resolver {
 		IgnoreVersion:  false,
 		IncludeDev:     true,
 		AlsoDownload:   false, // TODO: set to true when working properly
-		Providers:      make(map[string]providers.Provider, 2),
+		Providers:      make(map[string]providers.Provider),
 		downloadWg:     sync.WaitGroup{},
 	}
 
@@ -87,6 +86,10 @@ func New(man *manifest.Manifest, platformLock manifest.PlatformLock) *Resolver {
 
 	resolver.Providers["https"] = &providers.HttpProvider{
 		Client: http.DefaultClient,
+	}
+
+	resolver.Providers["modrinth"] = &providers.ModrinthProvider{
+		Client: modrinth.New(),
 	}
 
 	resolver.Providers["dummy"] = &providers.DummyProvider{}
@@ -151,12 +154,11 @@ func (r *Resolver) ResolveDependencies(ctx context.Context, dependencies []*mani
 	resolving := 0
 	resultsC := make(chan *Resolved)
 	errorC := make(chan error)
-	throttle := make(chan interface{}, 24) // 24 is good
 
-	throttleDownload := make(chan interface{}, 8)
+	queryQueue := make(chan interface{}, 24) // 24 is good
 
 	asyncResolve := func(dependency *manifest.InterpretedDependency, root *manifest.DependencyLock) {
-		throttle <- nil
+		queryQueue <- nil
 		// t := time.Now()
 		ctx, cancel := context.WithTimeout(ctx, time.Minute*2)
 		defer cancel()
@@ -168,7 +170,7 @@ func (r *Resolver) ResolveDependencies(ctx context.Context, dependencies []*mani
 		}
 
 		resultsC <- result
-		<-throttle
+		<-queryQueue
 	}
 
 	batchResolve := func(dependencies []*manifest.InterpretedDependency, root *manifest.DependencyLock) {
@@ -185,14 +187,6 @@ func (r *Resolver) ResolveDependencies(ctx context.Context, dependencies []*mani
 
 			go asyncResolve(dep, root)
 		}
-	}
-
-	download := func(resolved *Resolved) {
-		throttleDownload <- nil
-		r.downloadWg.Add(1)
-		resolved.Fetch(context.TODO())
-		r.downloadWg.Done()
-		<-throttleDownload
 	}
 
 	for {
@@ -216,15 +210,7 @@ func (r *Resolver) ResolveDependencies(ctx context.Context, dependencies []*mani
 			r.Resolved[lock.Name] = lock
 			r.BetterResolved = append(r.BetterResolved, resolved)
 
-			// download this package
-			if r.AlsoDownload {
-				go func(resolved *Resolved) {
-					download(resolved)
-					r.notifySubscribers(resolved)
-				}(resolved)
-			} else {
-				r.notifySubscribers(resolved)
-			}
+			r.notifySubscribers(resolved)
 
 			// resolve the dependencies of this package
 			batchResolve(resolved.result.Dependencies(), resolved.result.Lock())
@@ -263,70 +249,4 @@ func (r *Resolver) providerRequest(dep *manifest.InterpretedDependency, root *ma
 		Requirements: r.GlobalReqs,
 		Root:         root,
 	}
-}
-
-type Resolved struct {
-	Request *providers.Request
-	result  providers.Result
-
-	provider         providers.Provider
-	bytesTransferred uint64
-	totalBytes       uint64
-}
-
-func (r *Resolved) Lock() *manifest.DependencyLock {
-	lock := r.result.Lock()
-	if r.Request.Root != nil {
-		lock.Dependend = r.Request.Root.Name
-	}
-
-	return lock
-}
-
-func (r *Resolved) Fetch(ctx context.Context) error {
-	// TODO: check cache here
-	reader, size, err := r.provider.Fetch(ctx, r.result)
-	if err != nil {
-		return err
-	}
-	r.totalBytes = uint64(size)
-
-	src := io.TeeReader(reader, &WriteCounter{&r.bytesTransferred})
-	dest, err := os.CreateTemp("", "minepkg")
-	if err != nil {
-		return err
-	}
-	if _, err := io.Copy(dest, src); err != nil {
-		return err
-	}
-
-	if r.bytesTransferred != r.totalBytes {
-		return ErrUnexpectedEOF
-	}
-
-	return nil
-}
-
-func (r *Resolved) Transferred() uint64 {
-	if r.totalBytes == 0 {
-		return 0
-	}
-
-	return r.bytesTransferred
-}
-
-func (r *Resolved) Size() uint64 {
-	if r.totalBytes == 0 {
-		return 0
-	}
-
-	return r.totalBytes
-}
-
-func (r *Resolved) Progress() float64 {
-	if r.totalBytes == 0 {
-		return 0
-	}
-
-	return float64(r.bytesTransferred) / float64(r.totalBytes)
 }

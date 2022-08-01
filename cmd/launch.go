@@ -76,7 +76,7 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 	var err error
 
 	if len(args) == 0 {
-		l.instance, err = l.instanceFromWd()
+		l.instance, err = root.LocalInstance()
 		if err != nil {
 			return err
 		}
@@ -257,17 +257,6 @@ func crashTest() error {
 		wait := math.Min(15, float64(3*tries))
 		time.Sleep(time.Duration(wait) * time.Second)
 	}
-}
-
-func (l *launchRunner) instanceFromWd() (*instances.Instance, error) {
-	var err error
-	instance, err := instances.NewFromWd()
-	if err != nil {
-		return nil, err
-	}
-	instance.MinepkgAPI = globals.ApiClient
-
-	return instance, err
 }
 
 func (l *launchRunner) instanceFromModpack(modpack string) (*instances.Instance, error) {

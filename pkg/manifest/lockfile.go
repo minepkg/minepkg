@@ -97,12 +97,14 @@ type DependencyLock struct {
 	Version  string `toml:"version" json:"version"`
 	Type     string `toml:"type" json:"type"`
 	IPFSHash string `toml:"ipfsHash" json:"ipfsHash"`
-	Sha256   string `toml:"Sha256" json:"Sha256"`
+	Sha1     string `toml:"Sha1,omitempty" json:"Sha1,omitempty"`
+	Sha256   string `toml:"Sha256,omitempty" json:"Sha256,omitempty"`
+	Sha512   string `toml:"Sha512,omitempty" json:"Sha512,omitempty"`
 	URL      string `toml:"url" json:"url"`
 	// Provider usually is minepkg but can also be https
 	Provider string `toml:"provider" json:"provider"`
-	// Dependend is the package that requires this mod. can be _root if top package
-	Dependend string `toml:"dependend" json:"dependend"`
+	// Dependent is the package that requires this mod. can be _root if top package
+	Dependent string `toml:"dependent" json:"dependent"`
 	// IsDev is true if this is a dev dependency
 	IsDev bool `toml:"isDev,omitempty" json:"isDev,omitempty"`
 }
