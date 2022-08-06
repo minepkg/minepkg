@@ -17,16 +17,6 @@ func installManifest(instance *instances.Instance) error {
 		UseSystemJava:  viper.GetBool("useSystemJava"),
 	}
 
-	for _, dep := range instance.Manifest.InterpretedDependencies() {
-		if dep.Provider != "modrinth" {
-			continue
-		}
-		fmt.Println("Installing", dep.Name)
-		fmt.Println(dep.Provider)
-		fmt.Println(dep.Name)
-		fmt.Println(dep.Source)
-	}
-
 	if err := cliLauncher.Prepare(); err != nil {
 		return err
 	}
