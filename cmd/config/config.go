@@ -21,6 +21,7 @@ var config = map[string]configEntry{
 	"verboselogging":      {configKindBool, ""},
 	"acceptminecrafteula": {configKindBool, ""},
 	"init.defaultsource":  {configKindBool, ""},
+	"updateChannel":       {configKindString, ""},
 }
 
 var SubCmd = &cobra.Command{
