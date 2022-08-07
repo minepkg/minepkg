@@ -129,15 +129,3 @@ docker-slim release:
   variables:
     DOCKER_VARIANT: slim
 
-gcs dev release:
-  stage: release
-  image: google/cloud-sdk:slim
-  only:
-    - master
-  script:
-    # auth
-    - gcloud config set project minepkg-io
-    - echo $GCP_DEV_SERVICEACCOUNT > ./gcp-secret.json
-    - gcloud auth activate-service-account --key-file gcp-secret.json
-    # upload binary to GCS
-    - gsutil -m cp dist/minepkg_linux_amd64/minepkg gs://minepkg-client/minepkg-dev-snapshot
