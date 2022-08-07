@@ -26,7 +26,10 @@ snapshot:
 release:
   gitlab:
     owner: minepkg
-    name: cli
+    name: minepkg
+   extra_files:
+    - glob: ./dist/artifacts.json
+    - glob: ./dist/metadata.json
 nfpms:
   -
     # ID of the nfpm config, must be unique.
@@ -40,7 +43,6 @@ nfpms:
     description: A package manager designed to install Minecraft mods and modpacks.
     license: MIT
     formats:
-      - apk
       - deb
       - rpm
 
