@@ -169,6 +169,7 @@ func (l *Launcher) PrepareMinecraft(ctx context.Context) error {
 	instance := l.Instance
 	mgr := downloadmgr.New()
 
+	fmt.Println(pipeText.Render(gchalk.Gray("Preparing Minecraft")))
 	launchManifest, err := instance.GetLaunchManifest()
 	if err != nil {
 		return fmt.Errorf("failed to get launch manifest: %w", err)
@@ -188,6 +189,10 @@ func (l *Launcher) PrepareMinecraft(ctx context.Context) error {
 			return err
 		}
 
+		if len(missingAssets) > 0 {
+			fmt.Println(pipeText.Render(gchalk.Gray("Downloading assets")))
+		}
+
 		for _, asset := range missingAssets {
 			target := filepath.Join(instance.CacheDir, "assets/objects", asset.UnixPath())
 			mgr.Add(downloadmgr.NewHTTPItem(asset.DownloadURL(), target))
@@ -199,6 +204,10 @@ func (l *Launcher) PrepareMinecraft(ctx context.Context) error {
 		return err
 	}
 
+	if len(missingLibs) > 0 {
+		fmt.Println(pipeText.Render(gchalk.Gray("Downloading Minecraft libraries")))
+	}
+
 	for _, lib := range missingLibs {
 		target := filepath.Join(instance.CacheDir, "libraries", lib.Filepath())
 		mgr.Add(downloadmgr.NewHTTPItem(lib.DownloadURL(), target))
@@ -207,6 +216,9 @@ func (l *Launcher) PrepareMinecraft(ctx context.Context) error {
 	if err = mgr.Start(ctx); err != nil {
 		return err
 	}
+
+	fmt.Println(pipeText.Render(""))
+
 	return nil
 }
 

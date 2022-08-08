@@ -3,6 +3,7 @@ package launcher
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"runtime"
 
@@ -42,6 +43,9 @@ func (c *Launcher) Run(opts *instances.LaunchOptions) error {
 	if err != nil {
 		return err
 	}
+
+	// Pass input to minecraft.
+	cmd.Stdin = os.Stdin
 
 	c.Cmd = cmd
 
