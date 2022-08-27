@@ -76,7 +76,7 @@ func (j *joinRunner) RunE(cmd *cobra.Command, args []string) error {
 	instance.Lockfile = manifest.NewLockfile()
 	instance.MinepkgAPI = globals.ApiClient
 
-	instanceDir := filepath.Join(instance.InstancesDir(), "server."+ip+"."+resolvedModpack.Package.Name+"."+resolvedModpack.Package.Platform)
+	instanceDir := filepath.Join(instance.InstancesDir(), "server."+host+"."+resolvedModpack.Package.Name+"."+resolvedModpack.Package.Platform)
 	os.MkdirAll(instanceDir, os.ModePerm)
 
 	instance.Directory = instanceDir
@@ -129,7 +129,7 @@ func (j *joinRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	opts := &instances.LaunchOptions{
-		JoinServer: ip + ":" + port,
+		JoinServer: host + ":" + port,
 		RamMiB:     j.ramMiB,
 	}
 	err = cliLauncher.Run(opts)
