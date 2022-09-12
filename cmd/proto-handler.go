@@ -118,7 +118,7 @@ func (t *TheThing) WriteLog(log *GameLogEvent) {
 	if strings.Contains(log.Log, "Sound engine started") {
 		t.State.Status = StatusRunningReady
 		// send status update
-		t.SendState()
+		t.Send("State", &StateResponse{Status: t.State.Status})
 	}
 
 	t.logsBuffer = append(t.logsBuffer, log)
@@ -126,20 +126,6 @@ func (t *TheThing) WriteLog(log *GameLogEvent) {
 		t.logsBuffer = t.logsBuffer[1:]
 	}
 	t.Send("GameLog", log)
-}
-
-func (t *TheThing) SendState() {
-	state := &StateResponse{
-		Status: t.State.Status,
-		Stats:  t.State.Stats,
-		Logs:   t.logsBuffer,
-	}
-
-	if t.launcher != nil {
-		state.Manifest = t.launcher.Instance.Manifest
-	}
-
-	t.Send("State", state)
 }
 
 func (t *TheThing) Launch(man *manifest.Manifest) error {
@@ -342,7 +328,7 @@ func protoLaunch(pack string) {
 	}()
 
 	connection.HandleFunc("requestState", func(event *remote.Message) *remote.Response {
-		log.Println("GameState:", theThing.State)
+		log.Println("sending game state")
 
 		state := &StateResponse{
 			Status: theThing.State.Status,
@@ -492,6 +478,7 @@ func (s *statsCollector) Stop() {
 func newInstanceFromManifest(release *manifest.Manifest) (*instances.Instance, error) {
 	// set instance details
 	instance := instances.New()
+	instance.ProviderStore = root.ProviderStore
 	instance.Manifest = manifest.NewInstanceLike(release)
 	instance.Directory = filepath.Join(instance.InstancesDir(), release.Package.Name+"_"+release.Package.Platform)
 
