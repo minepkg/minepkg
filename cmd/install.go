@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/minepkg/minepkg/internals/commands"
-	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/spf13/cobra"
 )
@@ -20,7 +19,7 @@ func init() {
 	}, runner)
 
 	cmd.Flags().BoolVarP(&runner.dev, "dev", "D", false, "Install as a dev dependency only.")
-	cmd.Flags().BoolVar(&runner.dev, "save-dev", false, "Same as --dev (for you node devs)")
+	cmd.Flags().BoolVar(&runner.dev, "save-dev", false, "Alias for --dev")
 
 	rootCmd.AddCommand(cmd.Command)
 }
@@ -32,11 +31,10 @@ type installRunner struct {
 }
 
 func (i *installRunner) RunE(cmd *cobra.Command, args []string) error {
-	instance, err := instances.NewFromWd()
+	instance, err := root.LocalInstance()
 	if err != nil {
 		return err
 	}
-	instance.MinepkgAPI = globals.ApiClient
 	i.instance = instance
 	// we validate the local manifest
 	if err := root.validateManifest(instance.Manifest); err != nil {
