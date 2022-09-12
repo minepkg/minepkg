@@ -75,6 +75,7 @@ func (j *joinRunner) RunE(cmd *cobra.Command, args []string) error {
 	instance := instances.New()
 	instance.Lockfile = manifest.NewLockfile()
 	instance.MinepkgAPI = globals.ApiClient
+	instance.ProviderStore = root.ProviderStore
 
 	instanceDir := filepath.Join(instance.InstancesDir(), "server."+host+"."+resolvedModpack.Package.Name+"."+resolvedModpack.Package.Platform)
 	os.MkdirAll(instanceDir, os.ModePerm)
