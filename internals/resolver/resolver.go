@@ -4,14 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"sync"
 	"time"
 
 	"github.com/minepkg/minepkg/internals/api"
-	"github.com/minepkg/minepkg/internals/globals"
-	"github.com/minepkg/minepkg/internals/modrinth"
-	"github.com/minepkg/minepkg/internals/resolver/providers"
+	"github.com/minepkg/minepkg/internals/pkgid"
+	"github.com/minepkg/minepkg/internals/provider"
 	"github.com/minepkg/minepkg/pkg/manifest"
 )
 
@@ -63,7 +61,7 @@ type Resolver struct {
 	resolvingFinished bool
 	downloadWg        sync.WaitGroup
 	subscribers       []chan *Resolved
-	Providers         map[string]providers.Provider
+	ProviderStore     *provider.Store
 }
 
 // New returns a new resolver
@@ -76,25 +74,14 @@ func New(man *manifest.Manifest, platformLock manifest.PlatformLock) *Resolver {
 		IgnoreVersion:  false,
 		IncludeDev:     true,
 		AlsoDownload:   false, // TODO: set to true when working properly
-		Providers:      make(map[string]providers.Provider),
 		downloadWg:     sync.WaitGroup{},
 	}
 
-	resolver.Providers["minepkg"] = &providers.MinepkgProvider{
-		Client: globals.ApiClient,
-	}
-
-	resolver.Providers["https"] = &providers.HttpProvider{
-		Client: http.DefaultClient,
-	}
-
-	resolver.Providers["modrinth"] = &providers.ModrinthProvider{
-		Client: modrinth.New(),
-	}
-
-	resolver.Providers["dummy"] = &providers.DummyProvider{}
-
 	return resolver
+}
+
+func (r *Resolver) SetProviderStore(store *provider.Store) {
+	r.ProviderStore = store
 }
 
 func (r *Resolver) ResolveFinished() bool {
@@ -219,13 +206,17 @@ func (r *Resolver) ResolveDependencies(ctx context.Context, dependencies []*mani
 }
 
 func (r *Resolver) resolveSingle(ctx context.Context, dependency *manifest.InterpretedDependency, root *manifest.DependencyLock) (*Resolved, error) {
-	provider, ok := r.Providers[dependency.Provider]
+	provider, ok := r.ProviderStore.Get(dependency.Provider)
 	if !ok {
 		return nil, fmt.Errorf("%s needs %s as install provider which is not supported", dependency.Name, dependency.Provider)
 	}
 
-	request := r.providerRequest(dependency, root)
-	result, err := provider.Resolve(ctx, request)
+	request := r.providerRequest(dependency.ID, root)
+
+	if r.ProviderStore == nil {
+		return nil, errors.New("no provider store")
+	}
+	result, err := r.ProviderStore.Resolve(ctx, request)
 	if err != nil {
 		return nil, err
 	}
@@ -235,16 +226,17 @@ func (r *Resolver) resolveSingle(ctx context.Context, dependency *manifest.Inter
 	}
 
 	resolved := &Resolved{
+		Key:      dependency.Name,
 		Request:  request,
 		result:   result,
-		provider: provider,
+		provider: &provider,
 	}
 
 	return resolved, nil
 }
 
-func (r *Resolver) providerRequest(dep *manifest.InterpretedDependency, root *manifest.DependencyLock) *providers.Request {
-	return &providers.Request{
+func (r *Resolver) providerRequest(dep *pkgid.ID, root *manifest.DependencyLock) *provider.Request {
+	return &provider.Request{
 		Dependency:   dep,
 		Requirements: r.GlobalReqs,
 		Root:         root,

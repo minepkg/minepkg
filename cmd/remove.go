@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/minepkg/minepkg/internals/globals"
-	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/spf13/cobra"
 )
 
@@ -18,8 +16,7 @@ var removeCmd = &cobra.Command{
 	Short:   "Removes supplied package from the current directory & package",
 	Aliases: []string{"delete", "un", "uninstall", "rm"},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		instance, err := instances.NewFromWd()
-		instance.MinepkgAPI = globals.ApiClient
+		instance, err := root.LocalInstance()
 		if err != nil {
 			return err
 		}

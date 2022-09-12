@@ -1,4 +1,4 @@
-package providers
+package provider
 
 import (
 	"context"
@@ -33,16 +33,14 @@ func (m *minepkgResult) Dependencies() []*manifest.InterpretedDependency {
 	return m.InterpretedDependencies()
 }
 
+func (m *MinepkgProvider) Name() string { return "minepkg" }
+
 func (m *MinepkgProvider) Resolve(ctx context.Context, request *Request) (Result, error) {
 	reqs := &api.ReleasesQuery{
 		Name:         request.Dependency.Name,
-		VersionRange: request.Dependency.Source,
+		VersionRange: request.Dependency.Version,
 		Minecraft:    request.Requirements.MinecraftVersion(),
 		Platform:     request.Requirements.PlatformName(),
-	}
-
-	if request.ignoreVersionsFlag {
-		reqs.VersionRange = "*"
 	}
 
 	release, err := m.Client.ReleasesQuery(ctx, reqs)
@@ -51,6 +49,11 @@ func (m *MinepkgProvider) Resolve(ctx context.Context, request *Request) (Result
 	}
 
 	return &minepkgResult{release}, nil
+}
+
+func (m *MinepkgProvider) ResolveLatest(ctx context.Context, request *Request) (Result, error) {
+	request.Dependency.Version = "*"
+	return m.Resolve(ctx, request)
 }
 
 func (m *MinepkgProvider) Fetch(ctx context.Context, toFetch Result) (io.Reader, int, error) {

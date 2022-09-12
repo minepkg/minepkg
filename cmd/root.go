@@ -24,6 +24,7 @@ import (
 	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/minepkg/minepkg/internals/ownhttp"
+	"github.com/minepkg/minepkg/internals/provider"
 	"github.com/minepkg/minepkg/pkg/manifest"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -49,15 +50,27 @@ type Root struct {
 	globalDir          string
 	logger             *cmdlog.Logger
 	NonInteractive     bool
+	ProviderStore      *provider.Store
 }
 
 func newRoot() *Root {
 	http := ownhttp.New()
+
+	minepkgClient := api.NewWithClient(http)
+
+	providers := map[string]provider.Provider{
+		"minepkg":  &provider.MinepkgProvider{Client: minepkgClient},
+		"modrinth": provider.NewModrinthProvider(),
+		"https":    provider.NewHTTPSProvider(),
+		"dummy":    provider.NewDummyProvider(),
+	}
+
 	return &Root{
 		HTTPClient:     http,
 		MinepkgAPI:     api.NewWithClient(http),
 		logger:         globals.Logger,
 		NonInteractive: viper.GetBool("nonInteractive"),
+		ProviderStore:  provider.NewStore(providers),
 	}
 }
 
@@ -102,6 +115,7 @@ func (r *Root) LocalInstance() (*instances.Instance, error) {
 		return nil, err
 	}
 	instance.MinepkgAPI = globals.ApiClient
+	instance.ProviderStore = r.ProviderStore
 
 	return instance, err
 }

@@ -1,4 +1,4 @@
-package providers
+package provider
 
 import (
 	"context"
@@ -8,43 +8,55 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/minepkg/minepkg/internals/pkgid"
 	"github.com/minepkg/minepkg/pkg/manifest"
 )
 
-type HttpProvider struct {
+type HTTPSProvider struct {
 	Client *http.Client
 }
 
-type httpResult struct {
+type httpsResult struct {
 	cacheKey   string
-	dependency *manifest.InterpretedDependency
+	dependency *pkgid.ID
 }
 
-func (h *httpResult) Lock() *manifest.DependencyLock {
+func NewHTTPSProvider() *HTTPSProvider {
+	return &HTTPSProvider{
+		Client: http.DefaultClient,
+	}
+}
+
+func (h *httpsResult) Lock() *manifest.DependencyLock {
 	lock := &manifest.DependencyLock{
 		Name:     h.dependency.Name,
 		Provider: h.dependency.Provider,
 		Type:     "mod",
-		URL:      h.dependency.Source,
+		URL:      h.dependency.Version,
 		Version:  h.cacheKey,
 	}
 
 	return lock
 }
 
-func (h *httpResult) Dependencies() []*manifest.InterpretedDependency {
+func (h *httpsResult) Dependencies() []*manifest.InterpretedDependency {
 	// there currently is no way to resolve these … so empty they stay
 	return []*manifest.InterpretedDependency{}
 }
 
-func (h *HttpProvider) Resolve(ctx context.Context, request *Request) (Result, error) {
-	req, err := http.NewRequest("HEAD", request.Dependency.Source, nil)
+func (h *HTTPSProvider) Name() string { return "https" }
+
+func (h *HTTPSProvider) Resolve(ctx context.Context, request *Request) (Result, error) {
+	if !strings.HasPrefix(request.Dependency.Version, "https://") {
+		return nil, fmt.Errorf("refusing to resolve non https url %s", request.Dependency.Version)
+	}
+	req, err := http.NewRequest("HEAD", request.Dependency.Version, nil)
 	if err != nil {
 		return nil, err
 	}
-	req.WithContext(ctx)
+	req = req.WithContext(ctx)
 
-	res, err := h.Client.Head(request.Dependency.Source)
+	res, err := h.Client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -64,10 +76,10 @@ func (h *HttpProvider) Resolve(ctx context.Context, request *Request) (Result, e
 		)
 	}
 
-	return &httpResult{dependency: request.Dependency, cacheKey: cacheKey}, nil
+	return &httpsResult{dependency: request.Dependency, cacheKey: cacheKey}, nil
 }
 
-func (h *HttpProvider) Fetch(ctx context.Context, toFetch Result) (io.Reader, int, error) {
+func (h *HTTPSProvider) Fetch(ctx context.Context, toFetch Result) (io.Reader, int, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", toFetch.Lock().URL, nil)
 	if err != nil {
 		return nil, 0, err

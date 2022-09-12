@@ -2,7 +2,6 @@ package manifest
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -33,6 +32,24 @@ type PlatformLock interface {
 	PlatformName() string
 	MinecraftVersion() string
 	PlatformVersion() string
+}
+
+type PlatformRequirement struct {
+	Minecraft     string `toml:"minecraft"`
+	LoaderName    string `toml:"loader"`
+	LoaderVersion string `toml:"loader_version"`
+}
+
+func (p *PlatformRequirement) MinecraftVersion() string {
+	return p.Minecraft
+}
+
+func (p *PlatformRequirement) PlatformName() string {
+	return p.LoaderName
+}
+
+func (p *PlatformRequirement) PlatformVersion() string {
+	return p.LoaderVersion
 }
 
 // Lockfile includes resolved dependencies and requirements
@@ -93,14 +110,15 @@ func (f *ForgeLock) PlatformVersion() string { return f.ForgeLoader }
 
 // DependencyLock is a single resolved dependency
 type DependencyLock struct {
-	Name     string `toml:"name" json:"name"`
-	Version  string `toml:"version" json:"version"`
-	Type     string `toml:"type" json:"type"`
-	IPFSHash string `toml:"ipfsHash" json:"ipfsHash"`
-	Sha1     string `toml:"Sha1,omitempty" json:"Sha1,omitempty"`
-	Sha256   string `toml:"Sha256,omitempty" json:"Sha256,omitempty"`
-	Sha512   string `toml:"Sha512,omitempty" json:"Sha512,omitempty"`
-	URL      string `toml:"url" json:"url"`
+	Name        string `toml:"name" json:"name"`
+	Version     string `toml:"version" json:"version"`
+	VersionName string `toml:"versionName" json:"versionName"`
+	Type        string `toml:"type" json:"type"`
+	IPFSHash    string `toml:"ipfsHash" json:"ipfsHash"`
+	Sha1        string `toml:"Sha1,omitempty" json:"Sha1,omitempty"`
+	Sha256      string `toml:"Sha256,omitempty" json:"Sha256,omitempty"`
+	Sha512      string `toml:"Sha512,omitempty" json:"Sha512,omitempty"`
+	URL         string `toml:"url" json:"url"`
 	// Provider usually is minepkg but can also be https
 	Provider string `toml:"provider" json:"provider"`
 	// Dependent is the package that requires this mod. can be _root if top package
@@ -116,12 +134,6 @@ func (d *DependencyLock) FileExt() string {
 		ending = ".zip"
 	}
 	return ending
-}
-
-// ID returns the a sha256 of "provider:name:version"
-func (d *DependencyLock) ID() string {
-	input := fmt.Sprintf("%s:%s:%s", d.Provider, d.Name, d.Version)
-	return string(sha256.New().Sum([]byte(input)))
 }
 
 // Filename returns the dependency in the "[name]-[version].jar" format

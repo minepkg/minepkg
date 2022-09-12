@@ -51,9 +51,13 @@ func (l *Logger) Log(s string) {
 }
 
 // Warn will print a warning
-func (l *Logger) Warn(s string) {
+func (l *Logger) Warn(s ...string) {
 	l.printEmoji("⚠️ ")
-	fmt.Println(gchalk.WithYellow().Bold(s))
+	lines := make([]string, len(s))
+	for i, line := range s {
+		lines[i] = gchalk.WithYellow().Bold(line)
+	}
+	fmt.Println(strings.Join(lines, " "))
 }
 
 // Fail will print the given message with PrintLn and then exit 1

@@ -298,8 +298,11 @@ func (c *Launcher) fetchDependencies(ctx context.Context) error {
 	}()
 
 	for resolved := range sub {
-		instance.Lockfile.AddDependency(resolved.Lock())
-		fmt.Println(dependencyLine(resolved.Lock()))
+		lock := resolved.Lock()
+		// TODO: allow them to set the name
+		lock.Name = resolved.Key
+		instance.Lockfile.AddDependency(lock)
+		fmt.Println(dependencyLine(lock))
 	}
 
 	if err := <-resolverErrorC; err != nil {

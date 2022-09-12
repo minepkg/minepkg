@@ -1,6 +1,8 @@
 package manifest
 
-import "strings"
+import (
+	"github.com/minepkg/minepkg/internals/pkgid"
+)
 
 // InterpretedDependency is a key-value dependency that has been interpreted.
 // It can help to fetch the dependency more easily
@@ -16,6 +18,8 @@ type InterpretedDependency struct {
 	Source string
 	// IsDev is true if this is a dev dependency
 	IsDev bool
+
+	ID *pkgid.ID
 }
 
 // InterpretedDependencies returns the dependencies in a `[]*InterpretedDependency` slice.
@@ -48,17 +52,10 @@ func (m *Manifest) InterpretedDevDependencies() []*InterpretedDependency {
 }
 
 func interpretSingleDependency(name string, source string) *InterpretedDependency {
-	switch {
-	case strings.HasPrefix(source, "https://"):
-		return &InterpretedDependency{Name: name, Provider: "https", Source: source}
-	case source == "none":
-		return &InterpretedDependency{Name: name, Provider: "dummy", Source: "none"}
-	default:
-		sourceParts := strings.SplitN(source, ":", 2)
-		if len(sourceParts) == 1 {
-			return &InterpretedDependency{Name: name, Provider: "minepkg", Source: source}
-		}
-
-		return &InterpretedDependency{Name: name, Provider: sourceParts[0], Source: sourceParts[1]}
+	parsed := pkgid.Parse(source)
+	if parsed.Name == "" {
+		parsed.Name = name
 	}
+
+	return &InterpretedDependency{Name: name, Provider: parsed.Provider, Source: parsed.Version, ID: parsed}
 }

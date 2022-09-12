@@ -264,6 +264,7 @@ func (l *launchRunner) instanceFromModpack(modpack string) (*instances.Instance,
 
 	instance := instances.New()
 	instance.MinepkgAPI = apiClient
+	instance.ProviderStore = root.ProviderStore
 
 	// fetch modpack
 	query := &api.ReleasesQuery{
@@ -286,8 +287,6 @@ func (l *launchRunner) instanceFromModpack(modpack string) (*instances.Instance,
 
 	// set instance details
 	instance.Manifest = manifest.NewInstanceLike(release.Manifest)
-
-	instance.MinepkgAPI = apiClient
 	instance.Directory = filepath.Join(instance.InstancesDir(), release.Package.Name+"_"+release.Package.Platform)
 
 	if l.overwrites.McVersion == "" {

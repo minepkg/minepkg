@@ -2,25 +2,39 @@ package modrinth
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
-	"strings"
 )
 
+var (
+	ErrVersionNotFound = errors.New("version not found")
+)
+
+// ListProjectVersionQuery is used to filter the results of ListProjectVersion
 type ListProjectVersionQuery struct {
-	Loaders      []string `json:"loaders,omitempty"`
+	// Loaders is a list of loaders to filter by (e.g. "fabric", "forge", "quilt")
+	Loaders []string `json:"loaders,omitempty"`
+	// GameVersions is a list of Minecraft versions to filter by (e.g. "1.16.5", "1.17.1")
 	GameVersions []string `json:"game_versions,omitempty"`
-	Featured     *bool    `json:"featured,omitempty"`
+	// Featured is a boolean to filter by versions that are marked as "featured"
+	Featured *bool `json:"featured,omitempty"`
 }
 
+func sliceAsJson(s []string) string {
+	b, _ := json.Marshal(s)
+	return string(b)
+}
+
+// queryString is a helper to convert a ListProjectVersionQuery to a query string
 func (l *ListProjectVersionQuery) queryString() string {
 	values := url.Values{}
 	if l.Loaders != nil {
-		values.Add("loaders", strings.Join(l.Loaders, ","))
+		values.Add("loaders", sliceAsJson(l.Loaders))
 	}
 	if l.GameVersions != nil {
-		values.Add("game_versions", strings.Join(l.GameVersions, ","))
+		values.Add("game_versions", sliceAsJson(l.GameVersions))
 	}
 	if l.Featured != nil {
 		values.Add("featured", fmt.Sprintf("%t", *l.Featured))
@@ -69,6 +83,9 @@ func (c *Client) GetVersion(ctx context.Context, id string) (*Version, error) {
 	}
 
 	if res.StatusCode != 200 {
+		if res.StatusCode == 404 {
+			return nil, ErrVersionNotFound
+		}
 		return nil, fmt.Errorf("unexpected status code: %d", res.StatusCode)
 	}
 

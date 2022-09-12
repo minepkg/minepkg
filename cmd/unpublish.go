@@ -13,6 +13,7 @@ import (
 	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/minepkg/minepkg/internals/pkgid"
+	"github.com/minepkg/minepkg/pkg/manifest"
 	"github.com/spf13/cobra"
 )
 
@@ -59,7 +60,7 @@ func (p *unpublishRunner) RunE(cmd *cobra.Command, args []string) error {
 		if err := root.validateManifest(mani); err != nil {
 			return err
 		}
-		mID = pkgid.NewFromManifest(mani)
+		mID = newIdFromManifest(mani)
 	} else {
 		mID = pkgid.ParseLikeVersion(args[0])
 
@@ -159,4 +160,13 @@ func (p *unpublishRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	logger.Info("Release deleted")
 	return nil
+}
+
+func newIdFromManifest(m *manifest.Manifest) *pkgid.ID {
+	return &pkgid.ID{
+		Provider: "minepkg",
+		Platform: m.PlatformString(),
+		Name:     m.Package.Name,
+		Version:  m.Package.Version,
+	}
 }

@@ -3,8 +3,6 @@ package pkgid
 import (
 	"fmt"
 	"strings"
-
-	"github.com/minepkg/minepkg/pkg/manifest"
 )
 
 type ID struct {
@@ -18,15 +16,6 @@ func (m *ID) LegacyID() string {
 	return fmt.Sprintf("%s@%s", m.Name, m.Version)
 }
 
-func NewFromManifest(m *manifest.Manifest) *ID {
-	return &ID{
-		Provider: "minepkg",
-		Platform: m.PlatformString(),
-		Name:     m.Package.Name,
-		Version:  m.Package.Version,
-	}
-}
-
 func Parse(id string) *ID {
 	return parseIt(id, false)
 }
@@ -36,7 +25,20 @@ func ParseLikeVersion(id string) *ID {
 }
 
 func parseIt(id string, likeVersion bool) *ID {
-	newId := &ID{}
+	newId := &ID{Provider: "minepkg"}
+
+	// special case for none
+	if id == "none" {
+		newId.Provider = "dummy"
+		return newId
+	}
+
+	// special case for https
+	if strings.HasPrefix(id, "https://") {
+		newId.Provider = "https"
+		newId.Version = id
+		return newId
+	}
 
 	parts := strings.SplitN(id, ":", 2)
 	if len(parts) == 2 {
@@ -55,11 +57,7 @@ func parseIt(id string, likeVersion bool) *ID {
 		newId.Name = parts[0]
 		newId.Version = parts[1]
 	} else {
-		if likeVersion {
-			newId.Version = id
-		} else {
-			newId.Name = id
-		}
+		newId.Version = id
 	}
 
 	return newId

@@ -260,8 +260,13 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
+		fmt.Println("Caught interrupt, stopping minecraft")
 		// stops the minecraft server
 		cmd.Process.Signal(syscall.SIGTERM)
+		signal.Stop(c)
+
+		// send SIGTERM to own process
+		syscall.Kill(os.Getpid(), syscall.SIGTERM)
 	}()
 
 	if opts.Stdout != nil {

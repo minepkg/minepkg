@@ -9,6 +9,7 @@ import (
 
 	"github.com/jwalton/gchalk"
 	"github.com/minepkg/minepkg/internals/commands"
+	"github.com/minepkg/minepkg/internals/provider"
 
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/pkg/manifest"
@@ -55,6 +56,7 @@ type Instance struct {
 	Lockfile        *manifest.Lockfile
 	MinepkgAPI      *api.MinepkgAPI
 	AuthCredentials *LaunchCredentials
+	ProviderStore   *provider.Store
 
 	isFromWd                     bool
 	launchCmd                    string

@@ -34,6 +34,7 @@ func (i *Instance) GetResolver(ctx context.Context) (*resolver.Resolver, error) 
 	}
 
 	res := resolver.New(i.Manifest, i.Lockfile.PlatformLock())
+	res.ProviderStore = i.ProviderStore
 	// only include dev dependencies if this instance was created from a working directory
 	// (eg. typing "minepkg launch" in a directory with a minepkg.toml)
 	res.IncludeDev = i.isFromWd

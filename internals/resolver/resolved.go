@@ -1,15 +1,16 @@
 package resolver
 
 import (
-	"github.com/minepkg/minepkg/internals/resolver/providers"
+	"github.com/minepkg/minepkg/internals/provider"
 	"github.com/minepkg/minepkg/pkg/manifest"
 )
 
 type Resolved struct {
-	Request *providers.Request
-	result  providers.Result
+	Key     string
+	Request *provider.Request
+	result  provider.Result
 
-	provider providers.Provider
+	provider *provider.Provider
 }
 
 func (r *Resolved) Lock() *manifest.DependencyLock {
