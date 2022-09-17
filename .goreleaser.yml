@@ -27,7 +27,7 @@ release:
   gitlab:
     owner: minepkg
     name: minepkg
-   extra_files:
+  extra_files:
     - glob: ./dist/artifacts.json
     - glob: ./dist/metadata.json
 nfpms:
