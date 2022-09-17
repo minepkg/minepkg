@@ -23,6 +23,7 @@ import (
 	"github.com/minepkg/minepkg/internals/minecraft"
 	"github.com/minepkg/minepkg/pkg/manifest"
 	"github.com/pbnjay/memory"
+	"github.com/shirou/gopsutil/process"
 )
 
 var (
@@ -266,8 +267,8 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 		signal.Stop(c)
 
 		// send SIGTERM to own process
-		// TODO: reimplement (does not work on windows)
-		// syscall.Kill(os.Getpid(), syscall.SIGTERM)
+		p := &process.Process{Pid: int32(os.Getpid())}
+		p.Terminate()
 	}()
 
 	if opts.Stdout != nil {

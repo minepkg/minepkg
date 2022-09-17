@@ -12,7 +12,8 @@ func TestModrinthProvider_Resolve(t *testing.T) {
 	provider := ModrinthProvider{modrinth.New()}
 	res, err := provider.Resolve(context.Background(), &Request{
 		Dependency: &pkgid.ID{
-			Version: "fabric-api@4XRtXhtL",
+			Name:    "fabric-api",
+			Version: "4XRtXhtL",
 		},
 	})
 	if err != nil {
