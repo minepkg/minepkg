@@ -266,7 +266,8 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 		signal.Stop(c)
 
 		// send SIGTERM to own process
-		syscall.Kill(os.Getpid(), syscall.SIGTERM)
+		// TODO: reimplement (does not work on windows)
+		// syscall.Kill(os.Getpid(), syscall.SIGTERM)
 	}()
 
 	if opts.Stdout != nil {
