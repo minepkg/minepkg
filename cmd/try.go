@@ -36,7 +36,7 @@ It will be deleted after testing.
 	cmd.Flags().BoolVarP(&runner.serverMode, "server", "s", false, "Start a server instead of a client")
 	cmd.Flags().BoolVarP(&runner.offlineMode, "offline", "", false, "Start the server in offline mode (server only)")
 	cmd.Flags().BoolVarP(&runner.plain, "plain", "p", false, "Do not include default mods for testing")
-	cmd.Flags().BoolVarP(&runner.photosession, "photosession", "", false, "Upload all screenshots (take with F2) to the project")
+	cmd.Flags().BoolVarP(&runner.photoSession, "photosession", "", false, "Upload all screenshots (take with F2) to the project")
 
 	runner.overwrites = launcher.CmdOverwriteFlags(cmd.Command)
 
@@ -46,7 +46,7 @@ It will be deleted after testing.
 type tryRunner struct {
 	tryBase      string
 	plain        bool
-	photosession bool
+	photoSession bool
 	serverMode   bool
 	offlineMode  bool
 
@@ -167,7 +167,7 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if t.photosession {
+	if t.photoSession {
 		screenshotDir := filepath.Join(instance.McDir(), "./screenshots")
 		entries, err := ioutil.ReadDir(screenshotDir)
 		if err != nil {

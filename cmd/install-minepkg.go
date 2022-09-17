@@ -202,7 +202,7 @@ func prettyApiError(err error) error {
 			return &commands.CliError{
 				Text: fmt.Sprintf("Project %s does not exist", notFoundErr.Package),
 				Suggestions: []string{
-					"Check if your have a typo in the packagename",
+					"Check if your have a typo in the package name",
 					"Make sure the wanted Project is published",
 				},
 			}

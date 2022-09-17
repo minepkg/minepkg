@@ -75,7 +75,7 @@ func (r *Release) WorksWithManifest(man *manifest.Manifest) bool {
 	return false
 }
 
-// Upload uploads the jar or zipfile for a release
+// Upload uploads the jar or zip file for a release
 func (r *Release) Upload(reader io.Reader, size int64) (*Release, error) {
 	// prepare request
 	client := r.client

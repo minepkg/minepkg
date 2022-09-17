@@ -43,7 +43,7 @@ func (d *DownloadManager) Add(i Downloader) {
 // Start starts the download queue
 func (d *DownloadManager) Start(ctx context.Context) error {
 	sem := make(chan int, 16)
-	errc := make(chan error)
+	cErr := make(chan error)
 
 	if d.queue == nil {
 		return nil
@@ -52,33 +52,33 @@ func (d *DownloadManager) Start(ctx context.Context) error {
 	go func() {
 		for _, item := range d.queue {
 			sem <- 1
-			go func(item *Item, errc chan error) {
+			go func(item *Item, cErr chan error) {
 				for {
 					time.Sleep(time.Duration(item.attempts*item.attempts) * time.Second)
 					err := item.downloader.Download(ctx)
 					if err == nil {
-						errc <- nil
+						cErr <- nil
 						break
 					}
 					item.lastErr = err
 
 					item.attempts += 1
 					if item.attempts >= item.maxAttempts {
-						errc <- err
+						cErr <- err
 						break
 					} else {
-						errc <- &ErrFailedAttempt{err}
+						cErr <- &ErrFailedAttempt{err}
 					}
 				}
 				<-sem
-			}(item, errc)
+			}(item, cErr)
 		}
 	}()
 
 	// var maybeErr error
 	var attemptType *ErrFailedAttempt
 	for i := 0; i < len(d.queue); i++ {
-		maybeErr := <-errc
+		maybeErr := <-cErr
 		if maybeErr != nil {
 			if errors.As(maybeErr, &attemptType) {
 				i--

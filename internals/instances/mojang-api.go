@@ -29,7 +29,7 @@ type MinecraftRelease struct {
 	ReleaseTime string `json:"releaseTime"`
 }
 
-// MinecraftReleaseResponse is the response from the launchermeta mojang api
+// MinecraftReleaseResponse is the response from the "launchermeta" mojang api
 type MinecraftReleaseResponse struct {
 	Latest struct {
 		Release  string `json:"release"`

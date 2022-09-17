@@ -16,11 +16,11 @@ type configEntry struct {
 }
 
 var config = map[string]configEntry{
-	"noninteractive":      {configKindBool, ""},
-	"usesystemjava":       {configKindBool, ""},
-	"verboselogging":      {configKindBool, ""},
-	"acceptminecrafteula": {configKindBool, ""},
-	"init.defaultsource":  {configKindBool, ""},
+	"nonInteractive":      {configKindBool, ""},
+	"useSystemJava":       {configKindBool, ""},
+	"verboseLogging":      {configKindBool, ""},
+	"acceptMinecraftEula": {configKindBool, ""},
+	"init.defaultSource":  {configKindBool, ""},
 	"updateChannel":       {configKindString, ""},
 }
 

@@ -46,7 +46,7 @@ func (b *bumpRunner) gitCommitAction() *action {
 		enabled:      !b.noGit,
 		reason:       "",
 		enabledText:  "git commit changes",
-		disabledText: "skip commiting",
+		disabledText: "skip committing",
 		successText:  "git commit done",
 		run: func() error {
 			_, err := utils.SimpleGitExec("commit -am " + b.targetVersion)

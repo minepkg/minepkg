@@ -54,7 +54,7 @@ func (b *bumpRunner) gitChecks() error {
 		return fmt.Errorf("invalid git output. please report this error: %w", err)
 	}
 	if upstreamCommits != 0 {
-		return fmt.Errorf("there are %d unsynced commits upstream! Please run something like \"git pull --rebase\" first", upstreamCommits)
+		return fmt.Errorf("there are %d un-synced commits upstream! Please run something like \"git pull --rebase\" first", upstreamCommits)
 	}
 
 	fmt.Println(" ✓ No missing commits from upstream")

@@ -46,7 +46,7 @@ type Instance struct {
 	// GlobalDir contains persistent instance data
 	// on linux this usually is $HOME/.config/minepkg
 	GlobalDir string
-	// CacheDir is similar to cache dir but only contains data that can easily be redownloaded
+	// CacheDir is similar to cache dir but only contains data that can easily be re-downloaded
 	// like java binaries, libraries, assets, versions & mod cache
 	// on linux this usually is $HOME/.cache/minepkg
 	CacheDir string

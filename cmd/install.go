@@ -52,8 +52,8 @@ func (i *installRunner) RunE(cmd *cobra.Command, args []string) error {
 		switch {
 		// got a minepkg url
 		case strings.HasPrefix(firstArg, "https://minepkg.io/projects/"):
-			projectname := firstArg[28:] // url minus first bits (just the name)
-			return i.installFromMinepkg([]string{projectname})
+			projectName := firstArg[28:] // url minus first bits (just the name)
+			return i.installFromMinepkg([]string{projectName})
 		}
 		return fmt.Errorf("sorry. Don't know what to do with that url (yet)")
 	}

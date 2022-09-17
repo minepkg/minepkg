@@ -13,7 +13,7 @@ func (m *MinepkgAPI) Project(name string) *Project {
 	}
 }
 
-// GetProjectsQuery are the query paramters for the GetProjects function
+// GetProjectsQuery are the query parameters for the GetProjects function
 type GetProjectsQuery struct {
 	Type     string `json:"type"`
 	Platform string `json:"platform"`
@@ -28,11 +28,15 @@ func (m *MinepkgAPI) GetProjects(ctx context.Context, opts *GetProjectsQuery) ([
 		return nil, err
 	}
 
-	uri.Query().Set("type", opts.Type)
-	uri.Query().Set("platform", opts.Platform)
+	query := uri.Query()
+
+	query.Set("type", opts.Type)
+	query.Set("platform", opts.Platform)
 	if opts.Simple {
-		uri.Query().Set("simple", "true")
+		query.Set("simple", "true")
 	}
+
+	uri.RawQuery = query.Encode()
 
 	res, err := m.get(ctx, uri.String())
 	if err != nil {

@@ -27,11 +27,11 @@ import (
 )
 
 var (
-	// ErrLaunchNotImplemented is returned if attemting to start a non vanilla instance
+	// ErrLaunchNotImplemented is returned if attempting to start a non vanilla instance
 	ErrLaunchNotImplemented = errors.New("can only launch vanilla & fabric instances (for now)")
-	// ErrNoCredentials is returned when an instance is launched without `MojangProfile` beeing set
+	// ErrNoCredentials is returned when an instance is launched without `MojangProfile` being set
 	ErrNoCredentials = errors.New("can not launch without mojang credentials")
-	// ErrNoPaidAccount is returned when an instance is launched without `MojangProfile` beeing set
+	// ErrNoPaidAccount is returned when an instance is launched without `MojangProfile` being set
 	ErrNoPaidAccount = errors.New("you need to buy Minecraft to launch it")
 	// ErrNoVersion is returned if no mc version was detected
 	ErrNoVersion = errors.New("could not detect minecraft version")
@@ -69,11 +69,11 @@ type LaunchOptions struct {
 	Demo bool
 	// JoinServer can be a server address to join after startup
 	JoinServer string
-	// StartSave can be a savegame name to start after startup
+	// StartSave can be a save game name to start after startup
 	StartSave string
 	Debug     bool
 	// RamMiB can be set to the amount of ram in MiB to start Minecraft with
-	// 0 determins the amount by modcount + available system ram
+	// 0 determines the amount by mod count + available system ram
 	RamMiB int
 	// Environment variables to set
 	Env []string
@@ -87,7 +87,7 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 		return err
 	}
 
-	// TODO: detatch from process if wanted
+	// TODO: detach from process if wanted
 	if err := cmd.Run(); err != nil {
 		return err
 	}
@@ -172,10 +172,10 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 		return nil, err
 	}
 
-	javaCpSeperator := ":"
+	javaCpSeparator := ":"
 	// of course
 	if runtime.GOOS == "windows" {
-		javaCpSeperator = ";"
+		javaCpSeparator = ";"
 	}
 
 	var maxRamMiB int
@@ -200,7 +200,7 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 		// "-Dminecraft.launcher.version=" + "0.0.2", // TODO: implement!
 		"-Dminecraft.client.jar=" + mcJar,
 		"-cp",
-		strings.Join(cpArgs, javaCpSeperator),
+		strings.Join(cpArgs, javaCpSeparator),
 		fmt.Sprintf("-Xmx%dM", maxRamMiB),
 		"-XX:+UnlockExperimentalVMOptions",
 		"-XX:+UseG1GC",
@@ -231,7 +231,7 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	if opts.Debug {
 		fmt.Println("cmd: ")
 		fmt.Println(cmdArgs)
-		fmt.Println("tmpdir: " + tmpDir)
+		fmt.Println("tmp dir: " + tmpDir)
 		os.Exit(0)
 	}
 

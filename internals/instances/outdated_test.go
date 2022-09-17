@@ -24,7 +24,7 @@ func lockfileOrBust(filename string) *manifest.Lockfile {
 }
 
 func Test_thatSemverLibraryDoesWhatWeWant(t *testing.T) {
-	prereleases := []string{
+	preReleases := []string{
 		"1.0.1-beta1",
 		"1.0.1-beta1+mpkg.1",
 		"1.0.1-0",
@@ -36,7 +36,7 @@ func Test_thatSemverLibraryDoesWhatWeWant(t *testing.T) {
 		"0.0.0",
 	}
 
-	all := append(prereleases, stable...)
+	all := append(preReleases, stable...)
 
 	matchAll, _ := semver.NewConstraint(">=0.0.0-0")
 	for _, v := range all {
@@ -53,7 +53,7 @@ func Test_thatSemverLibraryDoesWhatWeWant(t *testing.T) {
 			t.Errorf("semver library is broken, version %s does not match *", v)
 		}
 	}
-	for _, v := range prereleases {
+	for _, v := range preReleases {
 		ver, _ := semver.NewVersion(v)
 		if matchAllStable.Check(ver) {
 			t.Errorf("semver library is broken, version %s should NOT match *", v)

@@ -22,7 +22,7 @@ var (
 		Suggestions: []string{
 			`Set the "dev.jar" field in your minepkg.toml`,
 			`Checkout https://preview.minepkg.io/docs/manifest#devjar`,
-			"Make sure that your build is outputing jar files",
+			"Make sure that your build is outputting jar files",
 		},
 	}
 )

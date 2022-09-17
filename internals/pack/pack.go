@@ -47,8 +47,8 @@ func (p *Reader) Files() []*zip.File {
 	return p.zipReader.File
 }
 
-// ExtractModpack will extract everything in this zipfile to `dest` but will
-// NOT overwrite existing savefiles
+// ExtractModpack will extract everything in this zip file to `dest` but will
+// NOT overwrite existing save files
 func (p *Reader) ExtractModpack(dest string) error {
 	zipReader := p.zipReader
 
@@ -167,8 +167,8 @@ func sanitizeExtractPath(filePath string, destination string) error {
 	// to avoid zip slip (writing outside of the destination), we resolve
 	// the target path, and make sure it's nested in the intended
 	// destination, or bail otherwise.
-	destpath := filepath.Join(destination, filePath)
-	if !strings.HasPrefix(destpath, destination) {
+	destPath := filepath.Join(destination, filePath)
+	if !strings.HasPrefix(destPath, destination) {
 		return fmt.Errorf("%s: illegal file path", filePath)
 	}
 	return nil

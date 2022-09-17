@@ -46,8 +46,8 @@ func sanitizeExtractPath(filePath string, destination string) error {
 	// to avoid zip slip (writing outside of the destination), we resolve
 	// the target path, and make sure it's nested in the intended
 	// destination, or bail otherwise.
-	destpath := filepath.Join(destination, filePath)
-	if !strings.HasPrefix(destpath, destination) {
+	destPath := filepath.Join(destination, filePath)
+	if !strings.HasPrefix(destPath, destination) {
 		return fmt.Errorf("%s: illegal file path", filePath)
 	}
 	return nil
@@ -68,9 +68,9 @@ func copyFileContents(src, dst string) (err error) {
 		return
 	}
 	defer func() {
-		cerr := out.Close()
+		cErr := out.Close()
 		if err == nil {
-			err = cerr
+			err = cErr
 		}
 	}()
 	if _, err = io.Copy(out, in); err != nil {

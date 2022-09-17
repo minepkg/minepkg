@@ -23,7 +23,7 @@ type RequirementQuery struct {
 // ErrInvalidMinecraftRequirement is returned if an invalid minecraft requirement was passed
 var ErrInvalidMinecraftRequirement = errors.New("minecraft requirement is invalid. Only * or a version number is allowed. No semver")
 
-// ErrNoMatchingRelease is returned if a wanted releaseendency (package) could not be resolved given the requirements
+// ErrNoMatchingRelease is returned if a wanted package (release) could not be resolved given the requirements
 type ErrNoMatchingRelease struct {
 	// Package is the name of the package that can not be resolved
 	Package string
@@ -96,7 +96,7 @@ func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *Requ
 
 		// get the latest version that matches the wanted minecraft version
 		for _, release := range releases {
-			if release.compatWith(wantedMCSemver) {
+			if release.isCompatible(wantedMCSemver) {
 				return release, nil
 			}
 		}
@@ -121,8 +121,8 @@ func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *Requ
 
 	// fallback to search all releases
 	for _, release := range releases {
-		mcCompatible := release.compatWith(wantedMCSemver)
-		versionCompatible := release.compatWith(wantedMCSemver)
+		mcCompatible := release.isCompatible(wantedMCSemver)
+		versionCompatible := release.isCompatible(wantedMCSemver)
 
 		if mcCompatible && versionCompatible {
 			return release, nil
@@ -158,7 +158,7 @@ func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *Requ
 func (r *Release) testedFor(mcVersion *semver.Version) bool {
 
 	// precondition (release requirement is compatible) failed
-	if !r.compatWith(mcVersion) {
+	if !r.isCompatible(mcVersion) {
 		return false
 	}
 
@@ -170,8 +170,8 @@ func (r *Release) testedFor(mcVersion *semver.Version) bool {
 	return false
 }
 
-// compatWith returns true if this release requirement is compatible with the given minecraft version
-func (r *Release) compatWith(mcVersion *semver.Version) bool {
+// isCompatible returns true if this release requirement is compatible with the given minecraft version
+func (r *Release) isCompatible(mcVersion *semver.Version) bool {
 	modMcConstraint, err := semver.NewConstraint(r.Requirements.Minecraft)
 	if err != nil {
 		// TODO: maybe this should be an error

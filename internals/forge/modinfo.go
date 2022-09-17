@@ -1,6 +1,6 @@
 package forge
 
-// McModInfo is a parsed mcmod.info file from forge
+// McModInfo is a parsed "mcmod.info" file from forge
 type McModInfo struct {
 	ModID       string   `json:"modid"`
 	Name        string   `json:"name"`

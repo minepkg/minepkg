@@ -130,7 +130,7 @@ var rootCmd = &cobra.Command{
 	Long:  "Manage Minecraft mods with ease",
 
 	Example: `
-  minepkg init -l fabric
+  minepkg init
   minepkg install modmenu@latest
   minepkg join demo.minepkg.host`,
 	SilenceErrors: true,

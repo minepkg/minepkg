@@ -23,7 +23,7 @@ type GithubLicense struct {
 	Featured       bool     `json:"featured"`
 }
 
-// GetLincense fetches the given license from githubs api
+// GetLicense fetches the given license from GitHub's api
 func GetLicense(licenseName string) (*GithubLicense, error) {
 	var license GithubLicense
 	r, err := http.Get("https://api.github.com/licenses/" + licenseName)
