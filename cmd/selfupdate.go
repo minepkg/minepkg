@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/mholt/archiver/v3"
+	"github.com/mholt/archiver/v4"
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/github"
 	"github.com/spf13/cobra"
@@ -57,8 +57,6 @@ func (m *minepkgRelease) ArchiveName() string {
 
 func (m *minepkgRelease) ArchiveURL() string {
 	for _, asset := range m.Release.Assets {
-		fmt.Println("Checking asset", asset.Name)
-		fmt.Println("against", m.ArchiveName())
 		if strings.EqualFold(asset.Name, m.ArchiveName()) {
 			return asset.BrowserDownloadURL
 		}
@@ -107,6 +105,9 @@ func (s *selfupdateRunner) RunE(cmd *cobra.Command, args []string) error {
 		os.Exit(0)
 	}
 
+	fmt.Println("Downloading new version")
+	fmt.Println("  " + latest.ArchiveURL())
+
 	// TODO: reimplement this
 	// if parsed.Info != "" {
 	// 	fmt.Println(styleWarnBox.Render(parsed.Info))
@@ -116,34 +117,67 @@ func (s *selfupdateRunner) RunE(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	minepkgCacheDir := filepath.Join(cacheDir, "minepkg")
 
-	// TODO: if this version is newer
-	newCli, err := ioutil.TempFile(cacheDir, latest.Version())
+	wd, err := os.MkdirTemp(minepkgCacheDir, latest.Version())
 	if err != nil {
 		return err
 	}
-	newCli.Chmod(0700)
+	defer os.RemoveAll(wd)
+	// change working directory to temp dir
+	if err := os.Chdir(wd); err != nil {
+		return err
+	}
+
+	// TODO: if this version is newer
+	tar, err := ioutil.TempFile(wd, latest.ArchiveName())
+	if err != nil {
+		return err
+	}
+
 	archive, err := http.Get(latest.ArchiveURL())
 	if err != nil {
 		return err
 	}
-	_, err = io.Copy(newCli, archive.Body)
+	_, err = io.Copy(tar, archive.Body)
 	if err != nil {
 		return err
 	}
 
-	newCli.Close()
+	tar.Close()
 
 	// extract archive to temp dir
-	tmpDir, err := ioutil.TempDir(cacheDir, latest.Version())
 	if err != nil {
 		return err
 	}
-	archiver.Unarchive(newCli.Name(), tmpDir)
+	fmt.Println("trying to extract", tar.Name())
 
-	newBinary := filepath.Join(tmpDir, latest.BinName())
+	tarFS, err := archiver.FileSystem(tar.Name())
+	if err != nil {
+		return err
+	}
+
+	tarBinary, err := tarFS.Open(latest.BinName())
+	if err != nil {
+		return err
+	}
+	fmt.Println("Binary found")
+
+	binaryTargetPath := filepath.Join(wd, latest.BinName())
+	binary, err := os.Create(binaryTargetPath)
+	if err != nil {
+		return err
+	}
+	io.Copy(binary, tarBinary)
+
+	fmt.Println("Extracted to", binaryTargetPath)
+
+	binary.Chmod(0700)
+	binary.Close()
+
+	// newCli.Chmod(0700)
 	fmt.Println("Testing new version")
-	test := exec.Command(newBinary, "selftest")
+	test := exec.Command(binaryTargetPath, "selftest")
 	out, err := test.Output()
 	if err != nil {
 		logger.Fail("Update aborted. Self test of new update failed:\n " + err.Error())
@@ -152,13 +186,15 @@ func (s *selfupdateRunner) RunE(cmd *cobra.Command, args []string) error {
 		logger.Fail("Update aborted. Self test of new update failed:\nInvalid output. Please open a bug report")
 	}
 
+	fmt.Println("Updating minepkg")
+
 	if runtime.GOOS == "windows" {
 		if err := os.Rename(toUpdate, toUpdate+".old"); err != nil {
 			return err
 		}
 	}
 
-	if err := os.Rename(newBinary, toUpdate); err != nil {
+	if err := os.Rename(binary.Name(), toUpdate); err != nil {
 		if runtime.GOOS == "windows" {
 			// revert to old version
 			if err := os.Rename(toUpdate+".old", toUpdate); err != nil {
