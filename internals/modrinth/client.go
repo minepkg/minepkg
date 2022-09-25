@@ -22,11 +22,15 @@ type Client struct {
 	baseURL *url.URL
 }
 
-func New() *Client {
+func New(httpClient *http.Client) *Client {
 	parsedDefaultURL, _ := url.Parse(DefaultApiURL)
 
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+
 	return &Client{
-		http:    http.DefaultClient,
+		http:    httpClient,
 		baseURL: parsedDefaultURL,
 	}
 }

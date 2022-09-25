@@ -9,7 +9,7 @@ import (
 
 // Basic usage
 func Example() {
-	client := modrinth.New()
+	client := modrinth.New(nil)
 
 	// Get the latest version of the fabric mod.
 	versions, err := client.ListProjectVersion(context.Background(), "fabric-api", nil)
@@ -21,7 +21,7 @@ func Example() {
 }
 
 func ExampleClient_GetVersion() {
-	client := modrinth.New()
+	client := modrinth.New(nil)
 
 	// get one version by its id
 	version, err := client.GetVersion(context.Background(), "4XRtXhtL")
@@ -33,7 +33,7 @@ func ExampleClient_GetVersion() {
 }
 
 func ExampleClient_GetVersionFile() {
-	client := modrinth.New()
+	client := modrinth.New(nil)
 
 	// get version with file hash
 	version, err := client.GetVersionFile(

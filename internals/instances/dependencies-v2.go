@@ -10,9 +10,11 @@ import (
 )
 
 type Dependency struct {
-	name string
-	Lock *manifest.DependencyLock
-	ID   *pkgid.ID
+	name          string
+	Lock          *manifest.DependencyLock
+	ID            *pkgid.ID
+	providerStore *provider.Store
+	instance      *Instance
 }
 
 type DependencyList []Dependency
@@ -30,7 +32,7 @@ func (d Dependency) Name() string {
 	return d.name
 }
 
-func (d Dependency) NeedsUpdating() bool {
+func (d Dependency) InSync() bool {
 	if d.ID.Provider == "dummy" {
 		return false
 	}
@@ -68,6 +70,14 @@ func (d Dependency) NeedsUpdating() bool {
 	return false
 }
 
+func (d *Dependency) ProviderRequest() *provider.Request {
+	return &provider.Request{
+		Dependency:   d.ID,
+		Requirements: d.instance.Lockfile.PlatformLock(),
+		// Root:         d.instance.Lockfile.,
+	}
+}
+
 func ProviderRequest(dependency *Dependency, requirements manifest.PlatformLock) *provider.Request {
 	return &provider.Request{
 		Dependency:   dependency.ID,
@@ -89,9 +99,10 @@ func (i *Instance) GetDependencyList() DependencyList {
 		pkgID.Platform = i.Manifest.PlatformString()
 
 		dependencies = append(dependencies, Dependency{
-			name: name,
-			Lock: lock,
-			ID:   pkgID,
+			name:     name,
+			Lock:     lock,
+			ID:       pkgID,
+			instance: i,
 		})
 	}
 

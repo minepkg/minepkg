@@ -4,6 +4,8 @@ require (
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/Tnze/go-mc v1.18.2
 	github.com/briandowns/spinner v1.19.0
+	github.com/charmbracelet/bubbles v0.14.0
+	github.com/charmbracelet/bubbletea v0.22.0
 	github.com/charmbracelet/lipgloss v0.5.0
 	github.com/dchest/uniuri v0.0.0-20200228104902-7aecb25e1fe5
 	github.com/erikgeiser/promptkit v0.7.0
@@ -16,20 +18,21 @@ require (
 	github.com/pelletier/go-toml v1.9.5
 	github.com/pion/webrtc/v3 v3.1.43
 	github.com/pkg/errors v0.9.1
+	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/shirou/gopsutil/v3 v3.22.6
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/viper v1.12.0
 	github.com/stoewer/go-strcase v1.2.0
 	github.com/zalando/go-keyring v0.2.1
 	golang.org/x/oauth2 v0.0.0-20220722155238-128564f6959c
+	golang.org/x/time v0.0.0-20220922220347-f3bd1da661af
 )
 
 require (
 	github.com/alessio/shellescape v1.4.1 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
-	github.com/charmbracelet/bubbles v0.13.0 // indirect
-	github.com/charmbracelet/bubbletea v0.22.0 // indirect
+	github.com/charmbracelet/harmonica v0.2.0 // indirect
 	github.com/chzyer/readline v1.5.1 // indirect
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/danieljoos/wincred v1.1.2 // indirect
@@ -76,7 +79,6 @@ require (
 	github.com/pion/udp v0.1.1 // indirect
 	github.com/power-devops/perfstat v0.0.0-20220216144756-c35f1ee13d7c // indirect
 	github.com/rivo/uniseg v0.3.1 // indirect
-	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
 	github.com/spf13/afero v1.9.2 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect

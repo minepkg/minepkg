@@ -9,13 +9,15 @@ import (
 	"strings"
 
 	"github.com/minepkg/minepkg/internals/modrinth"
+	"github.com/minepkg/minepkg/internals/ownhttp"
 	"github.com/minepkg/minepkg/pkg/manifest"
+	"golang.org/x/time/rate"
 )
 
 var (
-	ErrVersionNotSupported = errors.New("for modrinth version can only be '*', 'latest' a version id, sha1 or sha512")
-	ErrVersionsNotFound    = errors.New("no versions found")
-	ErrVersionHasNoFiles   = errors.New("version has no files")
+	ErrVersionNotSupported       = errors.New("for modrinth version can only be '*', 'latest' a version id, sha1 or sha512")
+	ErrCouldNotFindLatestVersion = errors.New("could not find latest version")
+	ErrVersionHasNoFiles         = errors.New("version has no files")
 )
 
 type ModrinthProvider struct {
@@ -47,8 +49,15 @@ func (m *modrinthResult) Dependencies() []*manifest.InterpretedDependency {
 }
 
 func NewModrinthProvider() *ModrinthProvider {
+	// http client that is throttled
+	client := http.Client{}
+	// limit to 5 requests per second (https://github.com/modrinth/labrinth/blob/1e4d07a52c441030374d052a44dddaaaa25d1f87/src/main.rs#L254-L255)
+	limiter := rate.NewLimiter(5, 120)
+	client.Transport = ownhttp.NewThrottleTransport(client.Transport, limiter)
+	client.Transport = ownhttp.NewAddHeaderTransport(client.Transport)
+
 	return &ModrinthProvider{
-		Client: modrinth.New(),
+		Client: modrinth.New(&client),
 	}
 }
 
@@ -63,9 +72,9 @@ func (m *ModrinthProvider) Resolve(ctx context.Context, request *Request) (Resul
 		wantedVersion, err = m.resolveLatest(ctx, request)
 	} else {
 		wantedVersion, err = m.resolveById(ctx, request.Dependency.Version)
-		if err != nil {
-			return nil, err
-		}
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	// this should never happen, we assume all versions have files
@@ -124,7 +133,7 @@ func (m *ModrinthProvider) resolveLatest(ctx context.Context, request *Request) 
 	}
 
 	if len(versions) == 0 {
-		return nil, ErrVersionsNotFound
+		return nil, ErrCouldNotFindLatestVersion
 	}
 
 	// grab the first version (not sure if this is good)

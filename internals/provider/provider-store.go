@@ -7,8 +7,9 @@ import (
 )
 
 var (
-	ErrProviderNotFound  = errors.New("provider not found")
-	ErrURLNotConvertible = errors.New("url not convertible")
+	ErrProviderNotFound    = errors.New("provider not found")
+	ErrProviderUnsupported = errors.New("provider does not support this operation")
+	ErrURLNotConvertible   = errors.New("url not convertible")
 )
 
 type Store struct {
@@ -57,12 +58,12 @@ func (s *Store) ResolveLatest(ctx context.Context, request *Request) (Result, er
 
 	latestResolver, ok := provider.(LatestResolver)
 	if !ok {
-		return nil, fmt.Errorf("%s does not support latest resolution", provider.Name())
+		return nil, fmt.Errorf("%w: %s", ErrProviderUnsupported, request.Dependency.Provider)
 	}
 
 	res, err := latestResolver.ResolveLatest(ctx, request)
 	if err != nil {
-		betterErr := fmt.Errorf("%s could not resolve %s: %w", provider.Name(), request.Dependency.LegacyID(), err)
+		betterErr := fmt.Errorf("%s could not resolve %s: %w", provider.Name(), request.Dependency.Name, err)
 		return nil, betterErr
 	}
 

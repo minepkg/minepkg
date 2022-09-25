@@ -80,7 +80,7 @@ func (l *Launcher) Prepare() error {
 func (l Launcher) PrepareRequirements() (bool, error) {
 	instance := l.Instance
 	// resolve requirements
-	outdatedReqs, err := instance.AreRequirementsOutdated()
+	outdatedReqs, err := instance.RequirementsSynced()
 	if err != nil {
 		return false, err
 	}
@@ -142,7 +142,7 @@ func (l *Launcher) PrepareDependencies(ctx context.Context, force bool) error {
 	instance := l.Instance
 	// resolve dependencies
 	// TODO: check dev dependencies!
-	outdatedDependencies, err := instance.AreDependenciesOutdated()
+	outdatedDependencies, err := instance.DependenciesSynced()
 	if err != nil {
 		return err
 	}

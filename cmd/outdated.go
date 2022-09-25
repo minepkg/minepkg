@@ -2,16 +2,17 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
+	"sort"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/jwalton/gchalk"
-	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/minepkg/minepkg/internals/provider"
 	"github.com/minepkg/minepkg/internals/utils"
-	"github.com/minepkg/minepkg/pkg/manifest"
 	"github.com/spf13/cobra"
 )
 
@@ -29,6 +30,20 @@ var outdatedCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+
+		// start timer
+		start := time.Now()
+
+		fmt.Println("minimum", time.Since(start))
+
+		result, err := instance.Outdated(context.Background())
+		if err != nil {
+			return err
+		}
+
+		sort.Slice(result, func(i, j int) bool {
+			return result[i].Dependency.Name() < result[j].Dependency.Name()
+		})
 
 		minecraftReq := MinecraftVersionFlag
 		if MinecraftVersionFlag == "" {
@@ -48,56 +63,49 @@ var outdatedCmd = &cobra.Command{
 
 		numOk := 0
 
-		dependencies := instance.GetDependencyList().Sorted()
-		for _, dependency := range dependencies {
-			if dependency.ID.Version == "none" {
+		for _, entry := range result {
+			if entry.Dependency.ID.Version == "none" {
 				continue
 			}
-			platformLock := instance.Lockfile.PlatformLock()
-			latestRequest := instances.ProviderRequest(&dependency, platformLock)
-			var latest provider.Result
-			rowStyle := lipgloss.NewStyle()
+
+			currentLock := entry.Dependency.Lock
+
+			var rowStyle lipgloss.Style
 			latestVersion := "unknown"
-			if latestRequest.Dependency.Provider != "dummy" {
-				customRequirement := &manifest.PlatformRequirement{
-					Minecraft:     minecraftReq,
-					LoaderName:    platformLock.PlatformName(),
-					LoaderVersion: platformLock.PlatformVersion(),
-				}
 
-				latestRequest.Requirements = customRequirement
-				latest, err = root.ProviderStore.ResolveLatest(context.TODO(), latestRequest)
-				if err != nil {
-					log.Println(err)
-					latestVersion = "unavailable"
-					rowStyle = lipgloss.NewStyle().Faint(true)
-					// TODO: handle error
+			if entry.Error != nil {
+				if errors.Is(entry.Error, provider.ErrProviderUnsupported) {
+					continue
 				}
-			}
-
-			if latest != nil {
-				if dependency.Lock == nil {
-					return fmt.Errorf("dependency %s has no lock. please run minepkg install", dependency.Name())
-				}
+				log.Println(err)
+				latestVersion = "unavailable (" + entry.Error.Error() + ")"
+				rowStyle = lipgloss.NewStyle().Faint(true)
+				// TODO: handle error
+				// if dependency.Lock == nil {
+				// 	return fmt.Errorf("dependency %s has no lock. please run minepkg install", dependency.Name())
+				// }
+			} else {
 				// already latest version?
-				if latest.Lock().Version == dependency.Lock.Version {
+				if entry.Result.Lock().Version == entry.Dependency.Lock.Version {
 					numOk++
 
-					log.Println(gchalk.Green("✓"), dependency.Name(), "is up to date")
+					log.Println(gchalk.Green("✓"), entry.Dependency.Name(), "is up to date")
 
 					continue
 				}
-				latestVersion = latest.Lock().Version
 
-				if latest.Lock().VersionName != "" {
-					latestVersion = fmt.Sprintf("%s (%s)", latest.Lock().VersionName, latest.Lock().Version)
+				latestLock := entry.Result.Lock()
+				latestVersion = latestLock.Version
+
+				if latestVersion != "" {
+					latestVersion = fmt.Sprintf("%s (%s)", latestLock.VersionName, latestLock.Version)
 				}
 
-				if latest.Lock().Provider == "minepkg" {
-					oldSemver := semver.MustParse(dependency.Lock.Version)
-					newSemver := semver.MustParse(latest.Lock().Version)
+				if entry.Result.Lock().Provider == "minepkg" {
+					oldSemver := semver.MustParse(entry.Dependency.Lock.Version)
+					newSemver := semver.MustParse(latestLock.Version)
 
-					latestVersion = utils.PrettyVersion(latest.Lock().Version)
+					latestVersion = utils.PrettyVersion(latestLock.Version)
 
 					switch {
 					case oldSemver.Major() != newSemver.Major():
@@ -115,15 +123,15 @@ var outdatedCmd = &cobra.Command{
 			}
 
 			var currentVersion string
-			if dependency.Lock.VersionName != "" {
-				currentVersion = fmt.Sprintf("%s (%s)", dependency.Lock.VersionName, dependency.Lock.Version)
+			if currentLock.VersionName != "" {
+				currentVersion = fmt.Sprintf("%s (%s)", currentLock.VersionName, currentLock.Version)
 			} else {
-				currentVersion = utils.PrettyVersion(dependency.Lock.Version)
+				currentVersion = utils.PrettyVersion(currentLock.Version)
 			}
 
 			row := table.addRow([]string{
-				dependency.Name(),
-				dependency.ID.Provider,
+				entry.Dependency.Name(),
+				entry.Dependency.ID.Provider,
 				currentVersion,
 				latestVersion,
 			})
@@ -137,6 +145,8 @@ var outdatedCmd = &cobra.Command{
 			note := fmt.Sprintf("%d dependencies hidden that where up to date.\n", numOk)
 			fmt.Println(gchalk.BrightGreen(note))
 		}
+
+		fmt.Println("Took", time.Since(start))
 
 		return nil
 	},

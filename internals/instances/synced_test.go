@@ -121,7 +121,7 @@ func Test_areRequirementsInLockfileOutdated(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := areRequirementsInLockfileOutdated(tt.args.lock, tt.args.mani)
+			got, err := requirementsInSync(tt.args.lock, tt.args.mani)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("areRequirementsInLockfileOutdated() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -193,7 +193,7 @@ func Test_areDependenciesInLockfileOutdated(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := areDependenciesInLockfileOutdated(tt.args.lock, tt.args.mani)
+			got, err := dependenciesInSync(tt.args.lock, tt.args.mani)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("areDependenciesInLockfileOutdated() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -9,7 +9,7 @@ import (
 )
 
 func TestModrinthProvider_Resolve(t *testing.T) {
-	provider := ModrinthProvider{modrinth.New()}
+	provider := ModrinthProvider{modrinth.New(nil)}
 	res, err := provider.Resolve(context.Background(), &Request{
 		Dependency: &pkgid.ID{
 			Name:    "fabric-api",
