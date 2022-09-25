@@ -44,6 +44,14 @@ Run this in **powershell**
 . { iwr -useb https://preview.minepkg.io/install.ps1} | iex
 ```
 
+### From Source
+
+If you have the go toolchain installed you can (compile &) install minepkg from source:
+
+```bash
+go install github.com/minepkg/minepkg@latest
+```
+
 ## Usage
 
 * [FAQ](https://preview.minepkg.io/docs/faq)
