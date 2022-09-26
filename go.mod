@@ -14,6 +14,7 @@ require (
 	github.com/manifoldco/promptui v0.9.0
 	github.com/mattn/go-isatty v0.0.14
 	github.com/mholt/archiver/v3 v3.5.1
+	github.com/mholt/archiver/v4 v4.0.0-alpha.7
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
 	github.com/pelletier/go-toml v1.9.5
 	github.com/pion/webrtc/v3 v3.1.43
@@ -53,7 +54,6 @@ require (
 	github.com/lufia/plan9stats v0.0.0-20220517141722-cf486979b281 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
-	github.com/mholt/archiver/v4 v4.0.0-alpha.7 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/muesli/ansi v0.0.0-20211031195517-c9f0611b6c70 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
@@ -106,5 +106,3 @@ require (
 )
 
 go 1.18
-
-replace github.com/erikgeiser/promptkit => github.com/fiws/promptkit v0.6.1-0.20220222134348-f5c3e493bc56
