@@ -20,7 +20,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v2
         with:
           version: latest
-          args: release --rm-dist --snapshot --skip-publish
+          args: build --rm-dist --snapshot
       - name: Test
         run: go test -v ./...
       - name: Archive binaries
