@@ -14,6 +14,7 @@ builds:
 archives:
 - id: minepkg
   name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+  format: binary
 checksum:
   name_template: 'checksums.txt'
 snapshot:
@@ -25,6 +26,10 @@ release:
   extra_files:
     - glob: ./dist/artifacts.json
     - glob: ./dist/metadata.json
+# blobs:
+#   provider: goos
+#   bucket: minepkg-client
+#   folder: stable
 nfpms:
   -
     # ID of the nfpm config, must be unique.
