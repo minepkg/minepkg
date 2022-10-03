@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -13,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/mholt/archiver/v4"
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/github"
 	"github.com/spf13/cobra"
@@ -51,8 +49,21 @@ func (m *minepkgRelease) Version() string {
 	return m.Release.Name[1:]
 }
 
+func (m *minepkgRelease) Extension() string {
+	if runtime.GOOS == "windows" {
+		return ".exe"
+	}
+	return ""
+}
+
 func (m *minepkgRelease) ArchiveName() string {
-	return fmt.Sprintf("minepkg_%s_%s_%s.tar.gz", m.Version(), runtime.GOOS, runtime.GOARCH)
+	return fmt.Sprintf(
+		"minepkg_%s_%s_%s%s",
+		m.Version(),
+		runtime.GOOS,
+		runtime.GOARCH,
+		m.Extension(),
+	)
 }
 
 func (m *minepkgRelease) ArchiveURL() string {
@@ -130,47 +141,22 @@ func (s *selfupdateRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	// TODO: if this version is newer
-	tar, err := ioutil.TempFile(wd, latest.ArchiveName())
-	if err != nil {
-		return err
-	}
-
-	archive, err := http.Get(latest.ArchiveURL())
-	if err != nil {
-		return err
-	}
-	_, err = io.Copy(tar, archive.Body)
-	if err != nil {
-		return err
-	}
-
-	tar.Close()
-
-	// extract archive to temp dir
-	if err != nil {
-		return err
-	}
-	fmt.Println("trying to extract", tar.Name())
-
-	tarFS, err := archiver.FileSystem(tar.Name())
-	if err != nil {
-		return err
-	}
-
-	tarBinary, err := tarFS.Open(latest.BinName())
-	if err != nil {
-		return err
-	}
-	fmt.Println("Binary found")
-
 	binaryTargetPath := filepath.Join(wd, latest.BinName())
 	binary, err := os.Create(binaryTargetPath)
 	if err != nil {
 		return err
 	}
-	io.Copy(binary, tarBinary)
 
-	fmt.Println("Extracted to", binaryTargetPath)
+	binDownload, err := http.Get(latest.ArchiveURL())
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(binary, binDownload.Body)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Downloaded to", binaryTargetPath)
 
 	binary.Chmod(0700)
 	binary.Close()
