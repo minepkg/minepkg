@@ -7,6 +7,8 @@ import (
 )
 
 type AuthProvider interface {
+	// Name returns the name of the auth provider
+	Name() string
 	// Prompt asks the user to authenticate
 	Prompt() error
 	// LaunchAuthData returns the auth data needed to launch the game

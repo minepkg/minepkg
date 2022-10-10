@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
@@ -28,6 +29,10 @@ type MicrosoftCredentialStorage struct {
 	ExpiresAt     time.Time    `json:"exp"`
 }
 
+func (m *Microsoft) Name() string {
+	return "Microsoft"
+}
+
 func (m *Microsoft) SetAuthState(authData *MicrosoftCredentialStorage) error {
 	log.Printf("Restoring MS auth state")
 	m.authData = &microsoft.Credentials{
@@ -48,16 +53,16 @@ func (m *Microsoft) SetAuthState(authData *MicrosoftCredentialStorage) error {
 func (m *Microsoft) Prompt() error {
 	ctx := context.Background()
 	if err := m.Oauth(context.Background()); err != nil {
-		return err
+		return fmt.Errorf("failed to authenticate with microsoft: %w", err)
 	}
 
 	creds, err := m.GetMinecraftCredentials(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get minecraft credentials: %w", err)
 	}
 	m.authData = creds
 	if err := m.persist(); err != nil {
-		return err
+		return fmt.Errorf("failed to persist auth data: %w", err)
 	}
 	return nil
 }
@@ -69,7 +74,7 @@ func (m *Microsoft) LaunchAuthData() (minecraft.LaunchAuthData, error) {
 		return m.refreshAuthData()
 	}
 	// we have valid and unexpired auth data
-	log.Println("Using Cached MS auth data")
+	log.Println("Using cached MS auth data")
 	return m.authData, nil
 }
 
@@ -80,7 +85,7 @@ func (m *Microsoft) refreshAuthData() (*microsoft.Credentials, error) {
 	}
 	m.authData = creds
 	if err := m.persist(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to persist auth data: %w", err)
 	}
 	return creds, err
 }
@@ -88,7 +93,6 @@ func (m *Microsoft) refreshAuthData() (*microsoft.Credentials, error) {
 func (m *Microsoft) persist() error {
 	log.Println("Persisting MS auth data")
 	trimmedData := &MicrosoftCredentialStorage{
-		ExpiresAt:     m.authData.ExpiresAt,
 		MicrosoftAuth: m.authData.MicrosoftAuth,
 		AccessToken:   m.authData.MinecraftAuth.AccessToken,
 		UUID:          m.authData.MinecraftProfile.ID,
@@ -96,7 +100,7 @@ func (m *Microsoft) persist() error {
 	}
 	data, err := json.Marshal(trimmedData)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to marshal auth data: %w", err)
 	}
 	return m.Store.Set(&PersistentCredentials{
 		Provider: "microsoft",

@@ -14,7 +14,6 @@ require (
 	github.com/manifoldco/promptui v0.9.0
 	github.com/mattn/go-isatty v0.0.14
 	github.com/mholt/archiver/v3 v3.5.1
-	github.com/mholt/archiver/v4 v4.0.0-alpha.7
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
 	github.com/pelletier/go-toml v1.9.5
 	github.com/pion/webrtc/v3 v3.1.43
@@ -60,7 +59,6 @@ require (
 	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/muesli/termenv v0.12.0 // indirect
 	github.com/nwaples/rardecode v1.1.3 // indirect
-	github.com/nwaples/rardecode/v2 v2.0.0-beta.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.2 // indirect
 	github.com/pierrec/lz4/v4 v4.1.15 // indirect
 	github.com/pion/datachannel v1.5.2 // indirect
@@ -86,7 +84,6 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.4.0 // indirect
-	github.com/therootcompany/xz v1.0.1 // indirect
 	github.com/tklauser/go-sysconf v0.3.10 // indirect
 	github.com/tklauser/numcpus v0.5.0 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
@@ -106,3 +103,5 @@ require (
 )
 
 go 1.18
+
+replace github.com/zalando/go-keyring v0.2.1 => github.com/fiws/go-keyring v0.0.0-20221010191512-5b6827277d3b

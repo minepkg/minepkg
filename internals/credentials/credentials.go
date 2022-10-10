@@ -62,7 +62,11 @@ func (s *Store) Set(data interface{}) error {
 	if NoKeyRingMode {
 		return s.writeCredentialFile(s.localFilename(), jsonBlob)
 	}
-	return keyring.Set("minepkg_auth_data", s.Name, string(jsonBlob))
+
+	if err := keyring.Set("minepkg_auth_data", s.Name, string(jsonBlob)); err != nil {
+		return fmt.Errorf("keyring problem, good luck with that: %w", err)
+	}
+	return nil
 }
 
 // readCredentialFile is a helper that reads a file from the minepkg config dir

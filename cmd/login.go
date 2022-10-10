@@ -22,7 +22,7 @@ func init() {
 func (r *Root) restoreAuth() {
 	authStore := r.minecraftAuthStore
 
-	authData := &auth.PersistentCredentials{}
+	var authData *auth.PersistentCredentials
 	err := authStore.Get(authData)
 	if err != nil {
 		log.Println("Failed to restore auth data:", err)
@@ -74,18 +74,21 @@ func (r *Root) useMicrosoftAuth() *auth.Microsoft {
 }
 
 func (r *Root) getLaunchCredentialsOrLogin() (*instances.LaunchCredentials, error) {
+	log.Println("Trying to restore launch credentials")
 	if r.authProvider == nil {
 		r.restoreAuth()
 	}
 
 	// still nothing, we need to login
 	if r.authProvider == nil {
+		log.Println("No auth provider found, logging in")
 		err := r.login()
 		if err != nil {
 			return nil, err
 		}
 	}
 
+	log.Println("Using auth provider:", r.authProvider.Name())
 	creds, err := r.authProvider.LaunchAuthData()
 	if err != nil {
 		fmt.Println("Could not get launch credentials:", err)
@@ -99,6 +102,8 @@ func (r *Root) getLaunchCredentialsOrLogin() (*instances.LaunchCredentials, erro
 			return nil, err
 		}
 	}
+
+	log.Println("Acquired launch credentials for user:", creds.GetPlayerName())
 
 	return &instances.LaunchCredentials{
 		PlayerName:  creds.GetPlayerName(),

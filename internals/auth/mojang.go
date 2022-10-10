@@ -19,6 +19,10 @@ type Mojang struct {
 	Store    *credentials.Store
 }
 
+func (m *Mojang) Name() string {
+	return "Mojang"
+}
+
 func (m *Mojang) SetAuthState(authData *mojang.AuthResponse) error {
 	log.Printf("Restoring Mojang auth state")
 	m.AuthData = authData
