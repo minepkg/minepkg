@@ -22,13 +22,13 @@ func init() {
 func (r *Root) restoreAuth() {
 	authStore := r.minecraftAuthStore
 
-	var authData *auth.PersistentCredentials
-	err := authStore.Get(authData)
+	var authData auth.PersistentCredentials
+	err := authStore.Get(&authData)
 	if err != nil {
 		log.Println("Failed to restore auth data:", err)
 	}
 
-	if authData == nil {
+	if authData.Provider == "" {
 		log.Println("No auth data to restore found")
 		return
 	}
