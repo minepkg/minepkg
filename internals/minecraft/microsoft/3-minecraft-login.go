@@ -66,11 +66,41 @@ func (m *MicrosoftClient) minecraftLoginWithXbox(ctx context.Context, userHash s
 	return &authRes, nil
 }
 
+func (m *MicrosoftClient) checkEntitlements(ctx context.Context, token string) error {
+	req, err := http.NewRequestWithContext(ctx, "GET", MC_API_CHECK_ENTITLEMENT, nil)
+	if err != nil {
+		return err
+	}
+
+	if token == "" {
+		return fmt.Errorf("no token provided")
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	resp, err := m.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("HTTP status %d", resp.StatusCode)
+	}
+
+	// we do not check the response body.
+	// The getProfile request will fail if the user does not own Minecraft
+
+	return nil
+}
+
 func (m *MicrosoftClient) getProfile(ctx context.Context, token string) (*GetProfileResponse, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", MC_API_PROFILE, nil)
 	if err != nil {
 		return nil, err
 	}
+
+	if token == "" {
+		return nil, fmt.Errorf("no token provided")
+	}
+
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	resp, err := m.Do(req)
 	if err != nil {

@@ -13,10 +13,11 @@ import (
 )
 
 const (
-	XBL_AUTHENTICATE   = "https://user.auth.xboxlive.com/user/authenticate"
-	XBL_XSTS_AUTHORIZE = "https://xsts.auth.xboxlive.com/xsts/authorize"
-	MC_API_XBOX_LOGIN  = "https://api.minecraftservices.com/authentication/login_with_xbox"
-	MC_API_PROFILE     = "https://api.minecraftservices.com/minecraft/profile"
+	XBL_AUTHENTICATE         = "https://user.auth.xboxlive.com/user/authenticate"
+	XBL_XSTS_AUTHORIZE       = "https://xsts.auth.xboxlive.com/xsts/authorize"
+	MC_API_XBOX_LOGIN        = "https://api.minecraftservices.com/authentication/login_with_xbox"
+	MC_API_PROFILE           = "https://api.minecraftservices.com/minecraft/profile"
+	MC_API_CHECK_ENTITLEMENT = "https://api.minecraftservices.com/entitlements/mcstore"
 )
 
 type MicrosoftClient struct {
@@ -77,19 +78,19 @@ func (m *MicrosoftClient) GetMinecraftCredentials(ctx context.Context) (*Credent
 	// refresh token if needed
 	newToken, err := m.Config.TokenSource(ctx, m.Token).Token()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get refresh token: %w", err)
 	}
 	m.Token = newToken
 
 	// 1. Authenticate with XBL
 	xblAuth, err := m.xblAuth(ctx, m.Token.AccessToken)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("xbl auth error: %w", err)
 	}
 	// 2. Get XSTS token
 	xstsAuth, err := m.xstsAuth(ctx, xblAuth.Token)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("xsts auth error: %w", err)
 	}
 
 	xstsToken := xstsAuth.Token
@@ -101,13 +102,20 @@ func (m *MicrosoftClient) GetMinecraftCredentials(ctx context.Context) (*Credent
 	// 3. Get Minecraft token
 	minecraftAuth, err := m.minecraftLoginWithXbox(ctx, userHash, xstsToken)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get Minecraft token: %w", err)
+	}
+
+	// 3.5 Call the entitlements endpoint
+	// Super weird: We need to call this for some accounts or else the
+	// next call to the profile endpoint will return a 404. I have no idea why.
+	if err = m.checkEntitlements(ctx, minecraftAuth.AccessToken); err != nil {
+		return nil, fmt.Errorf("failed to check entitlements: %w", err)
 	}
 
 	// 4. Get Minecraft profile
 	profile, err := m.getProfile(ctx, minecraftAuth.AccessToken)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get Minecraft profile: %w", err)
 	}
 
 	creds := &Credentials{
