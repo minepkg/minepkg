@@ -21,7 +21,7 @@ var (
 		Text: "no jar files found",
 		Suggestions: []string{
 			`Set the "dev.jar" field in your minepkg.toml`,
-			`Checkout https://preview.minepkg.io/docs/manifest#devjar`,
+			`Checkout https://minepkg.io/docs/manifest#devjar`,
 			"Make sure that your build is outputting jar files",
 		},
 	}

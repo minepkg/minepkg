@@ -36,7 +36,7 @@ var (
 	ErrMissingRequirementMinecraft = &commands.CliError{
 		Text: "the manifest is missing the required requirements.minecraft field",
 		Suggestions: []string{
-			"Add the field as documented here https://preview.minepkg.io/docs/manifest#requirements",
+			"Add the field as documented here https://minepkg.io/docs/manifest#requirements",
 		},
 	}
 )

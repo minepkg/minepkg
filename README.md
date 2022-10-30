@@ -11,13 +11,9 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/cd2f11d2dd41dee1fcbc/maintainability)](https://codeclimate.com/github/minepkg/minepkg/maintainability)
 [![Discord](https://img.shields.io/discord/517070108191883266.svg?logo=discord)](https://discord.gg/6tjBR5t)
 
-**This project is not ready for use yet! Please join our discord if you are interested in testing**
-
-**[List of current limitations](https://preview.minepkg.io/docs/current-state#current-limitations#:~:text=Current%20limitations)**
-
 ## Features
 
-* Installs mods from [minepkg](https://preview.minepkg.io/) (with dependency resolution)
+* Installs mods from [minepkg](https://minepkg.io/) (with dependency resolution)
 * Can launch Minecraft
 * Join compatible modded Servers with one command (Installs modpack and launches Minecraft & joins the server for you)
 * Saves your installed mods in a sharable `minepkg.toml`
@@ -26,14 +22,14 @@
 
 ## Installation
 
-You can read the [installation docs here](https://preview.minepkg.io/docs/install) for more detailed instructions.
+You can read the [installation docs here](https://minepkg.io/docs/install) for more detailed instructions.
 
 ### Linux & MacOS
 
 Run this in your favorite shell.
 
 ```bash
-curl -s https://preview.minepkg.io/install.sh | bash
+curl -s https://minepkg.io/install.sh | bash
 ```
 
 ### Windows
@@ -41,7 +37,7 @@ curl -s https://preview.minepkg.io/install.sh | bash
 Run this in **powershell**
 
 ```
-. { iwr -useb https://preview.minepkg.io/install.ps1} | iex
+. { iwr -useb https://minepkg.io/install.ps1} | iex
 ```
 
 ### From Source
@@ -54,9 +50,9 @@ go install github.com/minepkg/minepkg@latest
 
 ## Usage
 
-* [FAQ](https://preview.minepkg.io/docs/faq)
-* [Manifest Documentation](https://preview.minepkg.io/docs/manifest)
-* [Mod publishing](https://preview.minepkg.io/docs/mod-publishing)
+* [FAQ](https://minepkg.io/docs/faq)
+* [Manifest Documentation](https://minepkg.io/docs/manifest)
+* [Mod publishing](https://minepkg.io/docs/mod-publishing)
 
 ```
 $ minepkg --help
