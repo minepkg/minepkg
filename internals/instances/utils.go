@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,6 +15,8 @@ func extractNative(jar string, target string) error {
 	if err != nil {
 		return err
 	}
+
+	log.Printf("Extracting natives from %s to %s\n", jar, target)
 	defer r.Close()
 	for _, f := range r.File {
 		// skip META-INF dir
