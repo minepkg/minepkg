@@ -55,7 +55,7 @@ type Lib struct {
 		// Classifiers is a list of additional artifacts.
 		// It is used to download native libraries.
 		// The `Natives` field is used to determine which classifier to use.
-		// This field is no longer used after 1.19
+		// This field is no longer used starting with 1.19
 		Classifiers map[string]artifact `json:"classifiers"`
 	} `json:"downloads,omitempty"`
 	URL string `json:"url"`
@@ -63,7 +63,7 @@ type Lib struct {
 	// If no rules are specified, the library is included by default.
 	Rules []libRule `json:"rules"`
 	// Natives is a map of OS names to native library names.
-	// This field is no longer used after 1.19
+	// This field is no longer used starting with 1.19
 	// Newer library versions extract the native library from a jar at runtime.
 	Natives map[string]string `json:"natives"`
 }
