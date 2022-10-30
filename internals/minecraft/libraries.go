@@ -48,13 +48,23 @@ func (l Libraries) Required() Libraries {
 
 // Lib is a minecraft library
 type Lib struct {
+	// Name can be used to identify the library, but is not required otherwise.
 	Name      string `json:"name"`
 	Downloads struct {
-		Artifact    artifact            `json:"artifact"`
+		Artifact artifact `json:"artifact"`
+		// Classifiers is a list of additional artifacts.
+		// It is used to download native libraries.
+		// The `Natives` field is used to determine which classifier to use.
+		// This field is no longer used after 1.19
 		Classifiers map[string]artifact `json:"classifiers"`
 	} `json:"downloads,omitempty"`
-	URL     string            `json:"url"`
-	Rules   []libRule         `json:"rules"`
+	URL string `json:"url"`
+	// Rules is a list of rules that determine whether this library should be included.
+	// If no rules are specified, the library is included by default.
+	Rules []libRule `json:"rules"`
+	// Natives is a map of OS names to native library names.
+	// This field is no longer used after 1.19
+	// Newer library versions extract the native library from a jar at runtime.
 	Natives map[string]string `json:"natives"`
 }
 
@@ -105,8 +115,11 @@ func (l *Lib) DownloadURL() string {
 }
 
 type artifact struct {
-	Path string      `json:"path"`
-	Sha1 string      `json:"sha1"`
+	// Path of the jar file relative to the libraries folder
+	Path string `json:"path"`
+	Sha1 string `json:"sha1"`
+	// Size in bytes
 	Size json.Number `json:"size"`
-	URL  string      `json:"url"`
+	// URL to download the jar file
+	URL string `json:"url"`
 }

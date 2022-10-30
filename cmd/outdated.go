@@ -142,7 +142,7 @@ var outdatedCmd = &cobra.Command{
 		fmt.Println(table.render())
 
 		if numOk > 0 {
-			note := fmt.Sprintf("%d dependencies hidden that where up to date.\n", numOk)
+			note := fmt.Sprintf("%d dependencies hidden that are up to date.\n", numOk)
 			fmt.Println(gchalk.BrightGreen(note))
 		}
 
