@@ -69,7 +69,7 @@ func newRoot() *Root {
 		HTTPClient:     http,
 		MinepkgAPI:     api.NewWithClient(http),
 		logger:         globals.Logger,
-		NonInteractive: viper.GetBool("nonInteractive"),
+		NonInteractive: false,
 		ProviderStore:  provider.NewStore(providers),
 	}
 }
@@ -237,6 +237,7 @@ func initConfig() {
 	apiKey := os.Getenv("MINEPKG_API_KEY")
 	root.globalDir = filepath.Join(homeConfigs, "minepkg")
 	root.minecraftAuthStore = credentials.New(root.globalDir, "minecraft_auth")
+	root.NonInteractive = viper.GetBool("nonInteractive")
 	parsedUrl, err := url.Parse(globals.ApiClient.APIUrl)
 	if err != nil {
 		panic(fmt.Errorf("invalid minepkg API URL: %w", err))
