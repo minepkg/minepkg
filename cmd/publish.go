@@ -229,7 +229,7 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 		os.Exit(0)
 	}
 
-	if !root.NonInteractive {
+	if !nonInteractive {
 		input := confirmation.New("Do you want to publish this now?", confirmation.Yes)
 		overwrite, err := input.RunPrompt()
 		if !overwrite || err != nil {

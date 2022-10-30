@@ -53,16 +53,16 @@ func (i *setRunner) RunE(cmd *cobra.Command, args []string) error {
 	default:
 		return fmt.Errorf("what? uncovered config values type")
 	}
-	previousValue := viper.Get(key)
+	previousValue := viper.Get(entry.key)
 	previousStringValue := fmt.Sprintf("%v", previousValue)
 	if previousValue == nil {
 		previousStringValue = "(unset)"
 	}
-	viper.Set(key, newValue)
+	viper.Set(entry.key, newValue)
 
 	fmt.Printf(
 		"Changing config entry:\n  %s: %s → %v\n",
-		key,
+		entry.key,
 		gchalk.Strikethrough(previousStringValue),
 		gchalk.Bold(fmt.Sprintf("%v", newValue)),
 	)
