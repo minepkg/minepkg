@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"time"
 )
 
 // lineMatch matches the git output
@@ -29,18 +31,28 @@ func OpenBrowser(url string) {
 
 	fmt.Println("Opening ", url)
 
+	// 15 seconds timeout to open the browser
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
 	switch runtime.GOOS {
 	case "linux":
-		err = exec.Command("xdg-open", url).Run()
+		err = exec.CommandContext(ctx, "xdg-open", url).Run()
 	case "windows":
-		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Run()
+		err = exec.CommandContext(ctx, "rundll32", "url.dll,FileProtocolHandler", url).Run()
 	case "darwin":
-		err = exec.Command("open", url).Run()
+		err = exec.CommandContext(ctx, "open", url).Run()
 	default:
 		err = fmt.Errorf("unsupported platform")
 	}
 	if err != nil {
-		panic(err)
+		if ctx.Err() == context.DeadlineExceeded {
+			fmt.Println("Could not open browser, please open the following url manually:")
+			fmt.Println(url)
+		} else {
+			fmt.Println("Could not open browser:")
+			panic(err)
+		}
 	}
 }
 

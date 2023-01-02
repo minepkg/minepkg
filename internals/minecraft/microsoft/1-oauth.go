@@ -75,6 +75,8 @@ func (m *MicrosoftClient) Oauth(ctx context.Context) error {
 	})
 
 	utils.OpenBrowser(url)
+
+	fmt.Println("Waiting for login...")
 	// todo: error handling!
 	server.ListenAndServe()
 	defer server.Shutdown(ctx)
