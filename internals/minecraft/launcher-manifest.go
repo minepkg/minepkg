@@ -1,7 +1,6 @@
 package minecraft
 
 import (
-	"runtime"
 	"strings"
 )
 
@@ -40,44 +39,6 @@ type LaunchManifest struct {
 	InheritsFrom           string `json:"inheritsFrom"`
 	ID                     string `json:"id"`
 	MinimumLauncherVersion int    `json:"minimumLauncherVersion"`
-}
-
-type libRule struct {
-	Action string `json:"action"`
-	OS     struct {
-		Name string `json:"name"`
-	} `json:"os"`
-	Features map[string]bool `json:"features"`
-}
-
-func (r libRule) Applies() bool {
-	osName := runtime.GOOS
-	if osName == "darwin" {
-		osName = "osx"
-	}
-
-	// Features? Do not not know what to do with this. skip it
-	if len(r.Features) != 0 {
-		return false
-	}
-	// TODO: there are more rules (arch for example)
-	switch {
-	// allow with no OS allows everything
-	case r.Action == "allow" && r.OS.Name == "":
-		return true
-	// disallow with no OS blocks everything
-	case r.Action == "disallow" && r.OS.Name == "":
-		return false
-	// allow block but does not match os
-	case r.Action == "allow" && r.OS.Name != osName:
-		return false
-	// disallow block matches os
-	case r.Action == "disallow" && r.OS.Name == osName:
-		return false
-	// must match otherwise
-	default:
-		return true
-	}
 }
 
 type mcJarDownload struct {
@@ -156,5 +117,5 @@ OUTER:
 type argument struct {
 	// Value is the actual argument
 	Value stringSlice `json:"value"`
-	Rules []libRule   `json:"rules"`
+	Rules []Rule      `json:"rules"`
 }

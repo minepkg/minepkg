@@ -24,7 +24,12 @@ func (l Libraries) Required() Libraries {
 		include := true
 		for _, rule := range lib.Rules {
 			include = rule.Applies()
+			// stop checking rules if one does not apply
+			if !include {
+				break
+			}
 		}
+
 		// did some rules not apply? skip this library
 		if !include {
 			continue
@@ -61,7 +66,7 @@ type Lib struct {
 	URL string `json:"url"`
 	// Rules is a list of rules that determine whether this library should be included.
 	// If no rules are specified, the library is included by default.
-	Rules []libRule `json:"rules"`
+	Rules []Rule `json:"rules"`
 	// Natives is a map of OS names to native library names.
 	// This field is no longer used starting with 1.19
 	// Newer library versions extract the native library from a jar at runtime.
