@@ -25,9 +25,18 @@ func (r Rule) appliesFor(os string, arch string) bool {
 		os = "osx"
 	}
 
-	if arch == "amd64" {
+	if arch == "amd64" || arch == "x86_64" {
+		arch = "x64"
+	}
+
+	if arch == "386" || arch == "i386" {
 		arch = "x86"
 	}
+
+	if arch == "arm" {
+		arch = "arm32"
+	}
+
 	// note: we don't know how other platforms are named
 
 	// Features? Do not not know what to do with this. skip it

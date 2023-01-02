@@ -42,7 +42,7 @@ func (x *Credentials) GetUUID() string        { return x.MinecraftProfile.ID }
 
 func (x *Credentials) IsExpired() bool {
 	// add a minute current time for clock skew and stuff
-	return x.ExpiresAt.Before(time.Now().Add(time.Minute))
+	return x.ExpiresAt.After(time.Now().Add(time.Minute))
 }
 
 func New(httpClient *http.Client, config *oauth2.Config) *MicrosoftClient {

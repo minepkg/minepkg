@@ -69,8 +69,12 @@ func (m *Microsoft) Prompt() error {
 
 func (m *Microsoft) LaunchAuthData() (minecraft.LaunchAuthData, error) {
 	// not auth data or it is expired
-	if m.authData == nil || m.authData.IsExpired() {
-		log.Println("Refreshing MS auth data")
+	if m.authData == nil {
+		log.Println("Refreshing MS auth data (non existent)")
+		return m.refreshAuthData()
+	}
+	if m.authData.IsExpired() {
+		log.Println("Refreshing MS auth data (expired)")
 		return m.refreshAuthData()
 	}
 	// we have valid and unexpired auth data

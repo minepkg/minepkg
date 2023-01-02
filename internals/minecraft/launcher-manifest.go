@@ -104,7 +104,7 @@ OUTER:
 	for _, arg := range l.Arguments.Game {
 		for _, rule := range arg.Rules {
 			// skip here rules do not apply
-			if rule.Applies() != true {
+			if !rule.Applies() {
 				continue OUTER
 			}
 		}
