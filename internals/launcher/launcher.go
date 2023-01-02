@@ -6,12 +6,16 @@ import (
 	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/minepkg/minepkg/internals/java"
 	"github.com/minepkg/minepkg/internals/minecraft"
+	"github.com/minepkg/minepkg/internals/patch"
 )
 
 // Launcher can launch minepkg instances with CLI output
 type Launcher struct {
 	// Instance is the minepkg instance to be launched
 	Instance *instances.Instance
+
+	// Patches is a list of patches to apply to the instance
+	Patches []*patch.Patch
 
 	// MinepkgVersion is the version number of minepkg
 	MinepkgVersion string

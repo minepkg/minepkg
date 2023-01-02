@@ -41,7 +41,10 @@ var (
 
 // GetLaunchManifest returns the merged manifest for the instance
 func (i *Instance) GetLaunchManifest() (*minecraft.LaunchManifest, error) {
-	man, err := i.launchManifest()
+	if i.launchManifest != nil {
+		return i.launchManifest, nil
+	}
+	man, err := i.readLaunchManifest()
 	if err != nil {
 		return nil, err
 	}
@@ -53,6 +56,8 @@ func (i *Instance) GetLaunchManifest() (*minecraft.LaunchManifest, error) {
 		}
 		man.MergeWith(parent)
 	}
+
+	i.launchManifest = man
 	return man, nil
 }
 
@@ -338,7 +343,7 @@ func (i *Instance) gameArgs(launchManifest *minecraft.LaunchManifest, opts *Laun
 	return finalGameArgs, nil
 }
 
-func (i *Instance) launchManifest() (*minecraft.LaunchManifest, error) {
+func (i *Instance) readLaunchManifest() (*minecraft.LaunchManifest, error) {
 	lockfile := i.Lockfile
 	if lockfile == nil {
 		i.initLockfile()

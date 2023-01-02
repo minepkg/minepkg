@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"math"
 	"net"
 	"os"
@@ -18,6 +19,7 @@ import (
 	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/minepkg/minepkg/internals/launcher"
+	"github.com/minepkg/minepkg/internals/patch"
 	"github.com/minepkg/minepkg/pkg/manifest"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -43,6 +45,7 @@ Alternatively: Can be used in directories containing a minepkg.toml manifest to 
 	cmd.Flags().BoolVar(&runner.crashTest, "crashtest", false, "Stop server after it's online (can be used for testing)")
 	cmd.Flags().BoolVar(&runner.noBuild, "no-build", false, "Skip build (if any)")
 	cmd.Flags().BoolVar(&runner.clean, "clean", false, "Removes any instance data except for savegames")
+	cmd.Flags().StringArrayVar(&runner.patch, "patch", runner.patch, "Apply a patch to the instance before launching")
 	runner.overwrites = launcher.CmdOverwriteFlags(cmd.Command)
 
 	rootCmd.AddCommand(cmd.Command)
@@ -57,6 +60,7 @@ type launchRunner struct {
 	noBuild     bool
 	forceUpdate bool
 	clean       bool
+	patch       []string
 
 	overwrites *launcher.OverwriteFlags
 
@@ -137,6 +141,23 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	cliLauncher.ApplyOverWrites(l.overwrites)
+
+	// 1 minute timeout
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	// fetch patches
+	patches := make([]*patch.Patch, len(l.patch))
+	for i, patchLocation := range l.patch {
+		log.Println("Fetching patch", patchLocation)
+		p, err := patch.FetchPatch(ctx, patchLocation)
+		if err != nil {
+			return fmt.Errorf("could not fetch patch: %w", err)
+		}
+		patches[i] = p
+	}
+
+	cliLauncher.Patches = patches
 
 	if err := cliLauncher.Prepare(); err != nil {
 		return err

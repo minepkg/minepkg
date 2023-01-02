@@ -9,6 +9,7 @@ import (
 
 	"github.com/jwalton/gchalk"
 	"github.com/minepkg/minepkg/internals/commands"
+	"github.com/minepkg/minepkg/internals/minecraft"
 	"github.com/minepkg/minepkg/internals/provider"
 
 	"github.com/minepkg/minepkg/internals/api"
@@ -59,6 +60,7 @@ type Instance struct {
 	ProviderStore   *provider.Store
 
 	isFromWd                     bool
+	launchManifest               *minecraft.LaunchManifest
 	launchCmd                    string
 	lockfileNeedsRenameMigration bool
 }

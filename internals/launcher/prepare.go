@@ -12,6 +12,7 @@ import (
 	"github.com/jwalton/gchalk"
 	"github.com/minepkg/minepkg/internals/downloadmgr"
 	"github.com/minepkg/minepkg/internals/minecraft"
+	"github.com/minepkg/minepkg/internals/patch"
 	"github.com/spf13/viper"
 )
 
@@ -175,6 +176,19 @@ func (l *Launcher) PrepareMinecraft(ctx context.Context) error {
 		return fmt.Errorf("failed to get launch manifest: %w", err)
 	}
 	l.LaunchManifest = launchManifest
+
+	// Apply patches
+	if len(l.Patches) > 0 {
+		fmt.Println(pipeText.Render(gchalk.Gray("Applying patches")))
+		fmt.Print(pipeText.Render(""))
+		for _, p := range l.Patches {
+			if err := patch.PatchInstance(context.TODO(), p, *instance); err != nil {
+				return fmt.Errorf("could not apply patch \"%s\": %w", p.Name, err)
+			}
+			fmt.Print(".")
+		}
+		fmt.Println("")
+	}
 
 	// check for JAR
 	// TODO move more logic to internals
