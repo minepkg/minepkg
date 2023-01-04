@@ -171,18 +171,13 @@ func (l *Launcher) PrepareMinecraft(ctx context.Context) error {
 	mgr := downloadmgr.New()
 
 	fmt.Println(pipeText.Render(gchalk.Gray("Preparing Minecraft")))
-	launchManifest, err := instance.GetLaunchManifest()
-	if err != nil {
-		return fmt.Errorf("failed to get launch manifest: %w", err)
-	}
-	l.LaunchManifest = launchManifest
 
 	// Apply patches
 	if len(l.Patches) > 0 {
 		fmt.Println(pipeText.Render(gchalk.Gray("Applying patches")))
 		fmt.Print(pipeText.Render(""))
 		for _, p := range l.Patches {
-			if err := patch.PatchInstance(context.TODO(), p, *instance); err != nil {
+			if err := patch.PatchInstance(context.TODO(), p, instance); err != nil {
 				return fmt.Errorf("could not apply patch \"%s\": %w", p.Name, err)
 			}
 			fmt.Print(".")
@@ -190,11 +185,16 @@ func (l *Launcher) PrepareMinecraft(ctx context.Context) error {
 		fmt.Println("")
 	}
 
+	launchManifest, err := instance.GetLaunchManifest()
+	if err != nil {
+		return fmt.Errorf("failed to get launch manifest: %w", err)
+	}
+
 	// check for JAR
 	// TODO move more logic to internals
-	mainJar := filepath.Join(l.Instance.VersionsDir(), l.LaunchManifest.MinecraftVersion(), l.LaunchManifest.JarName())
+	mainJar := filepath.Join(l.Instance.VersionsDir(), launchManifest.MinecraftVersion(), launchManifest.JarName())
 	if _, err := os.Stat(mainJar); os.IsNotExist(err) {
-		mgr.Add(downloadmgr.NewHTTPItem(l.LaunchManifest.Downloads.Client.URL, mainJar))
+		mgr.Add(downloadmgr.NewHTTPItem(launchManifest.Downloads.Client.URL, mainJar))
 	}
 
 	if !l.ServerMode {
@@ -233,6 +233,7 @@ func (l *Launcher) PrepareMinecraft(ctx context.Context) error {
 
 	fmt.Println(pipeText.Render(""))
 
+	l.LaunchManifest = launchManifest
 	return nil
 }
 

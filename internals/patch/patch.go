@@ -17,8 +17,6 @@ type Patch struct {
 	// Description is a description of the patch
 	Description string `json:"description"`
 
-	// For is the thing that the patch is for
-	For string `json:"for"`
 	// Patches is the list of patches
 	Patches []PatchOperation `json:"patches"`
 }
@@ -29,6 +27,7 @@ type PatchOperation struct {
 	// With are the arguments for the action
 	With json.RawMessage `json:"with"`
 
+	// instance is the instance the patch is applied to, this is set by the patcher
 	instance *instances.Instance
 }
 
@@ -41,14 +40,15 @@ type Operator interface {
 
 var (
 	Operations = map[string]Operator{
-		"removeLibraries": &RemoveLibraries{},
-		"addLibraries":    &AddLibraries{},
+		"removeLibraries":     &RemoveLibraries{},
+		"addLibraries":        &AddLibraries{},
+		"mergeLaunchManifest": &MergeLaunchManifest{},
 	}
 )
 
-func PatchInstance(ctx context.Context, patch *Patch, instance instances.Instance) error {
+func PatchInstance(ctx context.Context, patch *Patch, instance *instances.Instance) error {
 	for _, operation := range patch.Patches {
-		operation.instance = &instance
+		operation.instance = instance
 		patcher := Operations[operation.Action]
 		if patcher == nil {
 			return fmt.Errorf("unknown patcher %q", operation.Action)
