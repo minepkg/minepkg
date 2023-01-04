@@ -15,6 +15,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"syscall"
@@ -33,8 +34,8 @@ var (
 	ErrNoCredentials = errors.New("can not launch without mojang credentials")
 	// ErrNoPaidAccount is returned when an instance is launched without `MojangProfile` being set
 	ErrNoPaidAccount = errors.New("you need to buy Minecraft to launch it")
-	// ErrNoVersion is returned if no mc version was detected
-	ErrNoVersion = errors.New("could not detect minecraft version")
+	// ErrInvalidVersion is returned if no mc version was detected
+	ErrInvalidVersion = errors.New("supplied version could not be found")
 	// ErrNoJava is returned if no java runtime is available to launch
 	ErrNoJava = errors.New("no java runtime set to launch instance")
 )
@@ -44,6 +45,9 @@ func (i *Instance) GetLaunchManifest() (*minecraft.LaunchManifest, error) {
 	if i.launchManifest != nil {
 		return i.launchManifest, nil
 	}
+
+	log.Println("Generating launch manifest")
+
 	man, err := i.readLaunchManifest()
 	if err != nil {
 		return nil, err
@@ -59,6 +63,11 @@ func (i *Instance) GetLaunchManifest() (*minecraft.LaunchManifest, error) {
 
 	i.launchManifest = man
 	return man, nil
+}
+
+// SetLaunchManifest sets the launch manifest for the instance
+func (i *Instance) SetLaunchManifest(m *minecraft.LaunchManifest) {
+	i.launchManifest = m
 }
 
 // LaunchOptions are options for launching
@@ -172,16 +181,19 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	mcJar := filepath.Join(i.VersionsDir(), launchManifest.MinecraftVersion(), launchManifest.JarName())
 	cpArgs = append(cpArgs, mcJar)
 
-	gameArgs, err := i.gameArgs(launchManifest, opts)
+	gameArgs, err := i.launchManifestArgs(launchManifest, opts, cpArgs, tmpDir)
 	if err != nil {
 		return nil, err
 	}
 
-	javaCpSeparator := ":"
-	// of course
-	if runtime.GOOS == "windows" {
-		javaCpSeparator = ";"
+	// filter out "-Xmx" args
+	filteredArgs := make([]string, 0, len(gameArgs))
+	for _, arg := range gameArgs {
+		if !strings.HasPrefix(arg, "-Xmx") {
+			filteredArgs = append(filteredArgs, arg)
+		}
 	}
+	gameArgs = filteredArgs
 
 	var maxRamMiB int
 
@@ -200,12 +212,7 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	}
 
 	cmdArgs := []string{
-		"-Djava.library.path=" + tmpDir,
-		"-Dminecraft.launcher.brand=minepkg",
-		// "-Dminecraft.launcher.version=" + "0.0.2", // TODO: implement!
 		"-Dminecraft.client.jar=" + mcJar,
-		"-cp",
-		strings.Join(cpArgs, javaCpSeparator),
 		fmt.Sprintf("-Xmx%dM", maxRamMiB),
 		"-XX:+UnlockExperimentalVMOptions",
 		"-XX:+UseG1GC",
@@ -214,7 +221,6 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 		"-XX:MaxGCPauseMillis=50",
 		"-XX:G1HeapRegionSize=32M",
 		"-XX:ErrorFile=./jvm-error.log",
-		launchManifest.MainClass,
 	}
 
 	if opts.RamMiB != 0 {
@@ -298,7 +304,15 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	return cmd, nil
 }
 
-func (i *Instance) gameArgs(launchManifest *minecraft.LaunchManifest, opts *LaunchOptions) ([]string, error) {
+// launchManifestArgs returns a slice of args came from the launch manifest
+// it replaces known variables in those args (like "game_directory") with the actual value
+func (i *Instance) launchManifestArgs(launchManifest *minecraft.LaunchManifest, opts *LaunchOptions, classPaths []string, nativesDir string) ([]string, error) {
+	javaCpSeparator := ":"
+	// of course
+	if runtime.GOOS == "windows" {
+		javaCpSeparator = ";"
+	}
+
 	gameArgs := map[string]string{
 		// the minecraft version
 		"version_name": launchManifest.MinecraftVersion(),
@@ -310,7 +324,13 @@ func (i *Instance) gameArgs(launchManifest *minecraft.LaunchManifest, opts *Laun
 		// as the minecraft version
 		"assets_index_name": launchManifest.Assets,
 		// release / snapshot … etc
-		"version_type": launchManifest.Type,
+		"version_type":        launchManifest.Type,
+		"launcher_name":       "minepkg",
+		"launcher_version":    "0.0.0",
+		"classpath":           strings.Join(classPaths, javaCpSeparator),
+		"classpath_separator": javaCpSeparator,
+		"natives_directory":   nativesDir,
+		"library_directory":   i.LibrariesDir(),
 	}
 
 	// this is not a server, we need to set some more auth data
@@ -322,24 +342,41 @@ func (i *Instance) gameArgs(launchManifest *minecraft.LaunchManifest, opts *Laun
 		gameArgs["auth_player_name"] = creds.PlayerName
 		gameArgs["auth_uuid"] = creds.UUID
 		gameArgs["auth_access_token"] = creds.AccessToken
-		gameArgs["user_type"] = "mojang" // unsure about this one (legacy mc login flag?)
+		gameArgs["user_type"] = creds.UserType
+		gameArgs["clientid"] = creds.ClientID
+
+		if creds.UserType == "msa" {
+			gameArgs["auth_xuid"] = creds.XUID
+		}
 	}
 
 	finalGameArgs := make([]string, 0, len(gameArgs)*2)
 	launchArgsTemplate := launchManifest.LaunchArgs()
-	for i := 0; i < len(launchArgsTemplate)-1; i += 2 {
-		arg := launchArgsTemplate[i]
-		// looks something like ${version_name}
-		valueTemplate := launchArgsTemplate[i+1]
-		// cut to just version_name
-		valueName := valueTemplate[2 : len(valueTemplate)-1]
 
-		// found in our args map
-		if val, ok := gameArgs[valueName]; ok {
-			// append to final args
-			finalGameArgs = append(finalGameArgs, arg, val)
-		}
+	variableRegex := regexp.MustCompile(`\$\{[a-zA-Z0-9_]+\}`)
+
+	// build string replacer out of gameArgs
+	replacerArgs := make([]string, 0, len(gameArgs)*2)
+	for k, v := range gameArgs {
+		replacerArgs = append(replacerArgs, "${"+k+"}", v)
 	}
+	replacer := strings.NewReplacer(replacerArgs...)
+
+	for _, template := range launchArgsTemplate {
+		// replace all ${var} with their value
+		replaced := replacer.Replace(template)
+
+		// check for any remaining ${var} and replace them with empty string
+		if variableRegex.MatchString(replaced) {
+			log.Println("[WARN] found unresolvable variable in launch args: " + replaced + "")
+			replaced = variableRegex.ReplaceAllString(replaced, "")
+			// TODO: filter out pairs not only the value!
+		}
+
+		// append replaced arg to finalGameArgs
+		finalGameArgs = append(finalGameArgs, replaced)
+	}
+
 	return finalGameArgs, nil
 }
 
@@ -362,7 +399,7 @@ func (i *Instance) readLaunchManifest() (*minecraft.LaunchManifest, error) {
 		// TODO: forge
 		panic("Forge is not supported")
 	default:
-		return i.getVanillaManifest(i.Manifest.Requirements.Minecraft)
+		return i.getVanillaManifest(lockfile.MinecraftVersion())
 	}
 }
 
@@ -435,7 +472,7 @@ func (i *Instance) fetchVanillaManifest(version string) (*minecraft.LaunchManife
 		}
 	}
 	if manifestURL == "" {
-		return nil, ErrNoVersion
+		return nil, ErrInvalidVersion
 	}
 
 	manifest := minecraft.LaunchManifest{}

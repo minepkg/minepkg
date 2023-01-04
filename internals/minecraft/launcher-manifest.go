@@ -49,7 +49,7 @@ type mcJarDownload struct {
 
 // MergeWith merges important properties with another manifest
 // if they are not present in the current one
-// it also merges libraries by appending them.
+// it also merges libraries, game args and jvm args by appending them.
 // This is a simple implementation. it does not merge everything and
 // does not care for duplicates in `Libraries`
 func (l *LaunchManifest) MergeWith(merge *LaunchManifest) {
@@ -72,6 +72,16 @@ func (l *LaunchManifest) MergeWith(merge *LaunchManifest) {
 
 	// hack
 	l.Downloads = merge.Downloads
+
+	// Merge launchArgs (kinda hacky)
+	if l.MinecraftArguments == "" {
+		l.MinecraftArguments = merge.MinecraftArguments
+	}
+
+	// Merge game args
+	l.Arguments.Game = append(l.Arguments.Game, merge.Arguments.Game...)
+	// Merge jvm args
+	l.Arguments.JVM = append(l.Arguments.JVM, merge.Arguments.JVM...)
 }
 
 // JarName returns this manifests jar name (for example `1.12.0.jar`)
@@ -93,13 +103,28 @@ func (l *LaunchManifest) MinecraftVersion() string {
 
 // LaunchArgs returns the launch arguments defined in the manifest as a string
 func (l *LaunchManifest) LaunchArgs() []string {
-	// easy minecraft versions before 1.13
+	args := make([]string, 0)
+
+	// minecraft versions before 1.13 and forge (?)
 	if l.MinecraftArguments != "" {
-		return strings.Split(l.MinecraftArguments, "")
+		// MinecraftArguments and Arguments are somewhat mutually exclusive
+		// so we return here
+		return strings.Split(l.MinecraftArguments, " ")
 	}
 
-	// TODO: missing jvm
-	args := make([]string, 0)
+OUTER_JVM:
+	for _, arg := range l.Arguments.JVM {
+		for _, rule := range arg.Rules {
+			// skip here rules do not apply
+			if !rule.Applies() {
+				continue OUTER_JVM
+			}
+		}
+		args = append(args, strings.Join(arg.Value, ""))
+	}
+
+	args = append(args, l.MainClass)
+
 OUTER:
 	for _, arg := range l.Arguments.Game {
 		for _, rule := range arg.Rules {
