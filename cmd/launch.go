@@ -74,10 +74,14 @@ var (
 			fmt.Sprintf("use %s to test mods", gchalk.Bold("minepkg try <modname>")),
 		},
 	}
+	vanillaManifest = manifest.New()
 )
 
 func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 	var err error
+
+	vanillaManifest.Requirements.Minecraft = "*"
+	vanillaManifest.Requirements.MinepkgCompanion = "none"
 
 	if len(args) == 0 {
 		l.instance, err = root.LocalInstance()
@@ -89,7 +93,14 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	} else {
-		l.instance, err = l.instanceFromModpack(args[0])
+		if args[0] == "vanilla" {
+			l.instance = instances.New()
+			l.instance.Manifest = vanillaManifest
+			l.instance.Directory = filepath.Join(l.instance.InstancesDir(), "vanilla")
+
+		} else {
+			l.instance, err = l.instanceFromModpack(args[0])
+		}
 		if err != nil {
 			return err
 		}
