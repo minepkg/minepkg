@@ -49,7 +49,11 @@ func (r Rule) appliesFor(os string, arch string) bool {
 		if r.OS.Name != "" && r.OS.Name != os {
 			return false
 		}
-		// TODO: check version (regex)
+
+		// TODO: check version (regex), we deny it for now
+		if r.OS.Version != "" {
+			return false
+		}
 
 		// check arch
 		if r.OS.Arch != "" && r.OS.Arch != arch {
@@ -67,6 +71,11 @@ func (r Rule) appliesFor(os string, arch string) bool {
 
 		// check arch
 		if r.OS.Arch != "" && r.OS.Arch == arch {
+			return false
+		}
+
+		// TODO: check version (regex), we deny it for now
+		if r.OS.Version != "" {
 			return false
 		}
 

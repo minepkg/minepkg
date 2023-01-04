@@ -126,7 +126,23 @@ func TestRule_appliesFor(t *testing.T) {
 			},
 			want: false,
 		},
+		{
+			name: "version should not apply (for now)",
+			fields: fields{
+				Action: "allow",
+				OS: OS{
+					Name:    "linux",
+					Version: "1.0",
+				},
+			},
+			args: args{
+				os:   "linux",
+				arch: "x86",
+			},
+			want: false,
+		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := Rule{
