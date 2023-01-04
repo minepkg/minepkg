@@ -2,6 +2,7 @@ package minecraft
 
 import (
 	"encoding/json"
+	"net/url"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -113,7 +114,11 @@ func (l *Lib) DownloadURL() string {
 	case l.Downloads.Artifact.URL != "":
 		return l.Downloads.Artifact.URL
 	case l.URL != "":
-		return l.URL + filepath.ToSlash(l.Filepath())
+		joined, err := url.JoinPath(l.URL, filepath.ToSlash(l.Filepath()))
+		if err != nil {
+			panic(err)
+		}
+		return joined
 	default:
 		return "https://libraries.minecraft.net/" + filepath.ToSlash(l.Filepath())
 	}
