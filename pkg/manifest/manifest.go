@@ -2,7 +2,7 @@
 Package manifest defines the file format that describes a mod or modpack.
 The "minepkg.toml" manifest is the way minepkg defines packages. Packages can be mods or modpacks.
 
-Learn More
+# Learn More
 
 For more details visit https://minepkg.io/docs/manifest
 */
@@ -27,7 +27,7 @@ const (
 // Manifest is a collection of data that describes a mod a modpack
 type Manifest struct {
 	// ManifestVersion specifies the format version
-	// This field is REQUIRED
+	// This field is REQUIRED, current version is 0
 	ManifestVersion int `toml:"manifestVersion" comment:"Preview of the minepkg.toml format! Could break anytime!" json:"manifestVersion"`
 	Package         struct {
 		// Type should be one of `TypeMod` ("mod") or `TypeModpack` ("modpack")
