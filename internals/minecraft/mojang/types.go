@@ -10,6 +10,8 @@ type AuthResponse struct {
 func (a *AuthResponse) GetAccessToken() string { return a.AccessToken }
 func (a *AuthResponse) GetPlayerName() string  { return a.SelectedProfile.Name }
 func (a *AuthResponse) GetUUID() string        { return a.SelectedProfile.ID }
+func (a *AuthResponse) GetXUID() string        { return "" }
+func (a *AuthResponse) GetUserType() string    { return "mojang" }
 
 // Profile is a profile that potentially can be used to launch minecraft
 type Profile struct {

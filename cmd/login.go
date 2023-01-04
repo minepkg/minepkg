@@ -15,6 +15,8 @@ import (
 	"golang.org/x/oauth2"
 )
 
+const MS_AUTH_CLIENT_ID = "056aa695-390f-4d6d-a1b6-fc52d083ccc9"
+
 func init() {
 	rootCmd.AddCommand(loginCmd)
 }
@@ -63,7 +65,7 @@ func (r *Root) useMojangAuth() *auth.Mojang {
 func (r *Root) useMicrosoftAuth() *auth.Microsoft {
 	provider := &auth.Microsoft{
 		MicrosoftClient: microsoft.New(root.HTTPClient, &oauth2.Config{
-			ClientID:     "056aa695-390f-4d6d-a1b6-fc52d083ccc9",
+			ClientID:     MS_AUTH_CLIENT_ID,
 			ClientSecret: "",
 			RedirectURL:  "http://localhost:27893",
 		}),
@@ -109,6 +111,9 @@ func (r *Root) getLaunchCredentialsOrLogin() (*instances.LaunchCredentials, erro
 		PlayerName:  creds.GetPlayerName(),
 		UUID:        creds.GetUUID(),
 		AccessToken: creds.GetAccessToken(),
+		UserType:    creds.GetUserType(),
+		XUID:        creds.GetXUID(),
+		ClientID:    MS_AUTH_CLIENT_ID,
 	}, nil
 }
 

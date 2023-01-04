@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"runtime"
 	"time"
 
 	"github.com/minepkg/minepkg/internals/credentials"
@@ -27,6 +28,7 @@ type MicrosoftCredentialStorage struct {
 	UUID          string       `json:"id"`
 	AccessToken   string       `json:"at"`
 	ExpiresAt     time.Time    `json:"exp"`
+	XUID          string       `json:"xuid,omitempty"`
 }
 
 func (m *Microsoft) Name() string {
@@ -101,6 +103,12 @@ func (m *Microsoft) persist() error {
 		AccessToken:   m.authData.MinecraftAuth.AccessToken,
 		UUID:          m.authData.MinecraftProfile.ID,
 		PlayerName:    m.authData.MinecraftProfile.Name,
+		ExpiresAt:     m.authData.ExpiresAt,
+	}
+	// TODO: we should probably find a better way to do this
+	if runtime.GOOS != "windows" {
+		trimmedData.XUID = m.authData.XUID
+		log.Println("storing additional XUID data for non windows platforms", trimmedData.XUID)
 	}
 	data, err := json.Marshal(trimmedData)
 	if err != nil {
