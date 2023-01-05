@@ -11,10 +11,10 @@ import (
 )
 
 // FindMissingLibraries returns all missing assets
-func (i *Instance) FindMissingLibraries(man *minecraft.LaunchManifest) (minecraft.Libraries, error) {
-	missing := minecraft.Libraries{}
+func (i *Instance) FindMissingLibraries(man *minecraft.LaunchManifest) ([]minecraft.Library, error) {
+	missing := make([]minecraft.Library, 0)
 
-	libs := man.Libraries.Required()
+	libs := man.RequiredLibraries()
 	globalDir := i.LibrariesDir()
 
 	for _, lib := range libs {

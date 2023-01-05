@@ -1,68 +1,23 @@
 package minecraft
 
 import (
-	"encoding/json"
 	"net/url"
 	"path/filepath"
 	"runtime"
 	"strings"
 )
 
-// Libraries as a collection of minecraft libs
-type Libraries []Lib
-
-// Required returns only the required library file (matching rules)
-func (l Libraries) Required() Libraries {
-	required := make(Libraries, 0)
-
-	osName := runtime.GOOS
-	if osName == "darwin" {
-		osName = "osx"
-	}
-
-	for _, lib := range l {
-
-		include := true
-		for _, rule := range lib.Rules {
-			include = rule.Applies()
-			// stop checking rules if one does not apply
-			if !include {
-				break
-			}
-		}
-
-		// did some rules not apply? skip this library
-		if !include {
-			continue
-		}
-
-		// copy natives. not sure if this implementation is complete
-		if len(lib.Natives) != 0 {
-			_, ok := lib.Natives[osName]
-			// skip native not available for this platform
-			if !ok {
-				continue
-			}
-		}
-
-		// not skipped. append this library
-		required = append(required, lib)
-	}
-
-	return required
-}
-
-// Lib is a minecraft library
-type Lib struct {
+// Library is a minecraft library
+type Library struct {
 	// Name can be used to identify the library, but is not required otherwise.
 	Name      string `json:"name"`
 	Downloads struct {
-		Artifact artifact `json:"artifact"`
+		Artifact Artifact `json:"artifact"`
 		// Classifiers is a list of additional artifacts.
 		// It is used to download native libraries.
 		// The `Natives` field is used to determine which classifier to use.
 		// This field is no longer used starting with 1.19
-		Classifiers map[string]artifact `json:"classifiers"`
+		Classifiers map[string]Artifact `json:"classifiers"`
 	} `json:"downloads,omitempty"`
 	URL string `json:"url"`
 	// Rules is a list of rules that determine whether this library should be included.
@@ -74,8 +29,18 @@ type Lib struct {
 	Natives map[string]string `json:"natives"`
 }
 
+// Applies returns true if every [Rule] in this argument applies (to this OS).
+func (l *Library) Applies() bool {
+	for _, rule := range l.Rules {
+		if !rule.Applies() {
+			return false
+		}
+	}
+	return true
+}
+
 // Filepath returns the target filepath for this library
-func (l *Lib) Filepath() string {
+func (l *Library) Filepath() string {
 
 	osName := runtime.GOOS
 	if osName == "darwin" {
@@ -101,7 +66,7 @@ func (l *Lib) Filepath() string {
 }
 
 // DownloadURL returns the Download URL this library
-func (l *Lib) DownloadURL() string {
+func (l *Library) DownloadURL() string {
 	osName := runtime.GOOS
 	if osName == "darwin" {
 		osName = "osx"
@@ -124,12 +89,37 @@ func (l *Lib) DownloadURL() string {
 	}
 }
 
-type artifact struct {
-	// Path of the jar file relative to the libraries folder
-	Path string `json:"path"`
-	Sha1 string `json:"sha1"`
-	// Size in bytes
-	Size json.Number `json:"size"`
-	// URL to download the jar file
-	URL string `json:"url"`
+// RequiredLibraries returns a slice of libraries that are required for the current platform
+func RequiredLibraries(libraries []Library) []Library {
+	required := make([]Library, 0)
+
+	osName := runtime.GOOS
+	if osName == "darwin" {
+		osName = "osx"
+	}
+
+	for _, lib := range libraries {
+
+		// include if all rules apply
+		include := lib.Applies()
+
+		// did some rules not apply? skip this library
+		if !include {
+			continue
+		}
+
+		// copy natives. not sure if this implementation is complete
+		if len(lib.Natives) != 0 {
+			_, ok := lib.Natives[osName]
+			// skip native not available for this platform
+			if !ok {
+				continue
+			}
+		}
+
+		// not skipped. append this library
+		required = append(required, lib)
+	}
+
+	return required
 }

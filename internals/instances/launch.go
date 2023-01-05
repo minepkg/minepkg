@@ -58,7 +58,7 @@ func (i *Instance) GetLaunchManifest() (*minecraft.LaunchManifest, error) {
 		if err != nil {
 			return nil, err
 		}
-		man.MergeWith(parent)
+		minecraft.MergeManifests(man, parent)
 	}
 
 	i.launchManifest = man
@@ -150,7 +150,7 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	// build that spooky -cp arg
 	var cpArgs []string
 
-	libs := launchManifest.Libraries.Required()
+	libs := minecraft.RequiredLibraries(launchManifest.Libraries)
 	osName := runtime.GOOS
 	if osName == "darwin" {
 		osName = "osx"
@@ -181,7 +181,9 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	mcJar := filepath.Join(i.VersionsDir(), launchManifest.MinecraftVersion(), launchManifest.JarName())
 	cpArgs = append(cpArgs, mcJar)
 
-	gameArgs, err := i.launchManifestArgs(launchManifest, opts, cpArgs, tmpDir)
+	classPath := strings.Join(cpArgs, cpSeparator())
+
+	gameArgs, err := i.launchManifestArgs(launchManifest, opts, classPath, tmpDir)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +198,6 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	gameArgs = filteredArgs
 
 	var maxRamMiB int
-
 	if opts.RamMiB == 0 {
 		sysMemMiB := float64(memory.TotalMemory()) / 1024 / 1024
 
@@ -306,11 +307,23 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 
 // launchManifestArgs returns a slice of args came from the launch manifest
 // it replaces known variables in those args (like "game_directory") with the actual value
-func (i *Instance) launchManifestArgs(launchManifest *minecraft.LaunchManifest, opts *LaunchOptions, classPaths []string, nativesDir string) ([]string, error) {
-	javaCpSeparator := ":"
-	// of course
-	if runtime.GOOS == "windows" {
-		javaCpSeparator = ";"
+func (i *Instance) launchManifestArgs(launchManifest *minecraft.LaunchManifest, opts *LaunchOptions, classPaths string, nativesDir string) ([]string, error) {
+
+	if launchManifest.MainClass == "" {
+		log.Println("[WARN] launchManifest.MainClass is empty")
+	}
+
+	if launchManifest.Type == "" {
+		log.Println("[WARN] launchManifest.type is empty")
+	}
+
+	if launchManifest.MinecraftArguments != "" {
+		log.Println("[INFO] launchManifest is using (the old style) minecraftArguments")
+	}
+
+	version := launchManifest.MinecraftVersion()
+	if version == "" {
+		return nil, errors.New("launchManifest does not contain a minecraft version (missing ID and inheritsFrom)")
 	}
 
 	gameArgs := map[string]string{
@@ -327,8 +340,8 @@ func (i *Instance) launchManifestArgs(launchManifest *minecraft.LaunchManifest, 
 		"version_type":        launchManifest.Type,
 		"launcher_name":       "minepkg",
 		"launcher_version":    "0.0.0",
-		"classpath":           strings.Join(classPaths, javaCpSeparator),
-		"classpath_separator": javaCpSeparator,
+		"classpath":           classPaths,
+		"classpath_separator": cpSeparator(),
 		"natives_directory":   nativesDir,
 		"library_directory":   i.LibrariesDir(),
 	}
@@ -350,8 +363,8 @@ func (i *Instance) launchManifestArgs(launchManifest *minecraft.LaunchManifest, 
 		}
 	}
 
-	finalGameArgs := make([]string, 0, len(gameArgs)*2)
-	launchArgsTemplate := launchManifest.LaunchArgs()
+	finalGameArgs := make([]string, 0, len(gameArgs))
+	launchArgsTemplate := launchManifest.FullArgs()
 
 	variableRegex := regexp.MustCompile(`\$\{[a-zA-Z0-9_]+\}`)
 
@@ -514,4 +527,11 @@ func (i *Instance) fetchVanillaManifest(version string) (*minecraft.LaunchManife
 	}
 
 	return &manifest, nil
+}
+
+func cpSeparator() string {
+	if runtime.GOOS == "windows" {
+		return ";"
+	}
+	return ":"
 }

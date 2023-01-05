@@ -32,7 +32,7 @@ func (r *RemoveLibraries) Apply(ctx context.Context, operation *PatchOperation) 
 	if err != nil {
 		return err
 	}
-	filtered := make([]minecraft.Lib, 0, len(launchManifest.Libraries))
+	filtered := make([]minecraft.Library, 0, len(launchManifest.Libraries))
 	for _, lib := range launchManifest.Libraries {
 		if !strings.HasPrefix(lib.Name, prefix) {
 			filtered = append(filtered, lib)
