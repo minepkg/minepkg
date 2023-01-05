@@ -163,7 +163,7 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 		log.Println("Fetching patch", patchLocation)
 		p, err := patch.FetchPatch(ctx, patchLocation)
 		if err != nil {
-			return fmt.Errorf("could not fetch patch: %w", err)
+			return fmt.Errorf("could not load patch: %w", err)
 		}
 		patches[i] = p
 	}

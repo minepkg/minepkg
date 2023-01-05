@@ -10,15 +10,11 @@ import (
 )
 
 // MergeLaunchManifest is a patch operation that merges a manifest into the instance manifest.
-type MergeLaunchManifest struct {
-	args struct {
-		Manifest *minecraft.LaunchManifest `json:"manifest,omitempty"`
-		URL      string                    `json:"url,omitempty"`
-	}
-}
+type MergeLaunchManifest struct{}
 
-func (r *MergeLaunchManifest) Args() any {
-	return &r.args
+type mergeLaunchArgs struct {
+	Manifest *minecraft.LaunchManifest `json:"manifest,omitempty"`
+	URL      string                    `json:"url,omitempty"`
 }
 
 func (r *MergeLaunchManifest) Apply(ctx context.Context, operation *PatchOperation) error {
@@ -26,15 +22,20 @@ func (r *MergeLaunchManifest) Apply(ctx context.Context, operation *PatchOperati
 		return fmt.Errorf("operation instance is nil")
 	}
 
-	manifest := r.args.Manifest
-	if r.args.URL != "" {
+	var args mergeLaunchArgs
+	if err := UnmarshalArgs(operation, &args); err != nil {
+		return err
+	}
+
+	manifest := args.Manifest
+	if args.URL != "" {
 
 		if manifest != nil {
 			return fmt.Errorf("cannot specify both manifest and url")
 		}
 
 		// fetch manifest
-		res, err := http.Get(r.args.URL)
+		res, err := http.Get(args.URL)
 		if err != nil {
 			return err
 		}
@@ -50,7 +51,7 @@ func (r *MergeLaunchManifest) Apply(ctx context.Context, operation *PatchOperati
 		return err
 	}
 
-	manifest.MergeWith(launchManifest)
-	operation.instance.SetLaunchManifest(manifest)
+	minecraft.MergeManifests(launchManifest, manifest)
+	operation.instance.SetLaunchManifest(launchManifest)
 	return nil
 }

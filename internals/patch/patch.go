@@ -2,13 +2,13 @@ package patch
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"strings"
 
 	"github.com/minepkg/minepkg/internals/instances"
+	"gopkg.in/yaml.v3"
 )
 
 type Patch struct {
@@ -25,7 +25,7 @@ type PatchOperation struct {
 	// Action is the action to perform
 	Action string `json:"action"`
 	// With are the arguments for the action
-	With json.RawMessage `json:"with"`
+	With yaml.Node `json:"with"`
 
 	// instance is the instance the patch is applied to, this is set by the patcher
 	instance *instances.Instance
@@ -34,15 +34,14 @@ type PatchOperation struct {
 type Operator interface {
 	// Apply applies the patch to the given instance
 	Apply(ctx context.Context, operation *PatchOperation) error
-	// Args returns the arguments for the patcher
-	Args() any
 }
 
 var (
 	Operations = map[string]Operator{
-		"removeLibraries":     &RemoveLibraries{},
-		"addLibraries":        &AddLibraries{},
-		"mergeLaunchManifest": &MergeLaunchManifest{},
+		"removeLibraries":      &RemoveLibraries{},
+		"addLibraries":         &AddLibraries{},
+		"mergeLaunchManifest":  &MergeLaunchManifest{},
+		"mergeMinepkgManifest": &MergeMinepkgManifest{},
 	}
 )
 
@@ -52,10 +51,6 @@ func PatchInstance(ctx context.Context, patch *Patch, instance *instances.Instan
 		patcher := Operations[operation.Action]
 		if patcher == nil {
 			return fmt.Errorf("unknown patcher %q", operation.Action)
-		}
-
-		if err := json.Unmarshal(operation.With, patcher.Args()); err != nil {
-			return fmt.Errorf("failed to unmarshal patcher arguments: %w", err)
 		}
 
 		if err := patcher.Apply(ctx, &operation); err != nil {
@@ -91,7 +86,7 @@ func FetchPatchFromURL(ctx context.Context, url string) (*Patch, error) {
 	}
 
 	var patch Patch
-	if err := json.NewDecoder(response.Body).Decode(&patch); err != nil {
+	if err := yaml.NewDecoder(response.Body).Decode(&patch); err != nil {
 		return nil, err
 	}
 
@@ -108,9 +103,16 @@ func FetchPatchFromFile(ctx context.Context, path string) (*Patch, error) {
 	defer file.Close()
 
 	var patch Patch
-	if err := json.NewDecoder(file).Decode(&patch); err != nil {
+	if err := yaml.NewDecoder(file).Decode(&patch); err != nil {
 		return nil, err
 	}
 
 	return &patch, nil
+}
+
+func UnmarshalArgs(op *PatchOperation, args any) error {
+	if err := op.With.Decode(args); err != nil {
+		return fmt.Errorf("failed to unmarshal patcher arguments: %w", err)
+	}
+	return nil
 }

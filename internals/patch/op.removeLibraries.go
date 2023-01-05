@@ -8,14 +8,10 @@ import (
 	"github.com/minepkg/minepkg/internals/minecraft"
 )
 
-type RemoveLibraries struct {
-	args struct {
-		Prefix string `json:"prefix"`
-	}
-}
+type RemoveLibraries struct{}
 
-func (r *RemoveLibraries) Args() any {
-	return &r.args
+type removeLibrariesArgs struct {
+	Prefix string `json:"prefix"`
 }
 
 func (r *RemoveLibraries) Apply(ctx context.Context, operation *PatchOperation) error {
@@ -23,7 +19,12 @@ func (r *RemoveLibraries) Apply(ctx context.Context, operation *PatchOperation) 
 		return fmt.Errorf("operation instance is nil")
 	}
 
-	prefix := r.args.Prefix
+	var args removeLibrariesArgs
+	if err := UnmarshalArgs(operation, &args); err != nil {
+		return err
+	}
+
+	prefix := args.Prefix
 	if prefix == "" {
 		return fmt.Errorf("prefix is empty")
 	}

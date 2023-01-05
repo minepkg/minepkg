@@ -7,14 +7,10 @@ import (
 	"github.com/minepkg/minepkg/internals/minecraft"
 )
 
-type AddLibraries struct {
-	args struct {
-		Libraries []minecraft.Lib `json:"libraries"`
-	}
-}
+type AddLibraries struct{}
 
-func (r *AddLibraries) Args() any {
-	return &r.args
+type addLibrariesArgs struct {
+	Libraries []minecraft.Library `json:"libraries"`
 }
 
 func (r *AddLibraries) Apply(ctx context.Context, operation *PatchOperation) error {
@@ -22,7 +18,12 @@ func (r *AddLibraries) Apply(ctx context.Context, operation *PatchOperation) err
 		return fmt.Errorf("operation instance is nil")
 	}
 
-	libraries := r.args.Libraries
+	var args addLibrariesArgs
+	if err := UnmarshalArgs(operation, &args); err != nil {
+		return err
+	}
+
+	libraries := args.Libraries
 
 	launchManifest, err := operation.instance.GetLaunchManifest()
 	if err != nil {
