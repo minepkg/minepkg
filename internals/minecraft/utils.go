@@ -28,9 +28,6 @@ func (w *stringSlice) UnmarshalJSON(data []byte) (err error) {
 	return nil
 }
 
-// // StringArgument is an argument that can be unmarshalled from an argument object or a string
-// type StringArgument struct{ Argument }
-
 // UnmarshalJSON is needed because argument sometimes is a string
 func (a *Argument) UnmarshalJSON(data []byte) (err error) {
 	var arg Argument

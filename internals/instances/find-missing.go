@@ -14,7 +14,7 @@ import (
 func (i *Instance) FindMissingLibraries(man *minecraft.LaunchManifest) ([]minecraft.Library, error) {
 	missing := make([]minecraft.Library, 0)
 
-	libs := man.RequiredLibraries()
+	libs := minecraft.RequiredLibraries(man.Libraries)
 	globalDir := i.LibrariesDir()
 
 	for _, lib := range libs {

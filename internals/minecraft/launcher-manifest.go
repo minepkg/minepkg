@@ -9,25 +9,45 @@ import (
 const SupportedLauncherVersion = 21
 
 // LaunchManifest is a version.json manifest that is used to launch minecraft instances
+// Example files:
+//   - Index: https://launchermeta.mojang.com/mc/game/version_manifest.json
+//   - Old format: https://launchermeta.mojang.com/v1/packages/cb32af124abf1bc87c38b788926b3e592126a77c/1.9.1.json
+//   - New format: https://piston-meta.mojang.com/v1/packages/6607feafdb2f96baad9314f207277730421a8e76/1.19.3.json
 type LaunchManifest struct {
 	// MinecraftArguments are used before 1.13 (?)
+	// It is a string that only contains the arguments to be passed to Minecraft (no JVM arguments).
+	// It is replaced by the Arguments field in 1.13
 	MinecraftArguments string `json:"minecraftArguments"`
-	// Arguments is the new (complicated) system
+	// Arguments is an object that contains the arguments to be passed to Minecraft and the JVM.
+	// It is used in 1.13 and newer.
 	Arguments *Arguments `json:"arguments,omitempty"`
-	// MainClass is the main class to launch (eg. net.minecraft.client.main.Main) – usually overwritten by a loader like fabric
+	// MainClass is the main class to launch (eg. net.minecraft.client.main.Main) – modded versions (like fabric) usually override this
 	MainClass string `json:"mainClass"`
+
+	// Downloads contains the client and server artifacts (jar files)
+	// Newer versions also contain the mappings txt files (client_mappings and server_mappings)
 	Downloads *struct {
-		Client Artifact `json:"client"`
-		Server Artifact `json:"server"`
+		// Client is the main client jar file ("minecraft.jar")
+		Client         Artifact `json:"client"`
+		Server         Artifact `json:"server"`
+		ClientMappings Artifact `json:"client_mappings,omitempty"`
+		ServerMappings Artifact `json:"server_mappings,omitempty"`
 	} `json:"downloads"`
-	Libraries   []Library `json:"libraries"`
+	// Libraries is a list of libraries that are required to launch the game.
+	// They need to be downloaded and added to the classpath.
+	// Libraries can have rules that are used to determine if they should be applied.
+	Libraries []Library `json:"libraries"`
+
+	// JavaVersion is the version of the Java Runtime that is required to launch the game.
 	JavaVersion *struct {
-		Component    string `json:"component"`    // "java-runtime-beta" currently not used
-		MajorVersion int    `json:"majorVersion"` // number like 16 or 17
+		Component    string `json:"component"`    // The official launcher uses these names (they are not that useful)
+		MajorVersion int    `json:"majorVersion"` // Java Version number required (eg. 16, 17)
 	} `json:"javaVersion"`
-	Type       string `json:"type"`
-	Jar        string `json:"jar"`
-	Assets     string `json:"assets"`
+	// Assets is the ID of the assets index (eg. 1.16)
+	Assets string `json:"assets"`
+	// AssetIndex is some metadata about the assets index file
+	// The assets index is a json file that contains a list of all assets (textures, sounds, etc.)
+	// The "URL" can be fetched and unmarshalled into an AssetIndex struct
 	AssetIndex struct {
 		ID        string `json:"id"`
 		Sha1      string `json:"sha1"`
@@ -35,9 +55,18 @@ type LaunchManifest struct {
 		TotalSize int    `json:"totalSize"`
 		URL       string `json:"url"`
 	} `json:"assetIndex,omitempty"`
-	InheritsFrom           string `json:"inheritsFrom"`
-	ID                     string `json:"id"`
-	MinimumLauncherVersion int    `json:"minimumLauncherVersion"`
+
+	// ID is the version number (eg. 1.16.5)
+	ID string `json:"id"`
+	// InheritsFrom is used by modded versions to inherit from a vanilla version
+	InheritsFrom string `json:"inheritsFrom"`
+	// Type is the type of the version (eg. release, snapshot, old_alpha, old_beta)
+	Type string `json:"type"`
+	// unsure what this is, might be a modding thing
+	Jar string `json:"jar"`
+	// MinimumLauncherVersion is the minimum launcher version required to launch this version.
+	// This indicates the version of the launch manifest.
+	MinimumLauncherVersion int `json:"minimumLauncherVersion"`
 }
 
 type Arguments struct {
@@ -127,10 +156,11 @@ func (l *LaunchManifest) GameArgs() []string {
 	return args
 }
 
-// FullArgs returns the launch arguments defined in the manifest as a string slice
-// this is a concatenation of JVMArgs, MainClass and GameArgs
-// uses DefaultJVMArgs() if no JVMArgs are defined.
-// These args should be able to launch the game after replacing variables.
+// FullArgs returns the launch arguments defined in the manifest as a string slice.
+// This is a concatenation of [LaunchManifest.JVMArgs] the MainClass and [LaunchManifest.GameArgs].
+// Uses [FallbackJVMArgs] if no JVM Arguments are defined in this manifest (in "LaunchManifest.Arguments.JVM").
+//
+// These arguments should be able to launch the game after replacing variables when launched with a java executable.
 func (l *LaunchManifest) FullArgs() []string {
 	jvmArgs := l.JVMArgs()
 	if len(jvmArgs) == 0 {
@@ -145,22 +175,11 @@ func (l *LaunchManifest) FullArgs() []string {
 	return args
 }
 
-// RequiredLibraries returns a slice of libraries that are required to launch the game (depending on the OS)
-func (l *LaunchManifest) RequiredLibraries() []Library {
-	libs := make([]Library, 0, len(l.Libraries))
-	for _, lib := range l.Libraries {
-		if lib.Applies() {
-			libs = append(libs, lib)
-		}
-	}
-	return libs
-}
-
 // MergeManifests merges important properties from the given manifests
 // by modifying the source manifest.
 // It merges libraries, game args and jvm args by appending them.
 // This is a simple implementation. it does not merge everything and
-// does not care for duplicates
+// does not care for duplicates.
 func MergeManifests(source *LaunchManifest, manifests ...*LaunchManifest) {
 	for _, new := range manifests {
 		source.Libraries = append(source.Libraries, new.Libraries...)
@@ -218,9 +237,9 @@ func MergeManifests(source *LaunchManifest, manifests ...*LaunchManifest) {
 	}
 }
 
-// FallbackJVMArgs returns some default jvm arguments for the given OS
-// this can be used if no jvm args are defined in the manifest
-// old versions of minecraft do not define any jvm args.
+// FallbackJVMArgs returns some default jvm arguments for the given OS.
+// This can be used if no jvm args are defined in the manifest.
+// Old versions of minecraft do not define any jvm args.
 //
 // Note that this contains the following variables that need to be replaced:
 //   - ${natives_directory}

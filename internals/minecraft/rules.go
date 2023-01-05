@@ -2,18 +2,21 @@ package minecraft
 
 import "runtime"
 
+// Rule is a rule that can be applied to an argument or library.
+// It can be used to determine if the argument or library should be applied to a specific OS.
+type Rule struct {
+	Action   string          `json:"action"`
+	OS       OS              `json:"os"`
+	Features map[string]bool `json:"features"`
+}
+
+// OS defines the feature of an OS that can be used in a [Rule] to determine if it should be applied.
 type OS struct {
 	Name string `json:"name"`
 	// Version of the os (can be a regex string)
 	Version string `json:"version"`
 	// Arch of the system
 	Arch string `json:"arch"`
-}
-
-type Rule struct {
-	Action   string          `json:"action"`
-	OS       OS              `json:"os"`
-	Features map[string]bool `json:"features"`
 }
 
 func (r Rule) Applies() bool {
