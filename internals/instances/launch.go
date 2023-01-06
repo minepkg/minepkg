@@ -228,11 +228,6 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 		cmdArgs = append([]string{fmt.Sprintf("-Xms%dM", opts.RamMiB)}, cmdArgs...)
 	}
 
-	// HACK: prepend this so macos does not crash
-	if runtime.GOOS == "darwin" {
-		cmdArgs = append([]string{"-XstartOnFirstThread"}, cmdArgs...)
-	}
-
 	if !opts.Server {
 		cmdArgs = append(cmdArgs, gameArgs...)
 	} else {
@@ -451,6 +446,7 @@ func (i *Instance) fetchFabricManifest(lock *manifest.FabricLock) (*minecraft.La
 		url.QueryEscape(minecraft),
 		url.QueryEscape(loader),
 	)
+	log.Println("Fetching fabric manifest from", profileURL)
 	res, err := http.Get(profileURL)
 	if err != nil {
 		return nil, err

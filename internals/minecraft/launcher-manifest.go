@@ -1,6 +1,7 @@
 package minecraft
 
 import (
+	"encoding/json"
 	"runtime"
 	"strings"
 )
@@ -85,7 +86,9 @@ type Arguments struct {
 //			"os": { "arch": "x86" }
 //		}]
 //	}
-type Argument struct {
+type Argument struct{ ActualArgument }
+
+type ActualArgument struct {
 	// Value is the actual argument
 	Value stringSlice `json:"value"`
 	Rules []Rule      `json:"rules"`
@@ -99,6 +102,32 @@ func (a *Argument) Applies() bool {
 		}
 	}
 	return true
+}
+
+// UnmarshalJSON is needed because argument sometimes is a string
+func (a *Argument) UnmarshalJSON(data []byte) (err error) {
+	// looks like an object
+	if string(data[0]) == "{" {
+		// unmarshal ignoring the UnmarshalJSON method
+
+		err := json.Unmarshal(data, &a.ActualArgument)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	// looks like a string, wrap it in an argument object
+	var str string
+	err = json.Unmarshal(data, &str)
+	if err != nil {
+		return err
+	}
+
+	// set it as the value
+	a.ActualArgument.Value = []string{str}
+	return nil
 }
 
 // JarName returns this manifests jar name (for example `1.12.0.jar`)
@@ -193,10 +222,6 @@ func MergeManifests(source *LaunchManifest, manifests ...*LaunchManifest) {
 			source.AssetIndex = new.AssetIndex
 		}
 
-		if new.Arguments != nil && len(new.Arguments.Game) != 0 {
-			source.Arguments = new.Arguments
-		}
-
 		if new.Type != "" {
 			source.Type = new.Type
 		}
@@ -252,8 +277,6 @@ func FallbackJVMArgs(os string) []string {
 		"-Djava.library.path=${natives_directory}",
 		"-Dminecraft.launcher.brand=${launcher_name}",
 		"-Dminecraft.launcher.version=${launcher_version}",
-		"-cp",
-		"${classpath}",
 	}
 
 	if os == "windows" {
@@ -263,6 +286,8 @@ func FallbackJVMArgs(os string) []string {
 	if os == "darwin" {
 		args = append(args, "-XstartOnFirstThread")
 	}
+
+	args = append(args, "-cp", "${classpath}")
 
 	return args
 }
