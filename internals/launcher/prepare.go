@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -183,6 +185,27 @@ func (l *Launcher) PrepareMinecraft(ctx context.Context) error {
 			fmt.Print(".")
 		}
 		fmt.Println("")
+	}
+
+	// We patch lwjgl for non-amd64 archs
+	lgwlSetting := viper.GetString("LWJGL")
+	if (runtime.GOARCH != "amd64" && lgwlSetting != "inherit") || lgwlSetting == "patched" {
+		log.Println("Patching in custom compatible lwjgl version")
+
+		// TODO: cache
+		lwjglPatch, err := patch.FetchPatchFromURL(
+			context.TODO(),
+			"https://raw.githubusercontent.com/minepkg/minepkg/main/assets/patches/v1/latest-lwjgl.yaml",
+		)
+		if err != nil {
+			return fmt.Errorf("could not fetch lwjgl patch: %w", err)
+		}
+
+		if err := patch.PatchInstance(context.TODO(), lwjglPatch, instance); err != nil {
+			return fmt.Errorf("could not apply lwjgl patch \"%s\": %w", lwjglPatch.Name, err)
+		}
+	} else {
+		log.Println("Using inherited lwjgl")
 	}
 
 	launchManifest, err := instance.GetLaunchManifest()
