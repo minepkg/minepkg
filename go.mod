@@ -23,7 +23,7 @@ require (
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.13.0
 	github.com/stoewer/go-strcase v1.2.0
-	github.com/zalando/go-keyring v0.2.1
+	github.com/zalando/go-keyring v0.2.2
 	golang.org/x/oauth2 v0.1.0
 	golang.org/x/time v0.1.0
 )
@@ -105,5 +105,3 @@ require (
 )
 
 go 1.18
-
-replace github.com/zalando/go-keyring v0.2.1 => github.com/fiws/go-keyring v0.0.0-20221010191512-5b6827277d3b
