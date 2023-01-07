@@ -13,8 +13,8 @@ func init() {
 var completionCmd = &cobra.Command{
 	Hidden:                true,
 	DisableFlagsInUseLine: true,
-	Use:                   "completion <bash|zsh|fish|powershell>",
-	Args:                  cobra.ExactValidArgs(1),
+	Use:                   "completion [bash|zsh|fish|powershell]",
+	Args:                  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 	ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
 	Short:                 "Output shell completion code for bash or zsh. Defaults to bash",
 	Long: `To load completion:
@@ -39,13 +39,12 @@ Oh-my-zsh:
 Zsh:
 
   # If shell completion is not already enabled in your environment,
-  # you will need to enable it.  You can execute the following once:
+  # you will need to enable it. To to that run the following once:
 
   echo "autoload -U compinit; compinit" >> ~/.zshrc
 
-  # To load completions for each session, execute once:
-  minepkg completion zsh > "${fpath[1]}/_minepkg"
-
+  # Add this to your .zshrc file:
+  source <(minepkg completion zsh)
   # You will need to start a new shell for this setup to take effect.
 
 fish:
@@ -68,7 +67,10 @@ PowerShell:
 		case "bash":
 			cmd.Root().GenBashCompletion(os.Stdout)
 		case "zsh":
+			// make this loadable
+			os.Stdout.WriteString("#compdef minepkg\ncompdef _minepkg minepkg\n")
 			cmd.Root().GenZshCompletion(os.Stdout)
+
 		case "fish":
 			cmd.Root().GenFishCompletion(os.Stdout, true)
 		case "powershell":
