@@ -17,6 +17,7 @@ import (
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/downloadmgr"
 	"github.com/minepkg/minepkg/internals/globals"
+	"github.com/minepkg/minepkg/internals/utils"
 )
 
 func (i *installRunner) installFromMinepkg(mods []string) error {
@@ -177,7 +178,7 @@ func searchFallback(ctx context.Context, name string) *api.Project {
 
 	selectable := make([]string, len(filtered))
 	for i, mod := range filtered {
-		selectable[i] = fmt.Sprintf("%s (%v Downloads)", mod.Name, HumanUint32(mod.Stats.TotalDownloads))
+		selectable[i] = fmt.Sprintf("%s (%v Downloads)", mod.Name, utils.HumanInteger(mod.Stats.TotalDownloads))
 	}
 
 	prompt := promptui.Select{

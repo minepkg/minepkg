@@ -16,19 +16,6 @@ type MinepkgMapping struct {
 	Modpack  string `json:"modpack"`
 }
 
-// HumanUint32 returns the number in a human readable format
-func HumanUint32(num uint32) string {
-	switch {
-	case num >= 1000000000:
-		return fmt.Sprintf("%v B", num/1000000000)
-	case num >= 1000000:
-		return fmt.Sprintf("%v M", num/1000000)
-	case num >= 1000:
-		return fmt.Sprintf("%v K", num/1000)
-	}
-	return fmt.Sprintf("%v", num)
-}
-
 // CopyFile copies a file from src to dst. If src and dst files exist, and are
 // the same, then return success. Otherwise, attempt to create a hard link
 // between the two files. If that fail, copy the file contents from src to dst.

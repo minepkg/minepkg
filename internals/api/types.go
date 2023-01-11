@@ -31,13 +31,22 @@ type Project struct {
 		Source   string `json:"source,omitempty"`
 		Homepage string `json:"homepage,omitempty"`
 	} `json:"links,omitempty"`
-	Stats      *ProjectStats `json:"stats,omitempty"`
-	Unofficial bool          `json:"unofficial,omitempty"`
+	Stats struct {
+		TotalDownloads uint32 `json:"totalDownloads"`
+	} `json:"stats,omitempty"`
+	Unofficial bool `json:"unofficial,omitempty"`
 }
 
-// ProjectStats contains statistics for a project
 type ProjectStats struct {
-	TotalDownloads uint32 `json:"totalDownloads"`
+	Summary struct {
+		TotalDownloads int `json:"totalDownloads"`
+		Releases       int `json:"releases"`
+		Likes          int `json:"likes"`
+	} `json:"summary"`
+	Downloads []struct {
+		Downloads int       `json:"downloads"`
+		Date      time.Time `json:"date"`
+	} `json:"downloads"`
 }
 
 // ReleaseMeta is metadata for a release. found in the `meta` field
@@ -97,7 +106,6 @@ type Requirements struct {
 
 // Dependency in verbose form
 type Dependency struct {
-	client *MinepkgAPI
 	// Provider is only minepkg for now. Kept for future extensions
 	Provider string `json:"provider"`
 	// Name is the name of the package (eg. storage-drawers)

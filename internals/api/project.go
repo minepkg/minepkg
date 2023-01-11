@@ -90,6 +90,24 @@ func (m *MinepkgAPI) CreateProject(p *Project) (*Project, error) {
 	return &project, nil
 }
 
+// GetProjectStats gets the statistics for a project
+func (m *MinepkgAPI) GetProjectStats(ctx context.Context, name string) (*ProjectStats, error) {
+	res, err := m.get(ctx, m.APIUrl+"/projects/"+name+"/stats")
+	if err != nil {
+		return nil, err
+	}
+	if err := checkResponse(res); err != nil {
+		return nil, err
+	}
+
+	stats := ProjectStats{}
+	if err := parseJSON(res, &stats); err != nil {
+		return nil, err
+	}
+
+	return &stats, nil
+}
+
 // CreateRelease will create a new release
 func (p *Project) CreateRelease(ctx context.Context, r *Release) (*Release, error) {
 	res, err := p.client.postJSON(ctx, p.client.APIUrl+"/releases", r)
