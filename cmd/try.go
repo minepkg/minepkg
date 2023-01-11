@@ -11,7 +11,6 @@ import (
 
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/commands"
-	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/minepkg/minepkg/internals/launcher"
 	"github.com/minepkg/minepkg/pkg/manifest"
@@ -54,7 +53,7 @@ type tryRunner struct {
 }
 
 func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
-	apiClient := globals.ApiClient
+	apiClient := root.MinepkgAPI
 
 	tempDir, err := ioutil.TempDir("", args[0])
 	wd, _ := os.Getwd()

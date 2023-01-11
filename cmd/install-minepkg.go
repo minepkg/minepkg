@@ -16,13 +16,12 @@ import (
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/downloadmgr"
-	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/utils"
 )
 
 func (i *installRunner) installFromMinepkg(mods []string) error {
 	instance := i.instance
-	apiClient := globals.ApiClient
+	apiClient := root.MinepkgAPI
 
 	task := logger.NewTask(3)
 	task.Step("📚", "Finding packages")
@@ -146,7 +145,7 @@ func (i *installRunner) installFromMinepkg(mods []string) error {
 }
 
 func searchFallback(ctx context.Context, name string) *api.Project {
-	projects, _ := globals.ApiClient.GetProjects(ctx, &api.GetProjectsQuery{})
+	projects, _ := root.MinepkgAPI.GetProjects(ctx, &api.GetProjectsQuery{})
 
 	filtered := make([]api.Project, 0, 10)
 	for _, p := range projects {

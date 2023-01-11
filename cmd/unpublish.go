@@ -10,7 +10,6 @@ import (
 	"github.com/erikgeiser/promptkit/confirmation"
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/commands"
-	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/minepkg/minepkg/internals/pkgid"
 	"github.com/minepkg/minepkg/pkg/manifest"
@@ -42,7 +41,7 @@ type unpublishRunner struct {
 }
 
 func (p *unpublishRunner) RunE(cmd *cobra.Command, args []string) error {
-	apiClient := globals.ApiClient
+	apiClient := root.MinepkgAPI
 	// nonInteractive := viper.GetBool("nonInteractive")
 
 	var mID *pkgid.ID
@@ -109,7 +108,7 @@ func (p *unpublishRunner) RunE(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if !globals.ApiClient.HasCredentials() {
+	if !apiClient.HasCredentials() {
 		logger.Warn("You need to login to minepkg.io first")
 		runner := &mpkgLoginRunner{}
 		runner.RunE(cmd, args)

@@ -11,15 +11,16 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/manifoldco/promptui"
+	"github.com/minepkg/minepkg/internals/cmdlog"
 	"github.com/minepkg/minepkg/internals/commands"
-	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/utils"
 	"github.com/minepkg/minepkg/pkg/manifest"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-var logger = globals.Logger
+var logger = cmdlog.DefaultLogger
+
 var projectName = regexp.MustCompile(`^([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])$`)
 
 func New() *cobra.Command {
@@ -43,7 +44,7 @@ type initRunner struct {
 
 func (i *initRunner) RunE(cmd *cobra.Command, args []string) error {
 	if _, err := ioutil.ReadFile("./minepkg.toml"); err == nil && !i.force {
-		logger.Fail("This directory already contains a minepkg.toml. Use --force to overwrite it")
+		return fmt.Errorf("this directory already contains a minepkg.toml. Use --force to overwrite it")
 	}
 
 	man := defaultManifest()

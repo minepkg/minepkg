@@ -17,7 +17,6 @@ import (
 	"github.com/erikgeiser/promptkit/confirmation"
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/commands"
-	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/minepkg/minepkg/pkg/manifest"
 	"github.com/spf13/cobra"
@@ -54,7 +53,7 @@ type publishRunner struct {
 }
 
 func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
-	apiClient := globals.ApiClient
+	apiClient := root.MinepkgAPI
 	nonInteractive := viper.GetBool("nonInteractive")
 
 	tasks := logger.NewTask(3)
@@ -73,7 +72,7 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	tasks.Log("Checking Authentication")
-	if !globals.ApiClient.HasCredentials() {
+	if !apiClient.HasCredentials() {
 		logger.Warn("You need to login to minepkg.io first")
 		runner := &mpkgLoginRunner{}
 		runner.RunE(cmd, args)

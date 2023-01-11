@@ -7,7 +7,6 @@ import (
 	"github.com/mattn/go-isatty"
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/commands"
-	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/spf13/cobra"
 )
 
@@ -50,7 +49,7 @@ func (i *mpkgLoginRunner) RunE(cmd *cobra.Command, args []string) error {
 		Scopes:       []string{"offline", "full_access"},
 	}
 
-	token := globals.ApiClient.OAuthLogin(&oAuthConfig)
+	token := root.MinepkgAPI.OAuthLogin(&oAuthConfig)
 
 	if err := root.setMinepkgAuth(token); err != nil {
 		return err

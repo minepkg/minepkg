@@ -16,7 +16,6 @@ import (
 	"github.com/jwalton/gchalk"
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/commands"
-	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/minepkg/minepkg/internals/launcher"
 	"github.com/minepkg/minepkg/internals/patch"
@@ -292,7 +291,7 @@ func crashTest() error {
 }
 
 func (l *launchRunner) instanceFromModpack(modpack string) (*instances.Instance, error) {
-	apiClient := globals.ApiClient
+	apiClient := root.MinepkgAPI
 
 	instance := instances.New()
 	instance.MinepkgAPI = apiClient

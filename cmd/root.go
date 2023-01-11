@@ -21,7 +21,6 @@ import (
 	"github.com/minepkg/minepkg/internals/cmdlog"
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/credentials"
-	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/minepkg/minepkg/internals/ownhttp"
 	"github.com/minepkg/minepkg/internals/provider"
@@ -68,7 +67,7 @@ func newRoot() *Root {
 	return &Root{
 		HTTPClient:     http,
 		MinepkgAPI:     api.NewWithClient(http),
-		logger:         globals.Logger,
+		logger:         cmdlog.DefaultLogger,
 		NonInteractive: false,
 		ProviderStore:  provider.NewStore(providers),
 	}
@@ -77,8 +76,7 @@ func newRoot() *Root {
 var root = newRoot()
 
 func (r *Root) setMinepkgAuth(token *oauth2.Token) error {
-	// TODO: no use of globals!
-	globals.ApiClient.JWT = token.AccessToken
+	root.MinepkgAPI.JWT = token.AccessToken
 	return r.minepkgAuthStore.Set(token)
 }
 
@@ -114,7 +112,7 @@ func (r *Root) LocalInstance() (*instances.Instance, error) {
 	if err != nil {
 		return nil, err
 	}
-	instance.MinepkgAPI = globals.ApiClient
+	instance.MinepkgAPI = root.MinepkgAPI
 	instance.ProviderStore = r.ProviderStore
 
 	return instance, err
@@ -227,7 +225,7 @@ func initConfig() {
 
 	if viper.GetString("apiUrl") != "" {
 		logger.Warn("NOT using default minepkg API URL: " + viper.GetString("apiUrl"))
-		globals.ApiClient.APIUrl = viper.GetString("apiUrl")
+		root.MinepkgAPI.APIUrl = viper.GetString("apiUrl")
 	}
 
 	homeConfigs, err := os.UserConfigDir()
@@ -238,7 +236,7 @@ func initConfig() {
 	root.globalDir = filepath.Join(homeConfigs, "minepkg")
 	root.minecraftAuthStore = credentials.New(root.globalDir, "minecraft_auth")
 	root.NonInteractive = viper.GetBool("nonInteractive")
-	parsedUrl, err := url.Parse(globals.ApiClient.APIUrl)
+	parsedUrl, err := url.Parse(root.MinepkgAPI.APIUrl)
 	if err != nil {
 		panic(fmt.Errorf("invalid minepkg API URL: %w", err))
 	}
@@ -257,13 +255,13 @@ func initConfig() {
 
 	if minepkgAuth != nil {
 		log.Println("Using minepkg JWT")
-		globals.ApiClient.JWT = minepkgAuth.AccessToken
+		root.MinepkgAPI.JWT = minepkgAuth.AccessToken
 	} else {
 		log.Println("No minepkg JWT found")
 	}
 
 	if apiKey != "" {
-		globals.ApiClient.APIKey = apiKey
+		root.MinepkgAPI.APIKey = apiKey
 		fmt.Println("Using MINEPKG_API_KEY for authentication")
 	}
 }

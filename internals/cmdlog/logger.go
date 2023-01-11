@@ -10,6 +10,8 @@ import (
 	"github.com/jwalton/gchalk"
 )
 
+var DefaultLogger = New()
+
 // Logger logs pretty stuff to the console
 type Logger struct {
 	emojis    bool

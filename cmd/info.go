@@ -1,4 +1,4 @@
-package dev
+package cmd
 
 import (
 	"context"
@@ -11,7 +11,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/commands"
-	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/minepkg/minepkg/internals/utils"
 	"github.com/minepkg/minepkg/pkg/manifest"
@@ -32,13 +31,13 @@ func init() {
 	cmd.Flags().Bool("combined", false, "Output Combined manifest & lockfile")
 	cmd.Flags().Bool("json", false, "Output json")
 
-	SubCmd.AddCommand(cmd.Command)
+	rootCmd.AddCommand(cmd.Command)
 }
 
 type infoRunner struct{}
 
 func (i *infoRunner) RunE(cmd *cobra.Command, args []string) error {
-	apiClient := globals.ApiClient
+	apiClient := root.MinepkgAPI
 
 	if len(args) == 0 {
 		instance, err := instances.NewFromWd()

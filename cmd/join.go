@@ -14,7 +14,6 @@ import (
 	"github.com/erikgeiser/promptkit/confirmation"
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/commands"
-	"github.com/minepkg/minepkg/internals/globals"
 	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/minepkg/minepkg/internals/launcher"
 	"github.com/minepkg/minepkg/pkg/manifest"
@@ -74,7 +73,7 @@ func (j *joinRunner) RunE(cmd *cobra.Command, args []string) error {
 	// looks like we can join this server, so we start initializing the instance stuff here
 	instance := instances.New()
 	instance.Lockfile = manifest.NewLockfile()
-	instance.MinepkgAPI = globals.ApiClient
+	instance.MinepkgAPI = root.MinepkgAPI
 	instance.ProviderStore = root.ProviderStore
 
 	instanceDir := filepath.Join(instance.InstancesDir(), "server."+host+"."+resolvedModpack.Package.Name+"."+resolvedModpack.Package.Platform)
@@ -183,7 +182,7 @@ func resolveViaSLP(ip string, port string) *api.Release {
 		// raw version from minecraft slp.. might need to check that
 		Minecraft: data.Version.Name,
 	}
-	release, err := globals.ApiClient.FindRelease(context.TODO(), data.MinepkgModpack.Name, reqs)
+	release, err := root.MinepkgAPI.FindRelease(context.TODO(), data.MinepkgModpack.Name, reqs)
 	if err != nil {
 		logger.Fail("Could not fetch release: " + err.Error())
 	}
