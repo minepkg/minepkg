@@ -2,7 +2,12 @@ package modrinth
 
 import (
 	"context"
-	"fmt"
+
+	"github.com/pkg/errors"
+)
+
+var (
+	ErrProjectNotFound = errors.Wrap(ErrResourceNotFound, "project not found")
 )
 
 func (c *Client) GetProject(ctx context.Context, id string) (*Project, error) {
@@ -12,15 +17,11 @@ func (c *Client) GetProject(ctx context.Context, id string) (*Project, error) {
 		return nil, err
 	}
 
-	if res.StatusCode != 200 {
-		if res.StatusCode == 404 {
-			return nil, ErrVersionNotFound
-		}
-		return nil, fmt.Errorf("unexpected status code: %d", res.StatusCode)
-	}
-
 	var project Project
 	if err = c.decode(res, &project); err != nil {
+		if err == ErrResourceNotFound {
+			return nil, ErrProjectNotFound
+		}
 		return nil, err
 	}
 

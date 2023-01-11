@@ -3,6 +3,7 @@ package modrinth_test
 import (
 	"context"
 	"fmt"
+	"testing"
 
 	"github.com/minepkg/minepkg/internals/modrinth"
 )
@@ -47,4 +48,39 @@ func ExampleClient_GetVersionFile() {
 
 	fmt.Println(version.ID)
 	// Output: 4XRtXhtL
+}
+
+// Test project 404
+func TestNotFounds(t *testing.T) {
+	client := modrinth.New(nil)
+
+	t.Run("project", func(t *testing.T) {
+		t.Parallel()
+		_, err := client.GetProject(context.Background(), "test-case-should-never-exist-404-404-404")
+		if err != modrinth.ErrProjectNotFound {
+			t.Fatalf("expected ErrProjectNotFound, got %v", err)
+		}
+	})
+
+	t.Run("version", func(t *testing.T) {
+		t.Parallel()
+		_, err := client.GetVersion(context.Background(), "test-case-should-never-exist-404-404-404")
+		if err != modrinth.ErrVersionNotFound {
+			t.Fatalf("expected ErrVersionNotFound, got %v", err)
+		}
+	})
+
+	t.Run("file", func(t *testing.T) {
+		t.Parallel()
+		_, err := client.GetVersionFile(context.Background(), "test-case-should-never-exist-404-404-404")
+		if err != modrinth.ErrResourceNotFound {
+			t.Fatalf("expected ErrFileNotFound, got %v", err)
+		}
+
+		// hash of main.go
+		_, err = client.GetVersionFile(context.Background(), "460e9c526fdf8dce833c560e56405c8ec253401b")
+		if err != modrinth.ErrResourceNotFound {
+			t.Fatalf("expected ErrFileNotFound, got %v", err)
+		}
+	})
 }

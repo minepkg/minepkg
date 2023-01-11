@@ -77,20 +77,15 @@ func (c *Client) GetVersion(ctx context.Context, id string) (*Version, error) {
 	}
 
 	res, err := c.get(ctx, reqUrl.String())
-
 	if err != nil {
 		return nil, err
 	}
 
-	if res.StatusCode != 200 {
-		if res.StatusCode == 404 {
-			return nil, ErrVersionNotFound
-		}
-		return nil, fmt.Errorf("unexpected status code: %d", res.StatusCode)
-	}
-
 	var result Version
 	if err = c.decode(res, &result); err != nil {
+		if err == ErrResourceNotFound {
+			return nil, ErrVersionNotFound
+		}
 		return nil, err
 	}
 

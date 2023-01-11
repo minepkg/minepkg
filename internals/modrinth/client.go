@@ -15,6 +15,8 @@ const DefaultApiURL = "https://api.modrinth.com/"
 var (
 	ErrInvalidProjectIDOrSlug = errors.New("invalid project ID or slug")
 	ErrInvalidVersionID       = errors.New("invalid version ID")
+	ErrResourceNotFound       = errors.New("resource not found")
+	ErrConflict               = errors.New("conflict")
 )
 
 type Client struct {
@@ -49,12 +51,10 @@ func (c *Client) url(addedPath ...string) *url.URL {
 
 // get is just a wrapper around http.Get() with context support
 func (c *Client) get(ctx context.Context, url string) (*http.Response, error) {
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
-
-	req = req.WithContext(ctx)
 
 	return c.http.Do(req)
 }
@@ -62,7 +62,14 @@ func (c *Client) get(ctx context.Context, url string) (*http.Response, error) {
 // decode is a helper that decodes json, and checks the status code
 func (c *Client) decode(res *http.Response, v interface{}) error {
 	if res.StatusCode != 200 {
-		return fmt.Errorf("unexpected status code: %d", res.StatusCode)
+		switch res.StatusCode {
+		case 404:
+			return ErrResourceNotFound
+		case 409:
+			return ErrConflict
+		default:
+			return fmt.Errorf("unexpected status code: %d", res.StatusCode)
+		}
 	}
 
 	if err := json.NewDecoder(res.Body).Decode(v); err != nil {
