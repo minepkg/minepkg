@@ -10,6 +10,7 @@ var (
 	ErrProjectNotFound = errors.Wrap(ErrResourceNotFound, "project not found")
 )
 
+// GetProject returns the project with the given ID
 func (c *Client) GetProject(ctx context.Context, id string) (*Project, error) {
 	reqUrl := c.url("v2/project", id)
 	res, err := c.get(ctx, reqUrl.String())

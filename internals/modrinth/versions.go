@@ -3,13 +3,15 @@ package modrinth
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/url"
+
+	"github.com/pkg/errors"
 )
 
 var (
-	ErrVersionNotFound = errors.New("version not found")
+	// Is returned when a version is not found
+	ErrVersionNotFound = errors.Wrap(ErrResourceNotFound, "version not found")
 )
 
 // ListProjectVersionQuery is used to filter the results of ListProjectVersion
@@ -18,8 +20,25 @@ type ListProjectVersionQuery struct {
 	Loaders []string `json:"loaders,omitempty"`
 	// GameVersions is a list of Minecraft versions to filter by (e.g. "1.16.5", "1.17.1")
 	GameVersions []string `json:"game_versions,omitempty"`
-	// Featured is a boolean to filter by versions that are marked as "featured"
+	// Featured is a boolean to filter by versions that are marked as "featured".
+	// You'll need to pass in a reference if you want to include this field in the api request.
+	// You can use the [ListProjectVersionQuery.SetFeatured] method to easily do this.
 	Featured *bool `json:"featured,omitempty"`
+}
+
+func (l *ListProjectVersionQuery) SetLoaders(loaders []string) *ListProjectVersionQuery {
+	l.Loaders = loaders
+	return l
+}
+
+func (l *ListProjectVersionQuery) SetGameVersions(versions []string) *ListProjectVersionQuery {
+	l.GameVersions = versions
+	return l
+}
+
+func (l *ListProjectVersionQuery) SetFeatured(featured bool) *ListProjectVersionQuery {
+	l.Featured = &featured
+	return l
 }
 
 func sliceAsJson(s []string) string {
@@ -27,8 +46,8 @@ func sliceAsJson(s []string) string {
 	return string(b)
 }
 
-// queryString is a helper to convert a ListProjectVersionQuery to a query string
-func (l *ListProjectVersionQuery) queryString() string {
+// String converts this to a query string
+func (l *ListProjectVersionQuery) String() string {
 	values := url.Values{}
 	if l.Loaders != nil {
 		values.Add("loaders", sliceAsJson(l.Loaders))
@@ -51,7 +70,7 @@ func (c *Client) ListProjectVersion(ctx context.Context, idOrSlug string, query 
 	}
 
 	if query != nil {
-		reqUrl.RawQuery = query.queryString()
+		reqUrl.RawQuery = query.String()
 	}
 
 	res, err := c.get(ctx, reqUrl.String())

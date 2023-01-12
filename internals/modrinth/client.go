@@ -7,16 +7,20 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"path"
 )
 
 const DefaultApiURL = "https://api.modrinth.com/"
 
 var (
+	// An error that is returned if the provided project ID or slug is invalid
+	// currently this is only returned if it was an empty string
 	ErrInvalidProjectIDOrSlug = errors.New("invalid project ID or slug")
-	ErrInvalidVersionID       = errors.New("invalid version ID")
-	ErrResourceNotFound       = errors.New("resource not found")
-	ErrConflict               = errors.New("conflict")
+	// An error that is returned if the provided version ID is invalid
+	// currently this is only returned if it was an empty string
+	ErrInvalidVersionID = errors.New("invalid version ID")
+	// A generic error that is returned if a resource was not found
+	// Some methods return more specific errors that wrap this error (e.g. ErrProjectNotFound)
+	ErrResourceNotFound = errors.New("resource not found")
 )
 
 type Client struct {
@@ -39,14 +43,17 @@ func New(httpClient *http.Client) *Client {
 
 // url joins the addedPath to the baseURL (panics if new path can not be parsed)
 func (c *Client) url(addedPath ...string) *url.URL {
-	// TODO: use url.JoinPath() when it's available
-	u, err := url.Parse(path.Join(addedPath...))
+	joined, err := url.JoinPath(c.baseURL.String(), addedPath...)
 	if err != nil {
 		panic(err)
 	}
 
-	joined := c.baseURL.ResolveReference(u)
-	return joined
+	url, err := url.Parse(joined)
+	if err != nil {
+		panic(err)
+	}
+
+	return url
 }
 
 // get is just a wrapper around http.Get() with context support
@@ -65,8 +72,6 @@ func (c *Client) decode(res *http.Response, v interface{}) error {
 		switch res.StatusCode {
 		case 404:
 			return ErrResourceNotFound
-		case 409:
-			return ErrConflict
 		default:
 			return fmt.Errorf("unexpected status code: %d", res.StatusCode)
 		}

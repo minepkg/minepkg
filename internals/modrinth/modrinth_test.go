@@ -84,3 +84,19 @@ func TestNotFounds(t *testing.T) {
 		}
 	})
 }
+
+// Test ListProjectVersionQuery String()
+func TestQueryString(t *testing.T) {
+	t.Parallel()
+	query := modrinth.ListProjectVersionQuery{
+		Loaders:      []string{"fabric"},
+		GameVersions: []string{"1"},
+	}
+
+	result := query.String()
+	expected := "game_versions=%5B%221%22%5D&loaders=%5B%22fabric%22%5D"
+
+	if result != expected {
+		t.Fatalf("expected %s, got %s", expected, result)
+	}
+}
