@@ -67,7 +67,7 @@ func (c *Client) get(ctx context.Context, url string) (*http.Response, error) {
 }
 
 // decode is a helper that decodes json, and checks the status code
-func (c *Client) decode(res *http.Response, v interface{}) error {
+func decode(res *http.Response, v interface{}) error {
 	if res.StatusCode != 200 {
 		switch res.StatusCode {
 		case 404:

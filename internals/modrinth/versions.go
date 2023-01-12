@@ -80,7 +80,7 @@ func (c *Client) ListProjectVersion(ctx context.Context, idOrSlug string, query 
 	}
 
 	var result []Version
-	if err = c.decode(res, &result); err != nil {
+	if err = decode(res, &result); err != nil {
 		return nil, err
 	}
 
@@ -101,7 +101,7 @@ func (c *Client) GetVersion(ctx context.Context, id string) (*Version, error) {
 	}
 
 	var result Version
-	if err = c.decode(res, &result); err != nil {
+	if err = decode(res, &result); err != nil {
 		if err == ErrResourceNotFound {
 			return nil, ErrVersionNotFound
 		}
@@ -141,7 +141,7 @@ func (c *Client) GetVersionFile(ctx context.Context, hash string) (*Version, err
 	}
 
 	var result Version
-	if err = c.decode(res, &result); err != nil {
+	if err = decode(res, &result); err != nil {
 		return nil, err
 	}
 

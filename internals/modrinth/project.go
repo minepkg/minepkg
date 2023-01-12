@@ -19,7 +19,7 @@ func (c *Client) GetProject(ctx context.Context, id string) (*Project, error) {
 	}
 
 	var project Project
-	if err = c.decode(res, &project); err != nil {
+	if err = decode(res, &project); err != nil {
 		if err == ErrResourceNotFound {
 			return nil, ErrProjectNotFound
 		}
