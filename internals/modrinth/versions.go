@@ -26,16 +26,6 @@ type ListProjectVersionQuery struct {
 	Featured *bool `json:"featured,omitempty"`
 }
 
-func (l *ListProjectVersionQuery) SetLoaders(loaders []string) *ListProjectVersionQuery {
-	l.Loaders = loaders
-	return l
-}
-
-func (l *ListProjectVersionQuery) SetGameVersions(versions []string) *ListProjectVersionQuery {
-	l.GameVersions = versions
-	return l
-}
-
 func (l *ListProjectVersionQuery) SetFeatured(featured bool) *ListProjectVersionQuery {
 	l.Featured = &featured
 	return l

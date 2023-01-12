@@ -6,7 +6,7 @@ import (
 )
 
 // Project returns a Project object without fetching it from the API
-func (m *MinepkgAPI) Project(name string) *Project {
+func (m *MinepkgClient) Project(name string) *Project {
 	return &Project{
 		client: m,
 		Name:   name,
@@ -21,7 +21,7 @@ type GetProjectsQuery struct {
 }
 
 // GetProjects gets all projects matching a query
-func (m *MinepkgAPI) GetProjects(ctx context.Context, opts *GetProjectsQuery) ([]Project, error) {
+func (m *MinepkgClient) GetProjects(ctx context.Context, opts *GetProjectsQuery) ([]Project, error) {
 
 	uri, err := url.Parse(m.APIUrl + "/projects")
 	if err != nil {
@@ -42,12 +42,9 @@ func (m *MinepkgAPI) GetProjects(ctx context.Context, opts *GetProjectsQuery) ([
 	if err != nil {
 		return nil, err
 	}
-	if err := checkResponse(res); err != nil {
-		return nil, err
-	}
 
 	projects := make([]Project, 0)
-	if err := parseJSON(res, &projects); err != nil {
+	if err := decode(res, &projects); err != nil {
 		return nil, err
 	}
 
@@ -55,17 +52,14 @@ func (m *MinepkgAPI) GetProjects(ctx context.Context, opts *GetProjectsQuery) ([
 }
 
 // GetProject gets a single project
-func (m *MinepkgAPI) GetProject(ctx context.Context, name string) (*Project, error) {
+func (m *MinepkgClient) GetProject(ctx context.Context, name string) (*Project, error) {
 	res, err := m.get(ctx, m.APIUrl+"/projects/"+name)
 	if err != nil {
 		return nil, err
 	}
-	if err := checkResponse(res); err != nil {
-		return nil, err
-	}
 
 	project := Project{client: m}
-	if err := parseJSON(res, &project); err != nil {
+	if err := decode(res, &project); err != nil {
 		return nil, err
 	}
 
@@ -73,17 +67,14 @@ func (m *MinepkgAPI) GetProject(ctx context.Context, name string) (*Project, err
 }
 
 // CreateProject creates a new project
-func (m *MinepkgAPI) CreateProject(p *Project) (*Project, error) {
+func (m *MinepkgClient) CreateProject(p *Project) (*Project, error) {
 	res, err := m.postJSON(context.TODO(), m.APIUrl+"/projects", p)
 	if err != nil {
 		return nil, err
 	}
-	if err := checkResponse(res); err != nil {
-		return nil, err
-	}
 
 	project := Project{client: m}
-	if err := parseJSON(res, &project); err != nil {
+	if err := decode(res, &project); err != nil {
 		return nil, err
 	}
 
@@ -91,17 +82,14 @@ func (m *MinepkgAPI) CreateProject(p *Project) (*Project, error) {
 }
 
 // GetProjectStats gets the statistics for a project
-func (m *MinepkgAPI) GetProjectStats(ctx context.Context, name string) (*ProjectStats, error) {
+func (m *MinepkgClient) GetProjectStats(ctx context.Context, name string) (*ProjectStats, error) {
 	res, err := m.get(ctx, m.APIUrl+"/projects/"+name+"/stats")
 	if err != nil {
 		return nil, err
 	}
-	if err := checkResponse(res); err != nil {
-		return nil, err
-	}
 
 	stats := ProjectStats{}
-	if err := parseJSON(res, &stats); err != nil {
+	if err := decode(res, &stats); err != nil {
 		return nil, err
 	}
 
@@ -114,12 +102,9 @@ func (p *Project) CreateRelease(ctx context.Context, r *Release) (*Release, erro
 	if err != nil {
 		return nil, err
 	}
-	if err := checkResponse(res); err != nil {
-		return nil, err
-	}
 
 	release := Release{client: p.client}
-	if err := parseJSON(res, &release); err != nil {
+	if err := decode(res, &release); err != nil {
 		return nil, err
 	}
 	return &release, nil
@@ -135,12 +120,9 @@ func (p *Project) GetReleases(ctx context.Context, platform string) (ReleaseList
 	if err != nil {
 		return nil, err
 	}
-	if err := checkResponse(res); err != nil {
-		return nil, err
-	}
 
 	releases := make([]*Release, 0, 20)
-	if err := parseJSON(res, &releases); err != nil {
+	if err := decode(res, &releases); err != nil {
 		return nil, err
 	}
 	for _, r := range releases {

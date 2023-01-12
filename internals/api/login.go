@@ -24,7 +24,7 @@ type OAuthLoginConfig struct {
 
 // OAuthLogin opens a browser that prompts the user to authorize this app
 // and returns oauth credentials
-func (m *MinepkgAPI) OAuthLogin(c *OAuthLoginConfig) *oauth2.Token {
+func (m *MinepkgClient) OAuthLogin(c *OAuthLoginConfig) *oauth2.Token {
 
 	// ctx := context.Background()
 	conf := &oauth2.Config{

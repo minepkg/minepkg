@@ -11,7 +11,7 @@ import (
 	"github.com/minepkg/minepkg/pkg/manifest"
 )
 
-func (r *Release) decorate(c *MinepkgAPI) {
+func (r *Release) decorate(c *MinepkgClient) {
 	r.client = c
 }
 
@@ -97,13 +97,10 @@ func (r *Release) Upload(reader io.Reader, size int64) (*Release, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := checkResponse(res); err != nil {
-		return nil, err
-	}
 
 	// parse body
 	release := Release{}
-	if err := parseJSON(res, &release); err != nil {
+	if err := decode(res, &release); err != nil {
 		return nil, err
 	}
 	release.decorate(r.client)
@@ -113,17 +110,14 @@ func (r *Release) Upload(reader io.Reader, size int64) (*Release, error) {
 
 // GetRelease gets a single release from a project
 // `identifier` is a project@version string
-func (m *MinepkgAPI) GetRelease(ctx context.Context, platform string, identifier string) (*Release, error) {
+func (m *MinepkgClient) GetRelease(ctx context.Context, platform string, identifier string) (*Release, error) {
 	res, err := m.get(ctx, m.APIUrl+"/releases/"+platform+"/"+identifier)
 	if err != nil {
 		return nil, err
 	}
-	if err := checkResponse(res); err != nil {
-		return nil, err
-	}
 
 	release := Release{}
-	if err := parseJSON(res, &release); err != nil {
+	if err := decode(res, &release); err != nil {
 		return nil, err
 	}
 	release.decorate(m)
@@ -133,17 +127,14 @@ func (m *MinepkgAPI) GetRelease(ctx context.Context, platform string, identifier
 
 // DeleteRelease gets a single release from a project
 // `identifier` is a project@version string
-func (m *MinepkgAPI) DeleteRelease(ctx context.Context, platform string, identifier string) (*Release, error) {
+func (m *MinepkgClient) DeleteRelease(ctx context.Context, platform string, identifier string) (*Release, error) {
 	res, err := m.delete(ctx, m.APIUrl+"/releases/"+platform+"/"+identifier)
 	if err != nil {
 		return nil, err
 	}
-	if err := checkResponse(res); err != nil {
-		return nil, err
-	}
 
 	release := Release{}
-	if err := parseJSON(res, &release); err != nil {
+	if err := decode(res, &release); err != nil {
 		return nil, err
 	}
 
@@ -151,7 +142,7 @@ func (m *MinepkgAPI) DeleteRelease(ctx context.Context, platform string, identif
 }
 
 // GetReleaseList gets a all available releases for a project
-func (m *MinepkgAPI) GetReleaseList(ctx context.Context, project string) ([]*Release, error) {
+func (m *MinepkgClient) GetReleaseList(ctx context.Context, project string) ([]*Release, error) {
 	p := Project{client: m, Name: project}
 	return p.GetReleases(ctx, "")
 }

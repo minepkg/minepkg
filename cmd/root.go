@@ -42,7 +42,7 @@ var (
 
 type Root struct {
 	HTTPClient         *http.Client
-	MinepkgAPI         *api.MinepkgAPI
+	MinepkgAPI         *api.MinepkgClient
 	authProvider       auth.AuthProvider
 	minecraftAuthStore *credentials.Store
 	minepkgAuthStore   *credentials.Store
@@ -55,7 +55,7 @@ type Root struct {
 func newRoot() *Root {
 	http := ownhttp.New()
 
-	minepkgClient := api.NewWithClient(http)
+	minepkgClient := api.NewWithCustomHTTP(http)
 
 	providers := map[string]provider.Provider{
 		"minepkg":  &provider.MinepkgProvider{Client: minepkgClient},
@@ -66,7 +66,7 @@ func newRoot() *Root {
 
 	return &Root{
 		HTTPClient:     http,
-		MinepkgAPI:     api.NewWithClient(http),
+		MinepkgAPI:     minepkgClient,
 		logger:         cmdlog.DefaultLogger,
 		NonInteractive: false,
 		ProviderStore:  provider.NewStore(providers),

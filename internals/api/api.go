@@ -21,9 +21,9 @@ var (
 	DefaultURL = "https://api.preview.minepkg.io/v1"
 )
 
-// MinepkgAPI contains credentials and methods to talk
+// MinepkgClient contains credentials and methods to talk
 // to the minepkg api
-type MinepkgAPI struct {
+type MinepkgClient struct {
 	// HTTP is the internal http client
 	HTTP *http.Client
 	// BaseAPI is the API url used. defaults to `https://api.preview.minepkg.io/v1`
@@ -33,40 +33,37 @@ type MinepkgAPI struct {
 	User   *User
 }
 
-// New returns a new MinepkgAPI instance
-func New() *MinepkgAPI {
-	return &MinepkgAPI{
+// New returns a new MinepkgAPI client
+func New() *MinepkgClient {
+	return &MinepkgClient{
 		HTTP:   http.DefaultClient,
 		APIUrl: DefaultURL,
 	}
 }
 
-// NewWithClient returns a new MinepkgAPI instance using a custom http client
+// NewWithCustomHTTP returns a new MinepkgAPI client using a custom http client
 // supplied as a first parameter
-func NewWithClient(client *http.Client) *MinepkgAPI {
-	return &MinepkgAPI{
+func NewWithCustomHTTP(client *http.Client) *MinepkgClient {
+	return &MinepkgClient{
 		HTTP:   client,
 		APIUrl: DefaultURL,
 	}
 }
 
 // HasCredentials returns true if a jwt or api is set
-func (m *MinepkgAPI) HasCredentials() bool {
+func (m *MinepkgClient) HasCredentials() bool {
 	return m.JWT != "" || m.APIKey != ""
 }
 
-// GetAccount gets the account information
-func (m *MinepkgAPI) GetAccount(ctx context.Context) (*User, error) {
+// GetAccount gets the account information of the current user
+func (m *MinepkgClient) GetAccount(ctx context.Context) (*User, error) {
 	res, err := m.get(ctx, m.APIUrl+"/account")
 	if err != nil {
 		return nil, err
 	}
-	if err := checkResponse(res); err != nil {
-		return nil, err
-	}
 
 	user := User{}
-	if err := parseJSON(res, &user); err != nil {
+	if err := decode(res, &user); err != nil {
 		return nil, err
 	}
 
@@ -74,7 +71,7 @@ func (m *MinepkgAPI) GetAccount(ctx context.Context) (*User, error) {
 }
 
 // PutRelease uploads a new release
-func (m *MinepkgAPI) PutRelease(project string, version string, reader io.Reader) (*Release, error) {
+func (m *MinepkgClient) PutRelease(project string, version string, reader io.Reader) (*Release, error) {
 	// prepare request
 	req, err := http.NewRequest("PUT", m.APIUrl+"/projects/"+project+"@"+version, reader)
 	if err != nil {
@@ -88,13 +85,10 @@ func (m *MinepkgAPI) PutRelease(project string, version string, reader io.Reader
 	if err != nil {
 		return nil, err
 	}
-	if err := checkResponse(res); err != nil {
-		return nil, err
-	}
 
 	// parse body
 	release := Release{}
-	if err := parseJSON(res, &release); err != nil {
+	if err := decode(res, &release); err != nil {
 		return nil, err
 	}
 
@@ -102,7 +96,7 @@ func (m *MinepkgAPI) PutRelease(project string, version string, reader io.Reader
 }
 
 // PostCrashReport posts a new crash report
-func (m *MinepkgAPI) PostCrashReport(ctx context.Context, report *CrashReport) error {
+func (m *MinepkgClient) PostCrashReport(ctx context.Context, report *CrashReport) error {
 	res, err := m.postJSON(context.TODO(), m.APIUrl+"/crash-reports", report)
 	if err != nil {
 		return err
@@ -115,7 +109,7 @@ func (m *MinepkgAPI) PostCrashReport(ctx context.Context, report *CrashReport) e
 }
 
 // PostProjectMedia uploads a new image to a project
-func (m *MinepkgAPI) PostProjectMedia(ctx context.Context, project string, content io.Reader) error {
+func (m *MinepkgClient) PostProjectMedia(ctx context.Context, project string, content io.Reader) error {
 
 	req, err := http.NewRequest("POST", m.APIUrl+"/projects/"+project+"/media", content)
 	// TODO: does not have to be png.. ?
@@ -141,7 +135,7 @@ func (m *MinepkgAPI) PostProjectMedia(ctx context.Context, project string, conte
 }
 
 // get is a helper that does a GET request and also sets various things
-func (m *MinepkgAPI) get(ctx context.Context, url string) (*http.Response, error) {
+func (m *MinepkgClient) get(ctx context.Context, url string) (*http.Response, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	req = req.WithContext(ctx)
 	if err != nil {
@@ -152,9 +146,8 @@ func (m *MinepkgAPI) get(ctx context.Context, url string) (*http.Response, error
 }
 
 // delete is a helper that does a DELETE request and also sets various things
-func (m *MinepkgAPI) delete(ctx context.Context, url string) (*http.Response, error) {
-	req, err := http.NewRequest("DELETE", url, nil)
-	req = req.WithContext(ctx)
+func (m *MinepkgClient) delete(ctx context.Context, url string) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, "DELETE", url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +156,7 @@ func (m *MinepkgAPI) delete(ctx context.Context, url string) (*http.Response, er
 }
 
 // postJSON posts json
-func (m *MinepkgAPI) postJSON(ctx context.Context, url string, data interface{}) (*http.Response, error) {
+func (m *MinepkgClient) postJSON(ctx context.Context, url string, data interface{}) (*http.Response, error) {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
@@ -178,27 +171,8 @@ func (m *MinepkgAPI) postJSON(ctx context.Context, url string, data interface{})
 	return m.HTTP.Do(req)
 }
 
-func checkResponse(res *http.Response) error {
-	switch {
-	case res.StatusCode == http.StatusNotFound:
-		return ErrNotFound
-	// case res.StatusCode == http.StatusBadRequest:
-	// 	return ErrorBadRequest
-	case res.StatusCode >= 200 && res.StatusCode < 400:
-		return nil
-	case res.StatusCode >= 400:
-		minepkgErr := &MinepkgError{}
-		if err := parseJSON(res, minepkgErr); err != nil {
-			return errors.New("minepkg API did respond with unexpected error format. code: " + res.Status)
-		}
-		return minepkgErr
-	default:
-		return errors.New("minepkg API did respond with unexpected status code " + res.Status)
-	}
-}
-
 // decorate decorates a request with the User-Agent header and a auth header if set
-func (m *MinepkgAPI) decorate(req *http.Request) {
+func (m *MinepkgClient) decorate(req *http.Request) {
 	req.Header.Set("User-Agent", "minepkg (https://github.com/minepkg/minepkg)")
 	if req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", "application/json")
@@ -212,11 +186,36 @@ func (m *MinepkgAPI) decorate(req *http.Request) {
 }
 
 // DecorateRequest decorates a provided http request with the User-Agent header and a auth header if set
-func (m *MinepkgAPI) DecorateRequest(req *http.Request) {
+func (m *MinepkgClient) DecorateRequest(req *http.Request) {
 	m.decorate(req)
 }
 
-func parseJSON(res *http.Response, i interface{}) error {
-	b, _ := ioutil.ReadAll(res.Body)
-	return json.Unmarshal(b, i)
+// decode is a helper that decodes json, and checks the status code
+func decode(res *http.Response, v interface{}) error {
+	if err := checkResponse(res); err != nil {
+		return err
+	}
+
+	if err := json.NewDecoder(res.Body).Decode(v); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func checkResponse(res *http.Response) error {
+	switch {
+	case res.StatusCode == http.StatusNotFound:
+		return ErrNotFound
+	case res.StatusCode >= 200 && res.StatusCode < 400:
+		return nil
+	case res.StatusCode >= 400:
+		minepkgErr := &MinepkgError{}
+		if err := json.NewDecoder(res.Body).Decode(minepkgErr); err != nil {
+			return errors.New("minepkg API did respond with unexpected error format. code: " + res.Status)
+		}
+		return minepkgErr
+	default:
+		return errors.New("minepkg API did respond with unexpected status code " + res.Status)
+	}
 }

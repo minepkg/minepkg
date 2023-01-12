@@ -22,7 +22,7 @@ type User struct {
 
 // Project is a project
 type Project struct {
-	client      *MinepkgAPI
+	client      *MinepkgClient
 	Name        string `json:"name"`
 	Type        string `json:"type"`
 	Description string `json:"description,omitempty"`
@@ -61,13 +61,13 @@ type ReleaseMeta struct {
 // Release is a released version of a project
 type Release struct {
 	*manifest.Manifest
-	client *MinepkgAPI
+	client *MinepkgClient
 	Meta   *ReleaseMeta           `json:"meta,omitempty"`
 	Tests  map[string]ReleaseTest `json:"tests,omitempty"`
 }
 
 // NewRelease returns a `Release` object. Only exists locally. Can be used to POST a new release to the API
-func (a *MinepkgAPI) NewRelease(m *manifest.Manifest) *Release {
+func (a *MinepkgClient) NewRelease(m *manifest.Manifest) *Release {
 	return &Release{
 		Manifest: m,
 		client:   a,
@@ -77,7 +77,7 @@ func (a *MinepkgAPI) NewRelease(m *manifest.Manifest) *Release {
 // NewUnpublishedRelease returns a `Release` object that has `Meta.published` set to false.
 // should be used if you want to upload an artifact after publishing this release
 // Only exists locally. Can be used to POST a new release to the API
-func (a *MinepkgAPI) NewUnpublishedRelease(m *manifest.Manifest) *Release {
+func (a *MinepkgClient) NewUnpublishedRelease(m *manifest.Manifest) *Release {
 	return &Release{
 		Manifest: m,
 		client:   a,

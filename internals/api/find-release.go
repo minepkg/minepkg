@@ -46,7 +46,7 @@ func (e *ErrNoMatchingRelease) Error() string {
 }
 
 // FindRelease gets the latest release matching the passed requirements via `RequirementQuery`
-func (m *MinepkgAPI) FindRelease(ctx context.Context, project string, reqs *RequirementQuery) (*Release, error) {
+func (m *MinepkgClient) FindRelease(ctx context.Context, project string, reqs *RequirementQuery) (*Release, error) {
 	p := Project{client: m, Name: project}
 
 	var wantedMCSemver *semver.Version

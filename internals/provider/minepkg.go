@@ -10,7 +10,7 @@ import (
 )
 
 type MinepkgProvider struct {
-	Client *api.MinepkgAPI
+	Client *api.MinepkgClient
 }
 
 type minepkgResult struct{ *api.Release }

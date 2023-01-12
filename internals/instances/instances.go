@@ -55,7 +55,7 @@ type Instance struct {
 	Directory       string
 	Manifest        *manifest.Manifest
 	Lockfile        *manifest.Lockfile
-	MinepkgAPI      *api.MinepkgAPI
+	MinepkgAPI      *api.MinepkgClient
 	AuthCredentials *LaunchCredentials
 	ProviderStore   *provider.Store
 

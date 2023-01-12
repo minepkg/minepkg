@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -50,7 +51,7 @@ type ReleasesQuery struct {
 }
 
 // FindRelease gets the latest release matching the passed requirements via `RequirementQuery`
-func (m *MinepkgAPI) ReleasesQuery(ctx context.Context, query *ReleasesQuery) (*Release, error) {
+func (m *MinepkgClient) ReleasesQuery(ctx context.Context, query *ReleasesQuery) (*Release, error) {
 	if query.Minecraft == "*" || query.Minecraft == "latest" {
 		query.Minecraft = ""
 	}
@@ -77,7 +78,7 @@ func (m *MinepkgAPI) ReleasesQuery(ctx context.Context, query *ReleasesQuery) (*
 	// special handle for 404 errors
 	if res.StatusCode == http.StatusNotFound {
 		minepkgErr := &MinepkgError{}
-		if err := parseJSON(res, minepkgErr); err != nil {
+		if err := json.NewDecoder(res.Body).Decode(minepkgErr); err != nil {
 			return nil, errors.New("minepkg API did respond with expected error format. code: " + res.Status)
 		}
 
@@ -101,13 +102,8 @@ func (m *MinepkgAPI) ReleasesQuery(ctx context.Context, query *ReleasesQuery) (*
 		return nil, resolveErr
 	}
 
-	// all other errors
-	if err := checkResponse(res); err != nil {
-		return nil, err
-	}
-
 	var release Release
-	if err := parseJSON(res, &release); err != nil {
+	if err := decode(res, &release); err != nil {
 		return nil, err
 	}
 
