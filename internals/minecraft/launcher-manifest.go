@@ -211,6 +211,9 @@ func (l *LaunchManifest) FullArgs() []string {
 // does not care for duplicates.
 func MergeManifests(source *LaunchManifest, manifests ...*LaunchManifest) {
 	for _, new := range manifests {
+		if new == nil {
+			panic("can't merge with nil manifest")
+		}
 		source.Libraries = append(source.Libraries, new.Libraries...)
 		if new.MainClass != "" {
 			source.MainClass = new.MainClass
@@ -252,13 +255,17 @@ func MergeManifests(source *LaunchManifest, manifests ...*LaunchManifest) {
 			source.MinecraftArguments = new.MinecraftArguments
 		}
 
-		if source.Arguments == nil {
+		if new.Arguments == nil {
 			return
 		}
 		// Merge game args
-		source.Arguments.Game = append(source.Arguments.Game, new.Arguments.Game...)
+		if new.Arguments.Game != nil {
+			source.Arguments.Game = append(source.Arguments.Game, new.Arguments.Game...)
+		}
 		// Merge jvm args
-		source.Arguments.JVM = append(source.Arguments.JVM, new.Arguments.JVM...)
+		if new.Arguments.JVM != nil {
+			source.Arguments.JVM = append(source.Arguments.JVM, new.Arguments.JVM...)
+		}
 	}
 }
 
