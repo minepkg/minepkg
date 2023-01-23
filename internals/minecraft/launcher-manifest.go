@@ -152,6 +152,9 @@ func (l *LaunchManifest) MinecraftVersion() string {
 // may contain variables that need to be replaced
 // note that this can be an empty slice (eg for 1.12 or older)
 func (l *LaunchManifest) JVMArgs() []string {
+	if l.Arguments == nil {
+		return []string{}
+	}
 	args := make([]string, 0, len(l.Arguments.JVM))
 
 	for _, arg := range l.Arguments.JVM {
