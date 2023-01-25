@@ -24,9 +24,9 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v3
+        uses: goreleaser/goreleaser-action@v4
         with:
-          version: latest
+          version: v1.12.3
           args: build --rm-dist --snapshot
       - name: Test
         run: go test -v ./...
