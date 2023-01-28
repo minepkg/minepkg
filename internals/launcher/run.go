@@ -26,6 +26,9 @@ func (c *Launcher) Run(opts *instances.LaunchOptions) error {
 		),
 	)
 
+	// cleanup after minecraft was stopped
+	defer c.Instance.CleanAfterExit()
+
 	switch {
 	case opts.LaunchManifest == nil:
 		opts.LaunchManifest = c.LaunchManifest

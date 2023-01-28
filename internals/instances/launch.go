@@ -143,8 +143,8 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	if err != nil {
 		return nil, err
 	}
+	i.nativesDir = tmpDir
 
-	defer os.RemoveAll(tmpDir) // cleanup dir after minecraft is closed
 	libDir := filepath.Join(i.LibrariesDir())
 
 	// build that spooky -cp arg
@@ -157,6 +157,10 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	}
 
 	for _, lib := range libs {
+		// skip if lib where rules do not apply (wrong os, arch, etc.)
+		if !lib.Applies() {
+			continue
+		}
 		// copy natives. not sure if this implementation is complete
 		if len(lib.Natives) != 0 {
 			// extract native to temp dir
@@ -169,7 +173,7 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 			if err != nil {
 				return nil, err
 			}
-			cpArgs = append(cpArgs, filepath.Join(libDir, native.Path))
+			// i think we do not append natives to the classpath
 		} else {
 			// append this library to our doom -cp arg
 			libPath := lib.Filepath()
@@ -337,8 +341,9 @@ func (i *Instance) launchManifestArgs(launchManifest *minecraft.LaunchManifest, 
 		"launcher_version":    "0.0.0",
 		"classpath":           classPaths,
 		"classpath_separator": cpSeparator(),
-		"natives_directory":   nativesDir,
-		"library_directory":   i.LibrariesDir(),
+		// "natives_directory":   nativesDir,
+		"natives_directory": i.nativesDir,
+		"library_directory": i.LibrariesDir(),
 	}
 
 	// this is not a server, we need to set some more auth data
@@ -466,6 +471,11 @@ func (i *Instance) fetchFabricManifest(lock *manifest.FabricLock) (*minecraft.La
 		return nil, err
 	}
 	return &manifest, nil
+}
+
+func (i *Instance) CleanAfterExit() {
+	log.Println("Cleaning up tmp dir")
+	os.RemoveAll(i.nativesDir)
 }
 
 func (i *Instance) fetchVanillaManifest(version string) (*minecraft.LaunchManifest, error) {

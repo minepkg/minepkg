@@ -63,6 +63,7 @@ type Instance struct {
 	launchManifest               *minecraft.LaunchManifest
 	launchCmd                    string
 	lockfileNeedsRenameMigration bool
+	nativesDir                   string
 }
 
 // LaunchCmd returns the cmd used to launch minecraft (if started)
