@@ -69,6 +69,10 @@ func (i *Instance) resolveVanillaRequirement(ctx context.Context) (*MinecraftRel
 
 		// skip non-parsable minecraft versions
 		if err != nil {
+			// fallback to string compare
+			if v.ID == i.Manifest.Requirements.Minecraft {
+				return &v, nil
+			}
 			continue
 		}
 
