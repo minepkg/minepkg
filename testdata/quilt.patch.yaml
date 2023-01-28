@@ -1,0 +1,13 @@
+name: quilt patch
+patches:
+- action: removeLibraries
+  with:
+    prefix: "net.fabricmc:"
+- action: addLibraries
+  with:
+    libraries:
+    - name: "net.fabricmc:intermediary:1.18.2"
+      url: "https://maven.fabricmc.net"
+- action: mergeLaunchManifest
+  with:
+    url: https://raw.githubusercontent.com/PrismLauncher/meta-launcher/master/org.quiltmc.quilt-loader/0.18.1-beta.26.json
