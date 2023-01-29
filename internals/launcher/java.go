@@ -3,8 +3,10 @@ package launcher
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/minepkg/minepkg/internals/java"
@@ -34,7 +36,7 @@ func (l *Launcher) Java(ctx context.Context) (*java.Java, error) {
 	v := "8"
 
 	// but use java version from launcher json if set
-	if l.LaunchManifest.JavaVersion.MajorVersion != 0 {
+	if l.LaunchManifest.JavaVersion != nil && l.LaunchManifest.JavaVersion.MajorVersion != 0 {
 		v = fmt.Sprintf("%d", l.LaunchManifest.JavaVersion.MajorVersion)
 	} else {
 		// or fallback to v16 for 1.17
@@ -43,6 +45,15 @@ func (l *Launcher) Java(ctx context.Context) (*java.Java, error) {
 			v = "16"
 		}
 	}
+
+	// do not allow to go lower than 8
+	intV, _ := strconv.Atoi(v)
+	if intV < 8 {
+		v = "8"
+		log.Println("Java version from launcher manifest is too low, falling back to 8")
+	}
+
+	log.Println("Using java version", v)
 
 	java, err := javaFactory.Version(ctx, v)
 	if err != nil {
