@@ -141,6 +141,21 @@ func TestRule_appliesFor(t *testing.T) {
 			},
 			want: false,
 		},
+		{
+			name: "1.6.4 bug (should allow lwjgl for linux)",
+			fields: fields{
+				Action: "disallow",
+				OS: OS{
+					Name:    "osx",
+					Version: "^10\\.5\\.(\\d+)$",
+				},
+			},
+			args: args{
+				os:   "linux",
+				arch: "x86",
+			},
+			want: true,
+		},
 	}
 
 	for _, tt := range tests {

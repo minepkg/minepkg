@@ -78,7 +78,8 @@ func (r Rule) appliesFor(os string, arch string) bool {
 		}
 
 		// TODO: check version (regex), we deny it for now
-		if r.OS.Version != "" {
+		// but only if the os matches
+		if r.OS.Name == os && r.OS.Version != "" {
 			return false
 		}
 
