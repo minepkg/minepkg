@@ -68,7 +68,7 @@ func (i *Instance) resolveVanillaRequirement(ctx context.Context) (*MinecraftRel
 		semverVersion, err := semver.NewVersion(v.ID)
 
 		// skip non-parsable minecraft versions
-		if err != nil {
+		if err != nil || constraint == nil {
 			// fallback to string compare
 			if v.ID == i.Manifest.Requirements.Minecraft {
 				return &v, nil
