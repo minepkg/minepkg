@@ -83,6 +83,7 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 	vanillaManifest.Requirements.MinepkgCompanion = "none"
 
 	if len(args) == 0 {
+		log.Println("no modpack supplied, trying to launch local modpack")
 		l.instance, err = root.LocalInstance()
 		if err != nil {
 			return err
@@ -93,11 +94,13 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 		}
 	} else {
 		if args[0] == "vanilla" {
+			log.Println("launching vanilla")
 			l.instance = instances.New()
 			l.instance.Manifest = vanillaManifest
 			l.instance.Directory = filepath.Join(l.instance.InstancesDir(), "vanilla")
 
 		} else {
+			log.Println("launching remote modpack")
 			l.instance, err = l.instanceFromModpack(args[0])
 		}
 		if err != nil {

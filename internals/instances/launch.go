@@ -58,7 +58,8 @@ func (i *Instance) GetLaunchManifest() (*minecraft.LaunchManifest, error) {
 		if err != nil {
 			return nil, err
 		}
-		minecraft.MergeManifests(man, parent)
+		minecraft.MergeManifests(parent, man)
+		man = parent
 	}
 
 	i.launchManifest = man
