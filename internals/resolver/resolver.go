@@ -206,6 +206,9 @@ func (r *Resolver) ResolveDependencies(ctx context.Context, dependencies []*mani
 }
 
 func (r *Resolver) resolveSingle(ctx context.Context, dependency *manifest.InterpretedDependency, root *manifest.DependencyLock) (*Resolved, error) {
+	if r.ProviderStore == nil {
+		return nil, errors.New("no provider store")
+	}
 	provider, ok := r.ProviderStore.Get(dependency.Provider)
 	if !ok {
 		return nil, fmt.Errorf("%s needs %s as install provider which is not supported", dependency.Name, dependency.Provider)
@@ -213,9 +216,6 @@ func (r *Resolver) resolveSingle(ctx context.Context, dependency *manifest.Inter
 
 	request := r.providerRequest(dependency.ID, root)
 
-	if r.ProviderStore == nil {
-		return nil, errors.New("no provider store")
-	}
 	result, err := r.ProviderStore.Resolve(ctx, request)
 	if err != nil {
 		return nil, err

@@ -68,6 +68,7 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 	instance.Directory = tempDir
 	instance.Lockfile = manifest.NewLockfile()
 	instance.MinepkgAPI = apiClient
+	instance.ProviderStore = root.ProviderStore
 
 	creds, err := root.getLaunchCredentialsOrLogin()
 	if err != nil {
