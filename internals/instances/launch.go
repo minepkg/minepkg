@@ -237,6 +237,7 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 		cmdArgs = append(cmdArgs, gameArgs...)
 	} else {
 		// maybe don't use client args for server …
+		cmdArgs = append(cmdArgs, gameArgs...)
 		cmdArgs = append(cmdArgs, "nogui")
 	}
 
@@ -269,7 +270,7 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	}
 
 	// we catch ctrl-c to handle this by ourself
-	c := make(chan os.Signal)
+	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
@@ -365,7 +366,14 @@ func (i *Instance) launchManifestArgs(launchManifest *minecraft.LaunchManifest, 
 	}
 
 	finalGameArgs := make([]string, 0, len(gameArgs))
-	launchArgsTemplate := launchManifest.FullArgs()
+	var launchArgsTemplate  []string
+	if opts.Server {
+		// we only use jvm args + main class for server
+		launchArgsTemplate = append(launchManifest.JVMArgs(), launchManifest.MainClass)
+	} else {
+		// include all args for client
+		launchArgsTemplate = launchManifest.FullArgs()
+	}
 
 	variableRegex := regexp.MustCompile(`\$\{[a-zA-Z0-9_]+\}`)
 
@@ -441,6 +449,7 @@ func (i *Instance) fetchFabricManifest(lock *manifest.FabricLock) (*minecraft.La
 	if rawMan, err := ioutil.ReadFile(file); err == nil {
 		err := json.Unmarshal(rawMan, &manifest)
 		if err == nil {
+			log.Println("Using cached fabric manifest", manifest)
 			return &manifest, nil
 		}
 		fmt.Printf("WARNING: Failed to parse cached manifest %s (this is a bug pls report)\n", file)

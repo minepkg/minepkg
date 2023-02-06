@@ -85,7 +85,6 @@ func (i *Instance) resolveVanillaRequirement(ctx context.Context) (*MinecraftRel
 }
 
 func (i *Instance) resolveFabricRequirement(ctx context.Context) (*manifest.FabricLock, error) {
-
 	reqMc := i.Manifest.Requirements.Minecraft
 	// latest is the same as '*' for this logic (it will return the latest version)
 	if reqMc == "latest" {
