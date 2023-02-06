@@ -25,6 +25,13 @@ func (w *stringSlice) UnmarshalJSON(data []byte) (err error) {
 		return nil
 	}
 
-	*w = []string{string(data)}
+	// convert string to []string
+	var str string
+	err = json.Unmarshal(data, &str)
+	if err != nil {
+		return err
+	}
+
+	*w = []string{str}
 	return nil
 }
