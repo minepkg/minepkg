@@ -69,7 +69,7 @@ func (c *Launcher) Run(opts *instances.LaunchOptions) error {
 	// minecraft server will always return code 130 when
 	// stop was successful, so we ignore the error here
 	if cmd.ProcessState.ExitCode() == 130 || cmd.ProcessState.ExitCode() == 0 {
-		fmt.Println("\nMinecraft was stopped normally")
+		fmt.Printf("\nMinecraft was stopped normally (exit code %d).\n", cmd.ProcessState.ExitCode())
 		return nil
 	}
 

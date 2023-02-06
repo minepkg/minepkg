@@ -242,7 +242,12 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 	// normal launch & minecraft was stopped
 	case err := <-launchErr:
 		if err != nil {
+			// was this a crash test and minecraft just stopped?
 			return err
+		}
+		if l.crashTest {
+			fmt.Println("Crashtest: Minecraft unexpectedly stopped before we could connect to it")
+			os.Exit(69)
 		}
 	// crashtest and we got a response from the crash go routine
 	case err := <-crashErr:
