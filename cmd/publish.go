@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/erikgeiser/promptkit/confirmation"
+	"github.com/jwalton/gchalk"
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/instances"
@@ -125,13 +126,13 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 	// 	logger.Fail("Do not have write access for " + m.Package.Name)
 	// }
 
-	tasks.Log("Determening version to publish")
+	tasks.Log("Determining version to publish")
 	switch {
 	case p.versionName != "":
-		tasks.Log("Using supplied release version number: " + p.versionName)
+		tasks.Log("Using supplied release version number: " + gchalk.White(p.versionName))
 		m.Package.Version = strings.TrimPrefix(p.versionName, "v")
 	case m.Package.Version != "":
-		tasks.Log("Using version number in minepkg.toml: " + m.Package.Version)
+		tasks.Log("Using version number in minepkg.toml: " + gchalk.White(m.Package.Version))
 	default:
 		logger.Fail("No version set in minepkg.toml and no release version passed. Please set one.")
 	}
@@ -227,6 +228,8 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 		}
 		os.Exit(0)
 	}
+
+	fmt.Println("Uploading as " + m.Package.Name + "@" + m.Package.Version)
 
 	if !nonInteractive {
 		input := confirmation.New("Do you want to publish this now?", confirmation.Yes)
