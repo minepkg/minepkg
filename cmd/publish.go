@@ -229,7 +229,11 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 		os.Exit(0)
 	}
 
-	fmt.Println("Uploading as " + m.Package.Name + "@" + m.Package.Version)
+	fmt.Printf("Uploading %s\n       as %s@%s\n\n", 
+		gchalk.Bold(artifact), 
+		gchalk.Bold(m.Package.Name),
+		gchalk.Bold(m.Package.Version),
+	)
 
 	if !nonInteractive {
 		input := confirmation.New("Do you want to publish this now?", confirmation.Yes)

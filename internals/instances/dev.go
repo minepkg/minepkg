@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dustin/go-humanize"
 	"github.com/minepkg/minepkg/internals/commands"
 )
 
@@ -41,6 +42,18 @@ func (m *MatchedJar) Name() string {
 // Path returns the full path to the jar file
 func (m *MatchedJar) Path() string {
 	return m.path
+}
+
+func (m MatchedJar) GoString() string {
+	return m.String()
+}
+
+func (m MatchedJar) String() string {
+	return fmt.Sprintf("%s (%s, %s bytes)",
+		m.Name(),
+		humanize.Time(m.stat.ModTime()),
+	 	humanize.Bytes(uint64(m.stat.Size()),
+	))
 }
 
 // BuildMod uses the manifest "dev.buildCmd" script to build this package

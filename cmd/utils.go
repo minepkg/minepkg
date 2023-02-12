@@ -6,8 +6,10 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/erikgeiser/promptkit/selection"
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/instances"
+	"github.com/spf13/viper"
 )
 
 // MinepkgMapping is a server mapping (very unfinished)
@@ -90,10 +92,19 @@ func getJarFileForInstance(i *instances.Instance) (*instances.MatchedJar, error)
 	if i.Manifest.Dev.Jar != "" {
 		fmt.Printf("Searching according to your pattern \"%s\" to find jar file\n", i.Manifest.Dev.Jar)
 	}
-	if len(jars) > 1 && i.Manifest.Dev.Jar == "" {
-		text := fmt.Sprintf("Found multiple jar files. Using %s", jars[0].Name())
-		fmt.Println(commands.StyleWarnBox.Render(text))
-		fmt.Println(" Checkout https://minepkg.io/docs/manifest#devjar if you want to use a different file.")
+	if len(jars) > 1 && i.Manifest.Dev.Jar == "" {		
+		if viper.GetBool("nonInteractive") {
+			text := fmt.Sprintf("Found multiple jar files. Using %s", jars[0].Name())
+			fmt.Println(commands.StyleWarnBox.Render(text))
+			fmt.Println(" Checkout https://minepkg.io/docs/manifest#devjar if you want to use a different file.")
+		} else {
+			sp := selection.New("Found multiple jar files. Please select one:", jars)
+			choice, err := sp.RunPrompt()
+			if err != nil {
+				return nil, err
+			}
+			return &choice, nil
+		}
 	} else {
 		text := fmt.Sprintf("Using jar: %s", jars[0].Path())
 		fmt.Println(commands.StyleInfoBox.Render(text))
