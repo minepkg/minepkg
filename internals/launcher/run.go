@@ -3,6 +3,7 @@ package launcher
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -51,6 +52,8 @@ func (c *Launcher) Run(opts *instances.LaunchOptions) error {
 	cmd.Stdin = os.Stdin
 
 	c.Cmd = cmd
+
+	log.Println("Starting Minecraft process")
 
 	err = func() error {
 		runtime.GC()
