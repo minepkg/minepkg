@@ -38,7 +38,7 @@ func (b *bumpRunner) gitChecks() error {
 		return fmt.Errorf("invalid upstream git output. please report this")
 	}
 
-	// fetch from remote
+	// fetch from git remote
 	if _, err = utils.SimpleGitExec("fetch --no-tags --quiet --recurse-submodules=no -v " + strings.Join(upstreamPair, " ")); err != nil {
 		return err
 	}

@@ -100,7 +100,7 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 			l.instance.Directory = filepath.Join(l.instance.InstancesDir(), "vanilla")
 
 		} else {
-			log.Println("launching remote modpack")
+			log.Println("launching online modpack")
 			l.instance, err = l.instanceFromModpack(args[0])
 		}
 		if err != nil {
