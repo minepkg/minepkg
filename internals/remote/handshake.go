@@ -16,7 +16,7 @@ type handshakeError struct {
 func (c *Connection) ListenForHandshake(ctx context.Context) error {
 	dataChannelOpen := make(chan struct{})
 
-	server := http.Server{Addr: ":20876"}
+	server := http.Server{Addr: "localhost:20876"}
 	c.httpServer = &server
 
 	server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -95,7 +95,7 @@ func (c *Connection) ListenForHandshake(ctx context.Context) error {
 	})
 
 	go server.ListenAndServe()
-	log.Println("Listening for handshake via HTTP on :20876")
+	log.Println("Listening for handshake via HTTP on localhost:20876")
 	// Wait for the DataChannel to open
 	select {
 	case <-dataChannelOpen:
