@@ -30,8 +30,12 @@ func (m *MinepkgClient) GetProjects(ctx context.Context, opts *GetProjectsQuery)
 
 	query := uri.Query()
 
-	query.Set("type", opts.Type)
-	query.Set("platform", opts.Platform)
+	if opts.Type != "" {
+		query.Set("type", opts.Type)
+	}
+	if opts.Platform != "" {
+		query.Set("platform", opts.Platform)
+	}
 	if opts.Simple {
 		query.Set("simple", "true")
 	}

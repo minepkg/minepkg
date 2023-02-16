@@ -11,6 +11,7 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/erikgeiser/promptkit/confirmation"
+	"github.com/erikgeiser/promptkit/selection"
 	"github.com/jwalton/gchalk"
 	"github.com/manifoldco/promptui"
 	"github.com/minepkg/minepkg/internals/api"
@@ -18,6 +19,14 @@ import (
 	"github.com/minepkg/minepkg/internals/downloadmgr"
 	"github.com/minepkg/minepkg/internals/utils"
 )
+
+type choice struct {
+	Project *api.Project
+}
+
+func (c choice) String() string {
+	return fmt.Sprintf("%s (%v Downloads)", c.Project.Name, utils.HumanInteger(c.Project.Stats.TotalDownloads))
+}
 
 func (i *installRunner) installFromMinepkg(mods []string) error {
 	instance := i.instance
@@ -175,23 +184,19 @@ func searchFallback(ctx context.Context, name string) *api.Project {
 
 	fmt.Println("Found multiple packages by that name, please select one.")
 
-	selectable := make([]string, len(filtered))
-	for i, mod := range filtered {
-		selectable[i] = fmt.Sprintf("%s (%v Downloads)", mod.Name, utils.HumanInteger(mod.Stats.TotalDownloads))
+	selectable := make([]choice, 0, len(filtered))
+	for _, p := range filtered {
+		project := p
+		selectable = append(selectable, choice{&project})
 	}
 
-	prompt := promptui.Select{
-		Label: "Select Package",
-		Items: selectable,
-		Size:  8,
-	}
-
-	i, _, err := prompt.Run()
+	prompt := selection.New("Select Package", selectable)
+	chosen, err := prompt.RunPrompt()
 	if err != nil {
 		fmt.Println("Aborting installation")
 		os.Exit(0)
 	}
-	return &filtered[i]
+	return chosen.Project
 }
 
 func prettyApiError(err error) error {

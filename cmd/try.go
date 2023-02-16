@@ -94,7 +94,7 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 		Minecraft:    mcVersion,
 		VersionRange: version,
 	})
-	var e *api.ErrNoMatchingRelease
+	var e *api.ErrNoQueryResult
 	if err != nil && !errors.As(err, &e) {
 		return err
 	}
@@ -102,7 +102,7 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 		// TODO: check if this was a 404
 		project := searchFallback(context.TODO(), name)
 		if project == nil {
-			logger.Info("Could not find package " + name + "@" + version)
+			logger.Info("Could not find package " + name)
 			os.Exit(1)
 		}
 
