@@ -44,10 +44,6 @@ func (m *MatchedJar) Path() string {
 	return m.path
 }
 
-func (m MatchedJar) GoString() string {
-	return m.String()
-}
-
 func (m MatchedJar) String() string {
 	return fmt.Sprintf("%s (%s, %s bytes)",
 		m.Name(),
