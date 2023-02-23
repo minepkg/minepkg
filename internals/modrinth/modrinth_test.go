@@ -64,7 +64,7 @@ func TestNotFounds(t *testing.T) {
 
 	t.Run("version", func(t *testing.T) {
 		t.Parallel()
-		_, err := client.GetVersion(context.Background(), "test-case-should-never-exist-404-404-404")
+		_, err := client.GetVersion(context.Background(), "AAAAAA")
 		if err != modrinth.ErrVersionNotFound {
 			t.Fatalf("expected ErrVersionNotFound, got %v", err)
 		}
