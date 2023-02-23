@@ -176,6 +176,8 @@ func (l *launchRunner) RunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	log.Println("Preparation done")
+
 	if len(args) != 0 {
 		if err := l.instance.SaveManifest(); err != nil {
 			return err

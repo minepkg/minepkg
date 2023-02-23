@@ -44,20 +44,24 @@ func (l *Launcher) Prepare() error {
 	javaUpdate := l.PrepareJavaBg(ctx)
 
 	// update dependencies
+	log.Println("Preparing dependencies")
 	if err := l.PrepareDependencies(ctx, outdatedReqs); err != nil {
-		return err
+		return fmt.Errorf("failed to prepare dependencies: %w", err)
 	}
 
+	log.Println("Copying local saves")
 	if err := instance.CopyLocalSaves(); err != nil {
-		return err
+		return fmt.Errorf("failed to copy local saves: %w", err)
 	}
 
+	log.Println("Linking dependencies")
 	if err := instance.EnsureDependencies(ctx); err != nil {
-		return err
+		return fmt.Errorf("failed to link dependencies: %w", err)
 	}
 
+	log.Println("Copying overwrites")
 	if err := instance.CopyOverwrites(); err != nil {
-		return err
+		return fmt.Errorf("failed to copy overwrites: %w", err)
 	}
 
 	if l.ServerMode {
@@ -147,7 +151,7 @@ func (l *Launcher) PrepareDependencies(ctx context.Context, force bool) error {
 	// TODO: check dev dependencies!
 	outdatedDependencies, err := instance.DependenciesSynced()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to check dependencies: %w", err)
 	}
 
 	// also update dependencies when requirements are outdated
@@ -155,7 +159,7 @@ func (l *Launcher) PrepareDependencies(ctx context.Context, force bool) error {
 	if force || l.ForceUpdate || outdatedDependencies {
 		fmt.Print(gchalk.Gray("(updating)\n"))
 		if err := l.fetchDependencies(ctx); err != nil {
-			return err
+			return fmt.Errorf("failed to fetch dependencies: %w", err)
 		}
 		instance.SaveLockfile()
 	} else {
@@ -236,6 +240,7 @@ func (l *Launcher) PrepareMinecraft(ctx context.Context) error {
 		}
 	}
 
+	log.Println("Checking for missing libraries")
 	missingLibs, err := instance.FindMissingLibraries(launchManifest)
 	if err != nil {
 		return err
@@ -250,8 +255,9 @@ func (l *Launcher) PrepareMinecraft(ctx context.Context) error {
 		mgr.Add(downloadmgr.NewHTTPItem(lib.DownloadURL(), target))
 	}
 
+	log.Println("Starting downloads")
 	if err = mgr.Start(ctx); err != nil {
-		return err
+		return fmt.Errorf("download error: %w", err)
 	}
 
 	fmt.Println(pipeText.Render(""))

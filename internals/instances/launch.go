@@ -449,7 +449,7 @@ func (i *Instance) fetchFabricManifest(lock *manifest.FabricLock) (*minecraft.La
 	if rawMan, err := ioutil.ReadFile(file); err == nil {
 		err := json.Unmarshal(rawMan, &manifest)
 		if err == nil {
-			log.Println("Using cached fabric manifest", manifest)
+			log.Println("Using cached fabric manifest", file)
 			return &manifest, nil
 		}
 		fmt.Printf("WARNING: Failed to parse cached manifest %s (this is a bug pls report)\n", file)
