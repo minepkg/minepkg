@@ -77,7 +77,12 @@ func dependenciesInSync(lock *manifest.Lockfile, mani *manifest.Manifest) (bool,
 			continue
 		}
 
-		packageDep, err := semver.NewConstraint(dep.Source)
+		source := dep.Source
+		if source == "latest" {
+			source = "*"
+		}
+
+		packageDep, err := semver.NewConstraint(source)
 		if err != nil {
 			return false, err
 		}
