@@ -13,8 +13,27 @@ func (b *bumpRunner) gitChecks() error {
 	if err != nil {
 		return err
 	}
-	if dirty != "" {
-		return fmt.Errorf("uncommitted files in git directory. Please commit them first")
+
+	if len(dirty) != 0 {
+		// are all untracked files?
+		allUntracked := true
+		for _, line := range dirty {
+			if !strings.HasPrefix(line, "??") {
+				allUntracked = false
+				break
+			}
+		}
+
+		if allUntracked {
+			fmt.Println("You have untracked files in your git directory. Ignoring them for now. Please commit or gitignore them!")
+		} else {
+			fmt.Println("You have uncommitted changes in your git directory. Please commit or stash them first!")
+			fmt.Println("Uncommitted files:")
+			for _, line := range dirty {
+				fmt.Println(" - " + line[3:])
+			}
+			return fmt.Errorf("uncommitted files in git directory")
+		}
 	}
 
 	fmt.Println(" ✓ Directory is not dirty")
@@ -33,7 +52,7 @@ func (b *bumpRunner) gitChecks() error {
 		b.noPush = true
 		return nil
 	}
-	upstreamPair := strings.Split(upstream, "/")
+	upstreamPair := strings.Split(upstream.Last(), "/")
 	if len(upstreamPair) != 2 {
 		return fmt.Errorf("invalid upstream git output. please report this")
 	}
@@ -45,11 +64,11 @@ func (b *bumpRunner) gitChecks() error {
 
 	fmt.Println(" ✓ Valid upstream")
 
-	upstreamCommitsStr, err := utils.SimpleGitExec("rev-list --count HEAD..HEAD@{upstream}")
+	upstreamCommitsOutput, err := utils.SimpleGitExec("rev-list --count HEAD..HEAD@{upstream}")
 	if err != nil {
 		return err
 	}
-	upstreamCommits, err := strconv.Atoi(upstreamCommitsStr)
+	upstreamCommits, err := strconv.Atoi(upstreamCommitsOutput.Last())
 	if err != nil {
 		return fmt.Errorf("invalid git output. please report this error: %w", err)
 	}

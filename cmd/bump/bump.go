@@ -121,7 +121,7 @@ func (b *bumpRunner) RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Println("\n" + gchalk.Bold("minepkg will now:"))
-	fmt.Printf("+ update the minepkg.toml package.version %s → %s\n", instance.Manifest.Package.Version, targetVersion)
+	fmt.Printf("+ Update the minepkg.toml \"package.version\": %s → %s\n", instance.Manifest.Package.Version, targetVersion)
 
 	for _, action := range actions {
 		fmt.Println(action.StatusText())
@@ -225,10 +225,11 @@ var remoteGitHubSSH = regexp.MustCompile(`^git@github.com:(.+)\.git`)
 var remoteGitHubHttps = regexp.MustCompile(`https://github.com/(.+)\.git`)
 
 func (b *bumpRunner) gitCreateReleasePrompt() error {
-	origin, err := utils.SimpleGitExec("config --get remote.origin.url")
+	originOutput, err := utils.SimpleGitExec("config --get remote.origin.url")
 	if err != nil {
 		return err
 	}
+	origin := strings.TrimSpace(originOutput.String())
 
 	match := remoteGitHubSSH.FindStringSubmatch(origin)
 	if len(match) != 2 {

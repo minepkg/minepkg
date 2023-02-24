@@ -6,23 +6,32 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"regexp"
 	"runtime"
 	"strings"
 	"time"
 )
 
-// lineMatch matches the git output
-var lineMatch = regexp.MustCompile("(.*)\r?\n?$")
+type simpleGitExecOutput []string
+
+func (s simpleGitExecOutput) String() string {
+	return strings.Join(s, "\n")
+}
+
+// Last returns the last line of the output (and trims whitespace!)
+func (s simpleGitExecOutput) Last() string {
+	return strings.TrimSpace(s[len(s)-1])
+}
+
 
 // SimpleGitExec runs a git command and returns the output in a easy to process way
-func SimpleGitExec(args string) (string, error) {
+func SimpleGitExec(args string) (simpleGitExecOutput, error) {
 	splitArgs := strings.Split(args, " ")
 	cmd := exec.Command("git", splitArgs...)
 	cmd.Env = os.Environ()
 	out, err := cmd.Output()
-	cleanOut := lineMatch.FindStringSubmatch(string(out))
-	return cleanOut[1], err
+	splitOut := strings.Split(string(out), "\n")
+	cleanOut := simpleGitExecOutput(splitOut[:len(splitOut)-1])
+	return cleanOut, err
 }
 
 // OpenBrowser opens the given url in a browser

@@ -132,10 +132,10 @@ func getDefaultAuthor() string {
 		return author
 	}
 
-	author = userName
+	author = userName.String()
 
 	email, err := utils.SimpleGitExec("config user.email")
-	if err != nil || email == "" {
+	if err != nil || email.String() == "" {
 		return author
 	}
 

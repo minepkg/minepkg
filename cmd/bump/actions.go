@@ -45,9 +45,9 @@ func (b *bumpRunner) gitCommitAction() *action {
 	return &action{
 		enabled:      !b.noGit,
 		reason:       "",
-		enabledText:  "git commit changes",
-		disabledText: "skip committing",
-		successText:  "git commit done",
+		enabledText:  "Create a Git commit called " + b.targetVersion,
+		disabledText: "Skip committing",
+		successText:  "Git commit created",
 		run: func() error {
 			_, err := utils.SimpleGitExec("commit -am " + b.targetVersion)
 			return err
@@ -59,9 +59,9 @@ func (b *bumpRunner) gitTagAction() *action {
 	return &action{
 		enabled:      !b.noGit && !b.noTag,
 		reason:       "",
-		enabledText:  "create git tag " + b.targetTag,
-		disabledText: "skip creating a git tag",
-		successText:  "git tag created",
+		enabledText:  "Create a git tag called " + b.targetTag,
+		disabledText: "Skip creating a git tag",
+		successText:  "Git tag created",
 		run: func() error {
 			_, err := utils.SimpleGitExec("tag v" + b.targetVersion + " -m " + b.targetTag)
 			return err
@@ -73,9 +73,9 @@ func (b *bumpRunner) gitPushAction() *action {
 	action := &action{
 		enabled:      !b.noGit && !b.noPush,
 		reason:       "",
-		enabledText:  "git push to",
-		disabledText: "skip git push",
-		successText:  "git push ok",
+		enabledText:  "Push Git commits",
+		disabledText: "Skip git push",
+		successText:  "Git commits pushed",
 		run: func() error {
 			_, err := utils.SimpleGitExec("push")
 			if err != nil {
@@ -96,7 +96,7 @@ func (b *bumpRunner) gitPushAction() *action {
 		return action
 	}
 
-	action.enabledText = fmt.Sprintf("git push to %s", b.upstreamPair[0])
+	action.enabledText = fmt.Sprintf("Git push to %s", b.upstreamPair[0])
 
 	return action
 }
@@ -105,9 +105,9 @@ func (b *bumpRunner) gradleAction() *action {
 	action := &action{
 		enabled:      true,
 		reason:       "",
-		enabledText:  "update gradle.properties",
-		disabledText: "skip updating gradle.properties",
-		successText:  "updated gradle.properties",
+		enabledText:  "Update gradle.properties",
+		disabledText: "Skip updating gradle.properties",
+		successText:  "Updated gradle.properties",
 	}
 
 	props, err := gradleCheck()
@@ -118,7 +118,7 @@ func (b *bumpRunner) gradleAction() *action {
 	}
 
 	action.enabledText = fmt.Sprintf(
-		"update mod_version field in gradle.properties: %s → %s",
+		"Update the \"mod_version\" field in gradle.properties: %s → %s",
 		props.GetString("mod_version", ""),
 		b.targetVersion,
 	)
