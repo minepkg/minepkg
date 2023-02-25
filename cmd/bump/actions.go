@@ -140,6 +140,7 @@ func (b *bumpRunner) gradleAction() *action {
 
 func gradleCheck() (*properties.Properties, error) {
 	props, err := properties.LoadFile("./gradle.properties", properties.UTF8)
+	props.WriteSeparator = "="
 	if err != nil {
 		return props, fmt.Errorf("gradle.properties does not exist " + err.Error())
 	}
