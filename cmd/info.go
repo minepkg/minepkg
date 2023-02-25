@@ -111,18 +111,18 @@ func (i *infoRunner) RunE(cmd *cobra.Command, args []string) error {
 
 	fmt.Println("\nFound package on minepkg:")
 
-	twoWeekDownloads := make([]int, 14)
+	monthlyDownloads := make([]int, 30)
 	dateIndex := time.Now().Add(-time.Hour * 24 * 14)
 
 	// stats.Downloads is sorted by date, but is missing days with 0 downloads
 	// so we need to fill in the gaps
 	for i, d := range stats.Downloads {
 		for dateIndex.Before(d.Date) {
-			twoWeekDownloads[i] = 0
+			monthlyDownloads[i] = 0
 			dateIndex = dateIndex.Add(time.Hour * 24)
 			i++
 		}
-		twoWeekDownloads[i] = d.Downloads
+		monthlyDownloads[i] = d.Downloads
 		dateIndex = dateIndex.Add(time.Hour * 24)
 	}
 
@@ -148,7 +148,8 @@ func (i *infoRunner) RunE(cmd *cobra.Command, args []string) error {
 				row(
 					"Downloads",
 					utils.HumanInteger(stats.Summary.TotalDownloads)+" "+
-						lipgloss.NewStyle().Foreground(lipgloss.Color("#3399aa")).Render(renderSparkLine(twoWeekDownloads)),
+						lipgloss.NewStyle().Foreground(lipgloss.Color("#3399aa")).
+						Render(renderSparkLine(monthlyDownloads)),
 				),
 			}, "\n"),
 		)
