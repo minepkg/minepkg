@@ -29,6 +29,13 @@ It will be deleted after testing.
 	`,
 		Aliases: []string{"test"},
 		Args:    cobra.ExactArgs(1),
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			// do not complete if we have an argument
+			if len(args) > 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return root.AutoCompleter.Complete(toComplete)
+		},
 	}, runner)
 
 	cmd.Flags().StringVarP(&runner.tryBase, "base", "b", "test-mansion", "Base modpack to use for testing")

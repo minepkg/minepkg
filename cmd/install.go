@@ -16,6 +16,13 @@ func init() {
 		Short:   "Installs one or more packages in your current modpack or mod",
 		Long:    `Adds package(s) to your local modpack or mod. Launch the modpack with minepkg launch`,
 		Aliases: []string{"isntall", "i", "add"},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			// do not complete if we have an argument
+			if len(args) > 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return root.AutoCompleter.Complete(toComplete)
+		},
 	}, runner)
 
 	cmd.Flags().BoolVarP(&runner.dev, "dev", "D", false, "Install as a dev dependency only.")

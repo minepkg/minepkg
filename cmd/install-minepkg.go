@@ -154,7 +154,7 @@ func (i *installRunner) installFromMinepkg(mods []string) error {
 }
 
 func searchFallback(ctx context.Context, name string) *api.Project {
-	projects, _ := root.MinepkgAPI.GetProjects(ctx, &api.GetProjectsQuery{})
+	projects, _ := root.AutoCompleter.GetProjects(ctx)
 
 	filtered := make([]api.Project, 0, 10)
 	for _, p := range projects {
