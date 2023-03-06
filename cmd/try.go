@@ -61,6 +61,7 @@ type tryRunner struct {
 
 func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 	apiClient := root.MinepkgAPI
+	nonInteractive := viper.GetBool("nonInteractive")
 
 	tempDir, err := ioutil.TempDir("", args[0])
 	wd, _ := os.Getwd()
@@ -105,7 +106,7 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 	if err != nil && !errors.As(err, &e) {
 		return err
 	}
-	if release == nil {
+	if release == nil && !nonInteractive {
 		// TODO: check if this was a 404
 		project := searchFallback(context.TODO(), name)
 		if project == nil {

@@ -164,11 +164,16 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 		}
 		logger.Info("Release already published but can be overwritten.")
 		logger.Warn("Overwriting might take some time to fully apply everywhere. (~30 minutes)")
-		input := confirmation.New("Delete & overwrite the existing release?", confirmation.Yes)
-		overwrite, err := input.RunPrompt()
-		if !overwrite {
-			logger.Info("Aborting")
-			os.Exit(0)
+
+		if !nonInteractive {
+			input := confirmation.New("Delete & overwrite the existing release?", confirmation.Yes)
+			overwrite, _ := input.RunPrompt()
+			if !overwrite {
+				logger.Info("Aborting")
+				os.Exit(0)
+			}
+		} else {
+			logger.Info("Overwriting release")
 		}
 		_, err = apiClient.DeleteRelease(context.TODO(), m.PlatformString(), m.Package.Name+"@"+m.Package.Version)
 		if err != nil {
@@ -229,8 +234,8 @@ func (p *publishRunner) RunE(cmd *cobra.Command, args []string) error {
 		os.Exit(0)
 	}
 
-	fmt.Printf("Uploading %s\n       as %s@%s\n\n", 
-		gchalk.Bold(artifact), 
+	fmt.Printf("Uploading %s\n       as %s@%s\n\n",
+		gchalk.Bold(artifact),
 		gchalk.Bold(m.Package.Name),
 		gchalk.Bold(m.Package.Version),
 	)
