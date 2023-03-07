@@ -31,7 +31,8 @@ type Project struct {
 		Source   string `json:"source,omitempty"`
 		Homepage string `json:"homepage,omitempty"`
 	} `json:"links,omitempty"`
-	Stats *struct {
+	Categories []string `json:"categories,omitempty"`
+	Stats      *struct {
 		TotalDownloads uint32 `json:"totalDownloads"`
 	} `json:"stats,omitempty"`
 	Unofficial bool `json:"unofficial,omitempty"`

@@ -26,6 +26,7 @@ import (
 
 func init() {
 	runner := &launchRunner{}
+
 	cmd := commands.New(&cobra.Command{
 		Use:   "launch [modpack]",
 		Short: "Launch the given or local modpack.",
@@ -34,6 +35,13 @@ Alternatively: Can be used in directories containing a minepkg.toml manifest to 
 		`,
 		Aliases: []string{"run", "start", "play"},
 		Args:    cobra.MaximumNArgs(1),
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			// do not complete if we have an argument
+			if len(args) > 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return root.AutoCompleter.CompleteModpacks(toComplete)
+		},
 	}, runner)
 
 	cmd.Flags().BoolVarP(&runner.serverMode, "server", "s", false, "Start a server instead of a client")
@@ -302,6 +310,7 @@ func crashTest() error {
 
 func (l *launchRunner) instanceFromModpack(modpack string) (*instances.Instance, error) {
 	apiClient := root.MinepkgAPI
+	nonInteractive := viper.GetBool("nonInteractive")
 
 	instance := instances.New()
 	instance.MinepkgAPI = apiClient
@@ -318,6 +327,22 @@ func (l *launchRunner) instanceFromModpack(modpack string) (*instances.Instance,
 	}
 
 	release, err := apiClient.ReleasesQuery(context.TODO(), query)
+	var matchErr *api.ErrNoQueryResult
+	// check for 404
+	if errors.As(err, &matchErr) && !nonInteractive {
+		project := searchFallbackModpacks(context.TODO(), modpack)
+		if project == nil {
+			logger.Info("Could not find package " + modpack)
+			os.Exit(1)
+		}
+
+		query.Name = project.Name
+
+		release, err = apiClient.ReleasesQuery(context.TODO(), query)
+		if err != nil || release == nil {
+			return nil, l.formatApiError(err)
+		}
+	}
 	if err != nil {
 		return nil, l.formatApiError(err)
 	}

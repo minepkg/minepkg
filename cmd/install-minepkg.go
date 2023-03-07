@@ -154,8 +154,24 @@ func (i *installRunner) installFromMinepkg(mods []string) error {
 }
 
 func searchFallback(ctx context.Context, name string) *api.Project {
-	projects, _ := root.MinepkgAPI.GetProjects(ctx, &api.GetProjectsQuery{})
+	projects, _ := root.AutoCompleter.GetProjects(ctx)
+	return _searchFallback(projects, name)
+}
 
+func searchFallbackModpacks(ctx context.Context, name string) *api.Project {
+	projects, _ := root.AutoCompleter.GetProjects(ctx)
+	// filter out everything but modpacks
+	filtered := []api.Project{}
+	for _, p := range projects {
+		if p.Type == "modpack" {
+			filtered = append(filtered, p)
+		}
+	}
+
+	return _searchFallback(filtered, name)
+}
+
+func _searchFallback(projects []api.Project, name string) *api.Project {
 	filtered := make([]api.Project, 0, 10)
 	for _, p := range projects {
 		if strings.Contains(p.Name, name) {

@@ -29,6 +29,13 @@ It will be deleted after testing.
 	`,
 		Aliases: []string{"test"},
 		Args:    cobra.ExactArgs(1),
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			// do not complete if we have an argument
+			if len(args) > 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return root.AutoCompleter.Complete(toComplete)
+		},
 	}, runner)
 
 	cmd.Flags().StringVarP(&runner.tryBase, "base", "b", "test-mansion", "Base modpack to use for testing")
@@ -54,6 +61,7 @@ type tryRunner struct {
 
 func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 	apiClient := root.MinepkgAPI
+	nonInteractive := viper.GetBool("nonInteractive")
 
 	tempDir, err := ioutil.TempDir("", args[0])
 	wd, _ := os.Getwd()
@@ -98,7 +106,7 @@ func (t *tryRunner) RunE(cmd *cobra.Command, args []string) error {
 	if err != nil && !errors.As(err, &e) {
 		return err
 	}
-	if release == nil {
+	if release == nil && !nonInteractive {
 		// TODO: check if this was a 404
 		project := searchFallback(context.TODO(), name)
 		if project == nil {

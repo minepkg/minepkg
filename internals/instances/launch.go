@@ -24,7 +24,7 @@ import (
 	"github.com/minepkg/minepkg/internals/minecraft"
 	"github.com/minepkg/minepkg/pkg/manifest"
 	"github.com/pbnjay/memory"
-	"github.com/shirou/gopsutil/process"
+	"github.com/shirou/gopsutil/v3/process"
 )
 
 var (

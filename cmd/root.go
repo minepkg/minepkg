@@ -18,6 +18,7 @@ import (
 	"github.com/minepkg/minepkg/cmd/initCmd"
 	"github.com/minepkg/minepkg/internals/api"
 	"github.com/minepkg/minepkg/internals/auth"
+	"github.com/minepkg/minepkg/internals/autocomplete"
 	"github.com/minepkg/minepkg/internals/cmdlog"
 	"github.com/minepkg/minepkg/internals/commands"
 	"github.com/minepkg/minepkg/internals/credentials"
@@ -47,9 +48,11 @@ type Root struct {
 	minecraftAuthStore *credentials.Store
 	minepkgAuthStore   *credentials.Store
 	globalDir          string
+	cacheDir           string
 	logger             *cmdlog.Logger
 	NonInteractive     bool
 	ProviderStore      *provider.Store
+	AutoCompleter      *autocomplete.AutoCompleter
 }
 
 func newRoot() *Root {
@@ -64,12 +67,26 @@ func newRoot() *Root {
 		"dummy":    provider.NewDummyProvider(),
 	}
 
+	osCacheDir, err := os.UserCacheDir()
+	if err != nil {
+		panic(err)
+	}
+
+	cacheDir := filepath.Join(osCacheDir, "minepkg")
+
+	completer := autocomplete.AutoCompleter{
+		Client:   minepkgClient,
+		CacheDir: cacheDir,
+	}
+
 	return &Root{
 		HTTPClient:     http,
 		MinepkgAPI:     minepkgClient,
 		logger:         cmdlog.DefaultLogger,
 		NonInteractive: false,
 		ProviderStore:  provider.NewStore(providers),
+		AutoCompleter:  &completer,
+		cacheDir:       cacheDir,
 	}
 }
 
@@ -114,6 +131,7 @@ func (r *Root) LocalInstance() (*instances.Instance, error) {
 	}
 	instance.MinepkgAPI = root.MinepkgAPI
 	instance.ProviderStore = r.ProviderStore
+	instance.CacheDir = root.cacheDir
 
 	return instance, err
 }
@@ -227,7 +245,6 @@ func initConfig() {
 		logger.Warn("NOT using default minepkg API URL: " + viper.GetString("apiUrl"))
 		root.MinepkgAPI.APIUrl = viper.GetString("apiUrl")
 	}
-
 	homeConfigs, err := os.UserConfigDir()
 	if err != nil {
 		panic(err)
