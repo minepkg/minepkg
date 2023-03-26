@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"path/filepath"
@@ -164,6 +165,8 @@ func resolveViaSLP(ip string, port string) *api.Release {
 
 	data := slpData{}
 	json.Unmarshal(serverData, &data)
+	log.Printf("Server data: %s\n", string(serverData))
+	log.Printf("Custom server data: %+v\n", data)
 	if data.MinepkgModpack == nil {
 		fmt.Println("Server does not use minepkg-companion 0.2.0+ or has no valid modpack")
 		return nil
