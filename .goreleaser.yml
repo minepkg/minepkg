@@ -7,10 +7,18 @@ builds:
     goos:
       - linux
       - darwin
+    goarch:
+      - amd64
+      - arm64
+  - id: minepkg-windows
+    binary: minepkg
+    goos:
       - windows
     goarch:
       - amd64
       - arm64
+    hooks:
+      post: osslsigncode sign -key ./.tmp/key.pem -certs ./.tmp/cert.cert -n "minepkg" -i "https://minepkg.io/" -t "http://timestamp.digicert.com" -in {{ .Path }} -out {{ .Path }}
 archives:
 - id: minepkg
   name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"

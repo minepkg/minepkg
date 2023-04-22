@@ -27,6 +27,14 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
+      - name: Write osslsigncode cert & key
+        env:
+          SIGNCODE_CERT: ${{ secrets.SIGNCODE_CERT }}
+          SIGNCODE_KEY: ${{ secrets.SIGNCODE_KEY }}
+        run:
+          - mkdir -p ./.tmp
+          - echo ${{ secrets.SIGNCODE_CERT }} > ./.tmp/cert.cert
+          - echo ${{ secrets.SIGNCODE_KEY }} > ./.tmp/key.pem
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v4
         env:
@@ -34,6 +42,9 @@ jobs:
         with:
           version: v1.12.3
           args: release --rm-dist
+      - name: Delete osslsigncode cert & key
+        run:
+          - rm -rf ./.tmp
       - name: Test
         run: go test -v ./...
       - name: Archive binaries
