@@ -31,10 +31,10 @@ jobs:
         env:
           SIGNCODE_CERT: ${{ secrets.SIGNCODE_CERT }}
           SIGNCODE_KEY: ${{ secrets.SIGNCODE_KEY }}
-        run:
-          - mkdir -p ./.tmp
-          - echo ${{ secrets.SIGNCODE_CERT }} > ./.tmp/cert.cert
-          - echo ${{ secrets.SIGNCODE_KEY }} > ./.tmp/key.pem
+        run: |
+          mkdir -p ./.tmp
+          echo ${{ secrets.SIGNCODE_CERT }} > ./.tmp/cert.cert
+          echo ${{ secrets.SIGNCODE_KEY }} > ./.tmp/key.pem
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v4
         env:
