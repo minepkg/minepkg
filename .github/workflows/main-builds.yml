@@ -27,7 +27,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v4
         with:
           version: v1.12.3
-          args: build --rm-dist --snapshot --skip-sign
+          args: build --rm-dist --snapshot --skip-post-hooks
       - name: Test
         run: go test -v ./...
       - name: Archive binaries
