@@ -27,6 +27,8 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
+      - name: Setup osslsigncode
+        run: sudo apt-get update && sudo apt-get install -y osslsigncode
       - name: Write osslsigncode cert & key
         env:
           SIGNCODE_CERT: ${{ secrets.SIGNCODE_CERT }}
