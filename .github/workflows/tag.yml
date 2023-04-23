@@ -35,8 +35,8 @@ jobs:
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
         run: |
           mkdir -p ./.tmp
-          echo ${{ secrets.SIGNING_CERT }} > ./.tmp/cert.cert
-          echo ${{ secrets.SIGNING_KEY }} > ./.tmp/key.pem
+          echo '${{ secrets.SIGNING_CERT }}' > ./.tmp/cert.cert
+          echo '${{ secrets.SIGNING_KEY }}' > ./.tmp/key.pem
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v4
         env:
