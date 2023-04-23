@@ -31,12 +31,12 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y osslsigncode
       - name: Write osslsigncode cert & key
         env:
-          SIGNCODE_CERT: ${{ secrets.SIGNCODE_CERT }}
-          SIGNCODE_KEY: ${{ secrets.SIGNCODE_KEY }}
+          SIGNING_CERT: ${{ secrets.SIGNING_CERT }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
         run: |
           mkdir -p ./.tmp
-          echo ${{ secrets.SIGNCODE_CERT }} > ./.tmp/cert.cert
-          echo ${{ secrets.SIGNCODE_KEY }} > ./.tmp/key.pem
+          echo ${{ secrets.SIGNING_CERT }} > ./.tmp/cert.cert
+          echo ${{ secrets.SIGNING_KEY }} > ./.tmp/key.pem
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v4
         env:
