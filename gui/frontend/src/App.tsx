@@ -14,7 +14,7 @@ function App() {
     }
 
     return (
-        <div id="app" className='bg-zinc-900 border-zinc-700 border'>
+        <div id="app" class-Name='bg-zinc-900 border-zinc-700 border'>
             <nav className="draggable flex px-2 justify-between items-center py-2 bg-zinc-800 shadow-lg">
                 <div>
                     minepkg

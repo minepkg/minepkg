@@ -1,20 +1,25 @@
-package main
+package gui
 
 import (
 	"embed"
 
+	"github.com/minepkg/minepkg/internals/api"
+	"github.com/minepkg/minepkg/internals/provider"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/linux"
+	"github.com/wailsapp/wails/v2/pkg/options/mac"
 )
 
 //go:embed all:frontend/dist
 var assets embed.FS
 
-func main() {
+func Start(api *api.MinepkgClient, providerStore *provider.Store) {
 	// Create an instance of the app structure
 	app := NewApp()
+	app.MinepkgAPI = api
+	app.ProviderStore = providerStore
 
 	// Create application with options
 	err := wails.Run(&options.App{
@@ -26,15 +31,19 @@ func main() {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 0},
+		BackgroundColour: &options.RGBA{R: 255, G: 0, B: 0, A: 1},
 		OnStartup:        app.startup,
-		Frameless:        true,
+		// Frameless:        true,
 		Bind: []interface{}{
 			app,
 		},
 		Linux: &linux.Options{
 			WindowIsTranslucent: true,
 			WebviewGpuPolicy:    linux.WebviewGpuPolicyOnDemand,
+		},
+		Mac: &mac.Options{
+			WindowIsTranslucent:  true,
+			WebviewIsTransparent: true,
 		},
 	})
 

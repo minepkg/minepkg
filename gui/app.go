@@ -1,13 +1,18 @@
-package main
+package gui
 
 import (
 	"context"
 	"fmt"
+
+	"github.com/minepkg/minepkg/internals/api"
+	"github.com/minepkg/minepkg/internals/provider"
 )
 
 // App struct
 type App struct {
-	ctx context.Context
+	ctx           context.Context
+	MinepkgAPI    *api.MinepkgClient
+	ProviderStore *provider.Store
 }
 
 // NewApp creates a new App application struct
@@ -28,5 +33,5 @@ func (a *App) Greet(name string) string {
 
 func (a *App) JoinServer(ip string) {
 	fmt.Println("Joining server", ip)
-	
+
 }

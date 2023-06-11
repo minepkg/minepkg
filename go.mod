@@ -19,11 +19,11 @@ require (
 	github.com/pelletier/go-toml v1.9.5
 	github.com/pion/webrtc/v3 v3.1.56
 	github.com/pkg/errors v0.9.1
-	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/shirou/gopsutil/v3 v3.23.1
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.15.0
 	github.com/stoewer/go-strcase v1.2.1
+	github.com/wailsapp/wails/v2 v2.5.1
 	github.com/zalando/go-keyring v0.2.2
 	golang.org/x/exp v0.0.0-20230224173230-c95f2b4c22f2
 	golang.org/x/oauth2 v0.5.0
@@ -36,6 +36,7 @@ require (
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52 v1.2.2 // indirect
+	github.com/bep/debounce v1.2.1 // indirect
 	github.com/charmbracelet/harmonica v0.2.0 // indirect
 	github.com/chzyer/readline v1.5.1 // indirect
 	github.com/containerd/console v1.0.3 // indirect
@@ -50,9 +51,15 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/jchv/go-winloader v0.0.0-20210711035445-715c2860da7e // indirect
 	github.com/jwalton/go-supportscolor v1.1.0 // indirect
 	github.com/klauspost/compress v1.16.0 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
+	github.com/labstack/echo/v4 v4.9.0 // indirect
+	github.com/labstack/gommon v0.3.1 // indirect
+	github.com/leaanthony/go-ansi-parser v1.0.1 // indirect
+	github.com/leaanthony/gosod v1.0.3 // indirect
+	github.com/leaanthony/slicer v1.5.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20230110061619-bbe2e5e100de // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
@@ -82,8 +89,10 @@ require (
 	github.com/pion/transport/v2 v2.0.2 // indirect
 	github.com/pion/turn/v2 v2.1.0 // indirect
 	github.com/pion/udp/v2 v2.0.1 // indirect
+	github.com/pkg/browser v0.0.0-20210706143420-7d21f8c997e2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20221212215047-62379fc7944b // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
+	github.com/samber/lo v1.27.1 // indirect
 	github.com/spf13/afero v1.9.4 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
@@ -91,7 +100,11 @@ require (
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/tklauser/go-sysconf v0.3.11 // indirect
 	github.com/tklauser/numcpus v0.6.0 // indirect
+	github.com/tkrajina/go-reflector v0.5.5 // indirect
 	github.com/ulikunitz/xz v0.5.11 // indirect
+	github.com/valyala/bytebufferpool v1.0.0 // indirect
+	github.com/valyala/fasttemplate v1.2.1 // indirect
+	github.com/wailsapp/mimetype v1.4.1 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	golang.org/x/crypto v0.6.0 // indirect

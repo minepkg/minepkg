@@ -11,7 +11,7 @@ const root = createRoot(container!)
 WindowSetTitle('Minepkg test app');
 
 root.render(
-    <React.StrictMode>
-        <App/>
-    </React.StrictMode>
+  <React.StrictMode>
+    <App/>
+  </React.StrictMode>
 )

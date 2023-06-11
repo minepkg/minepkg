@@ -5,6 +5,9 @@
 html, body {
     text-align: center;
     color: white;
+    border-radius: 6px;
+    background-color: transparent;
+    overflow: hidden;
 }
 
 body {
@@ -31,5 +34,11 @@ body {
 }
 
 .draggable {
-    --wails-draggable:drag
+    --wails-draggable: drag;
+    cursor: default;
+    /* prevent text selection */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
