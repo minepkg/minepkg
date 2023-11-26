@@ -1,6 +1,6 @@
 import {useState} from 'react';
 import './App.css';
-import {JoinServer} from "../wailsjs/go/main/App";
+import {Greet} from "../wailsjs/go/main/App";
 
 import { Quit } from '../wailsjs/runtime/runtime'
 
@@ -10,11 +10,12 @@ function App() {
     const updateName = (e: any) => setName(e.target.value);
 
     function joinServer() {
-        JoinServer(name);
+        console.log('Joining server: ' + name);
+        Greet(name);
     }
 
     return (
-        <div id="app" class-Name='bg-zinc-900 border-zinc-700 border'>
+        <div id="app" className='bg-zinc-900 border-zinc-700 border'>
             <nav className="draggable flex px-2 justify-between items-center py-2 bg-zinc-800 shadow-lg">
                 <div>
                     minepkg

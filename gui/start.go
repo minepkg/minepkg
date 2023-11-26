@@ -31,9 +31,9 @@ func Start(api *api.MinepkgClient, providerStore *provider.Store) {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		BackgroundColour: &options.RGBA{R: 255, G: 0, B: 0, A: 1},
+		BackgroundColour: &options.RGBA{R: 255, G: 0, B: 0, A: 0},
 		OnStartup:        app.startup,
-		// Frameless:        true,
+		Frameless:        true,
 		Bind: []interface{}{
 			app,
 		},

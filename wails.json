@@ -1,7 +1,7 @@
 {
   "$schema": "https://wails.io/schemas/config.v2.json",
   "name": "minepkg-wails",
-  "outputfilename": "minepkg-wails",
+  "outputfilename": "minepkg-gui",
   "appargs": "gui",
   "build:dir": "out",
   "frontend:dir": "./gui/frontend",
@@ -9,6 +9,7 @@
   "frontend:build": "npm run build",
   "frontend:dev:watcher": "npm run dev",
   "frontend:dev:serverUrl": "auto",
+  "wailsjsdir": "./gui/frontend/wailsjs",
   "author": {
     "name": "Filip Weiss",
     "email": "me@fiws.net"
