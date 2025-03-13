@@ -120,15 +120,6 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 	return err
 }
 
-// GetLastElement returns the last element of a string slice.
-// It is used to extract the version from a Minecraft launch manifest argument.
-func GetLastElement(slice []string) string {
-	if len(slice) == 0 {
-		return "" // Or handle empty slice as needed, e.g., return error
-	}
-	return slice[len(slice)-1]
-}
-
 type MavenLibraryName struct {
 	GroupID    string // e.g: "org.ow2.asm"
 	ArtifactID string // e.g: "asm"
