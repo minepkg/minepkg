@@ -120,7 +120,8 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 	return err
 }
 
-// Correct Go way to get the last element of a slice (safely)
+// GetLastElement returns the last element of a string slice.
+// It is used to extract the version from a Minecraft launch manifest argument.
 func GetLastElement(slice []string) string {
 	if len(slice) == 0 {
 		return "" // Or handle empty slice as needed, e.g., return error
@@ -250,8 +251,12 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 			existingVersion, errExisting := semver.NewVersion(existingLibParsed.Version)
 			newVersion, errNew := semver.NewVersion(parsedLibName.Version)
 
-			if errExisting != nil || errNew != nil {
-				// could not parse version
+			if errExisting != nil {
+				log.Printf("[WARN] Error parsing existing library version: %v", errExisting)
+				continue
+			}
+			if errNew != nil {
+				log.Printf("[WARN] Error parsing new library version: %v", errNew)
 				continue
 			}
 
