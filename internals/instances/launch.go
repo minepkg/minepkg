@@ -21,6 +21,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/minepkg/minepkg/internals/minecraft"
 	"github.com/minepkg/minepkg/pkg/manifest"
 	"github.com/pbnjay/memory"
@@ -119,10 +120,54 @@ func (i *Instance) Launch(opts *LaunchOptions) error {
 	return err
 }
 
+type MavenLibraryName struct {
+	GroupID    string // e.g: "org.ow2.asm"
+	ArtifactID string // e.g: "asm"
+	Version    string // e.g: "9.7.1"
+	Classifier string // e.g: "linux-x86_64"
+	FullName   string // e.g: "org.ow2.asm:asm:9.7.1:linux-x86_64"
+}
+
+func ParseMavenLibraryName(fullName string) MavenLibraryName {
+	parts := strings.Split(fullName, ":")
+	lib := MavenLibraryName{FullName: fullName}
+
+	switch len(parts) {
+	case 4: // groupId:artifactId:version:classifier
+		lib.GroupID = parts[0]
+		lib.ArtifactID = parts[1]
+		lib.Version = parts[2]
+		lib.Classifier = parts[3]
+	case 3: // groupId:artifactId:version (most common)
+		lib.GroupID = parts[0]
+		lib.ArtifactID = parts[1]
+		lib.Version = parts[2]
+	case 2: // groupId:artifactId (version missing)
+		lib.GroupID = parts[0]
+		lib.ArtifactID = parts[1]
+	case 1: // artifactId only
+		lib.ArtifactID = parts[0]
+	default:
+		return lib
+	}
+	return lib
+}
+
+func removeLibraryFromClasspath(cpArgs []string, libPathToRemove string) []string {
+	filteredArgs := cpArgs[:0]
+	for _, path := range cpArgs {
+		if path != libPathToRemove {
+			filteredArgs = append(filteredArgs, path)
+		}
+	}
+	return filteredArgs
+}
+
 // BuildLaunchCmd returns a go cmd ready to start minecraft
 func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 	// this file tells us how to construct the start command
 	launchManifest := opts.LaunchManifest
+	//fmt.Println("Launch manifest:", launchManifest.Libraries)
 	var err error
 
 	// get manifest if not passed as option
@@ -157,6 +202,7 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 		osName = "osx"
 	}
 
+	addedLibraries := make(map[string]minecraft.Library)
 	for _, lib := range libs {
 		// skip if lib where rules do not apply (wrong os, arch, etc.)
 		if !lib.Applies() {
@@ -176,9 +222,46 @@ func (i *Instance) BuildLaunchCmd(opts *LaunchOptions) (*exec.Cmd, error) {
 			}
 			// i think we do not append natives to the classpath
 		} else {
-			// append this library to our doom -cp arg
-			libPath := lib.Filepath()
-			cpArgs = append(cpArgs, filepath.Join(libDir, libPath))
+			libName := lib.Name
+			parsedLibName := ParseMavenLibraryName(libName)
+
+			libraryKey := parsedLibName.GroupID + ":" + parsedLibName.ArtifactID
+			if parsedLibName.Classifier != "" {
+				libraryKey += ":" + parsedLibName.Classifier
+			}
+
+			existingLib, alreadyExists := addedLibraries[libraryKey]
+			if !alreadyExists {
+				addedLibraries[libraryKey] = lib
+				cpArgs = append(cpArgs, filepath.Join(libDir, lib.Filepath()))
+				continue
+			}
+
+			// Duplicate library found - Prioritize newer version
+			existingLibParsed := ParseMavenLibraryName(existingLib.Name)
+			existingVersion, errExisting := semver.NewVersion(existingLibParsed.Version)
+			newVersion, errNew := semver.NewVersion(parsedLibName.Version)
+
+			if errExisting != nil {
+				log.Printf("[WARN] Error parsing existing library version: %v", errExisting)
+				continue
+			}
+			if errNew != nil {
+				log.Printf("[WARN] Error parsing new library version: %v", errNew)
+				continue
+			}
+
+			if !newVersion.GreaterThan(existingVersion) {
+				// skip older or same-version
+				continue
+			}
+
+			// Remove older version from cpArgs
+			cpArgs = removeLibraryFromClasspath(cpArgs, filepath.Join(libDir, existingLib.Filepath()))
+
+			// Update map and add newer version
+			addedLibraries[libraryKey] = lib
+			cpArgs = append(cpArgs, filepath.Join(libDir, lib.Filepath()))
 		}
 	}
 
@@ -366,7 +449,7 @@ func (i *Instance) launchManifestArgs(launchManifest *minecraft.LaunchManifest, 
 	}
 
 	finalGameArgs := make([]string, 0, len(gameArgs))
-	var launchArgsTemplate  []string
+	var launchArgsTemplate []string
 	if opts.Server {
 		// we only use jvm args + main class for server
 		launchArgsTemplate = append(launchManifest.JVMArgs(), launchManifest.MainClass)
