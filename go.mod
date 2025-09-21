@@ -3,7 +3,7 @@ module github.com/minepkg/minepkg
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/Tnze/go-mc v1.20.2
-	github.com/briandowns/spinner v1.23.0
+	github.com/briandowns/spinner v1.23.2
 	github.com/charmbracelet/bubbles v0.18.0
 	github.com/charmbracelet/bubbletea v0.26.2
 	github.com/charmbracelet/lipgloss v0.10.0
