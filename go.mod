@@ -26,7 +26,7 @@ require (
 	github.com/zalando/go-keyring v0.2.4
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
 	golang.org/x/oauth2 v0.20.0
-	golang.org/x/time v0.5.0
+	golang.org/x/time v0.13.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -108,4 +108,4 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
 
-go 1.18
+go 1.24.0
