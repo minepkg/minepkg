@@ -8,8 +8,8 @@ type LaunchCredentials struct {
 	// AccessToken is the mojang api access token (strictly required)
 	AccessToken string
 
-	// UserType show if the account is a Mojang account or a Microsoft account
-	// allowed values: "mojang" or "msa" (typically "msa" these days)
+	// UserType show if the account is a Microsoft account
+	// allowed values: "msa"
 	UserType string
 	// XUID is the player's XUID (for Xbox Live accounts) – kinda optional
 	XUID string
