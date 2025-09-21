@@ -142,7 +142,7 @@ func gradleCheck() (*properties.Properties, error) {
 	props, err := properties.LoadFile("./gradle.properties", properties.UTF8)
 	props.WriteSeparator = "="
 	if err != nil {
-		return props, fmt.Errorf("gradle.properties does not exist " + err.Error())
+		return props, fmt.Errorf("gradle.properties does not exist: %w", err)
 	}
 
 	// write mod_version in gradle.properties if its there
