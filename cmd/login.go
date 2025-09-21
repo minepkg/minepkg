@@ -4,13 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 
-	"github.com/manifoldco/promptui"
 	"github.com/minepkg/minepkg/internals/auth"
 	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/minepkg/minepkg/internals/minecraft/microsoft"
-	"github.com/minepkg/minepkg/internals/minecraft/mojang"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 )
@@ -36,12 +33,6 @@ func (r *Root) restoreAuth() {
 	}
 
 	switch authData.Provider {
-	case "mojang":
-		state := &mojang.AuthResponse{}
-		if err := json.Unmarshal(authData.Data, state); err != nil {
-			log.Println("Failed to restore auth data:", err)
-		}
-		r.useMojangAuth().SetAuthState(state)
 	case "microsoft":
 		state := &auth.MicrosoftCredentialStorage{}
 		if err := json.Unmarshal(authData.Data, state); err != nil {
@@ -51,15 +42,6 @@ func (r *Root) restoreAuth() {
 	default:
 		log.Println("Unknown auth provider:", authData.Provider)
 	}
-}
-
-func (r *Root) useMojangAuth() *auth.Mojang {
-	provider := &auth.Mojang{
-		MojangClient: mojang.New(r.HTTPClient),
-		Store:        r.minecraftAuthStore,
-	}
-	r.authProvider = provider
-	return provider
 }
 
 func (r *Root) useMicrosoftAuth() *auth.Microsoft {
@@ -118,35 +100,11 @@ func (r *Root) getLaunchCredentialsOrLogin() (*instances.LaunchCredentials, erro
 }
 
 func (r *Root) login() error {
-	methodP := promptui.Select{
-		Label: "Please choose a login method",
-		Items: []string{"Microsoft Account (Opens in Browser)", "Mojang Account (Email & Password)"},
-	}
-	method, _, err := methodP.Run()
+	r.useMicrosoftAuth()
+	err := r.authProvider.Prompt()
 	if err != nil {
-		fmt.Println("Aborting")
-		os.Exit(0)
+		return fmt.Errorf("ms login failed: %w", err)
 	}
-
-	// MS login
-	if method == 0 {
-		r.useMicrosoftAuth()
-		err := r.authProvider.Prompt()
-		if err != nil {
-			return fmt.Errorf("ms login failed: %w", err)
-		}
-
-		return nil
-	}
-
-	// Mojang login
-	r.useMojangAuth()
-	err = r.authProvider.Prompt()
-	if err != nil {
-		return fmt.Errorf("mojang login failed: %w", err)
-	}
-
-	fmt.Println("Login successful")
 
 	return nil
 }
@@ -154,7 +112,7 @@ func (r *Root) login() error {
 var loginCmd = &cobra.Command{
 	Use:     "login",
 	Aliases: []string{"signin"},
-	Short:   "Sign in with Microsoft or Mojang in order to start Minecraft",
+	Short:   "Sign in with your Microsoft account in order to start Minecraft",
 	Args:    cobra.ExactArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		err := root.login()

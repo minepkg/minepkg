@@ -14,7 +14,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/minepkg/minepkg/internals/auth"
 	"github.com/minepkg/minepkg/internals/instances"
 	"github.com/minepkg/minepkg/internals/launcher"
 	"github.com/minepkg/minepkg/internals/remote"
@@ -136,12 +135,7 @@ func (t *TheThing) Launch(man *manifest.Manifest) error {
 		root.restoreAuth()
 	}
 
-	switch root.authProvider.(type) {
-	case *auth.Microsoft:
-		fmt.Println("Microsoft auth provider detected")
-	case *auth.Mojang:
-		fmt.Println("Mojang auth provider detected")
-	default:
+	if root.authProvider == nil {
 		fmt.Println("No auth provider detected")
 		// Trigger Microsoft auth provider
 		connection.Send("GameAuthRequired", nil)

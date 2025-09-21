@@ -8,10 +8,7 @@ type LaunchAuthData interface {
 	GetUUID() string
 	// GetPlayerName returns the users player name (the one that also appears in game)
 	GetPlayerName() string
-	// GetUserType returns the users user type (legacy, mojang or msa).
-	// "legacy" is the old minecraft account type (should not be encountered anymore)
-	// "mojang" was the new minecraft account type (being replaced by "msa")
-	// "msa" is the new microsoft account type
+	// GetUserType returns the users user type. Should always be "msa"
 	GetUserType() string
 	// GetXUID returns the users XUID (only for xbox live accounts – user type "msa"))
 	GetXUID() string
