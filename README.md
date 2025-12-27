@@ -8,17 +8,16 @@
 ---
 
 [![main builds](https://github.com/minepkg/minepkg/actions/workflows/main-builds.yml/badge.svg)](https://github.com/minepkg/minepkg/actions/workflows/main-builds.yml)
-[![Maintainability](https://api.codeclimate.com/v1/badges/cd2f11d2dd41dee1fcbc/maintainability)](https://codeclimate.com/github/minepkg/minepkg/maintainability)
 [![Discord](https://img.shields.io/discord/517070108191883266.svg?logo=discord)](https://discord.gg/6tjBR5t)
 
 ## Features
 
-* Installs mods from [minepkg](https://minepkg.io/) (with dependency resolution)
-* Can launch Minecraft
-* Join compatible modded Servers with one command (Installs modpack and launches Minecraft & joins the server for you)
-* Saves your installed mods in a sharable `minepkg.toml`
-  * `minepkg.toml` modpacks can extend other modpacks
-* Publish mods and modpacks to minepkg.io
+- Installs mods from [minepkg](https://minepkg.io/) (with dependency resolution)
+- Can launch Minecraft
+- Join compatible modded Servers with one command (Installs modpack and launches Minecraft & joins the server for you)
+- Saves your installed mods in a sharable `minepkg.toml`
+  - `minepkg.toml` modpacks can extend other modpacks
+- Publish mods and modpacks to minepkg.io
 
 ## Installation
 
@@ -50,9 +49,9 @@ go install github.com/minepkg/minepkg@latest
 
 ## Usage
 
-* [FAQ](https://minepkg.io/docs/faq)
-* [Manifest Documentation](https://minepkg.io/docs/manifest)
-* [Mod publishing](https://minepkg.io/docs/mod-publishing)
+- [FAQ](https://minepkg.io/docs/faq)
+- [Manifest Documentation](https://minepkg.io/docs/manifest)
+- [Mod publishing](https://minepkg.io/docs/mod-publishing)
 
 ```
 $ minepkg --help
@@ -103,7 +102,6 @@ Use "minepkg [command] --help" for more information about a command.
 
 ## Building
 
-Requires go ~ 1.16+. Could also work with older go versions.
 Just `go run main.go [commands]` or `go build -o out/minepkg`
 
 ```
@@ -111,4 +109,3 @@ git clone https://github.com/minepkg/minepkg.git
 cd minepkg
 go run main.go --help
 ```
-
