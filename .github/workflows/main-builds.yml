@@ -2,7 +2,7 @@ name: main builds
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   mainBuilds:
@@ -48,11 +48,12 @@ jobs:
               "linux": "https://get.minepkg.io/dev/minepkg_linux_amd64/minepkg"
             }
           }' > dist/latest-version.json
-      - name: setup gcloud sdk
-        uses: google-github-actions/setup-gcloud@v2
+      - id: "auth"
+        uses: "google-github-actions/auth@v3"
         with:
-          service_account_key: ${{ secrets.gcp_credentials }}
-          export_default_credentials: true
+          credentials_json: "${{ secrets.gcp_credentials }}"
+
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v2"
       - name: upload dev binaries to get.minepkg.io
         run: gsutil cp -r dist/* gs://minepkg-client/dev
-

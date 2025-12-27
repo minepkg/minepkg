@@ -3,7 +3,7 @@ name: tag release
 on:
   push:
     tags:
-      - '*'
+      - "*"
 
 jobs:
   tagBuilds:
@@ -53,11 +53,12 @@ jobs:
         with:
           name: binaries
           path: dist/*
-      - name: setup gcloud sdk
-        uses: google-github-actions/setup-gcloud@v2
+      - id: "auth"
+        uses: "google-github-actions/auth@v3"
         with:
-          service_account_key: ${{ secrets.gcp_credentials }}
-          export_default_credentials: true
+          credentials_json: "${{ secrets.gcp_credentials }}"
+
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v2"
       - name: upload binaries to get.minepkg.io
         run: gsutil cp -r dist/* gs://minepkg-client/latest
-
