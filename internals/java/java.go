@@ -10,8 +10,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-
-	archiver "github.com/mholt/archiver/v3"
 )
 
 type Java struct {
@@ -53,25 +51,15 @@ func (j *Java) Update(ctx context.Context) error {
 	}
 	defer os.Remove(archive.Name()) // remove temporary download
 
-	// ugly hack to get root directory. it's something like "jdk8u292-b10-jre"
-	rootDirName := ""
-	err = archiver.Walk(archive.Name(), func(f archiver.File) error {
-		if f.IsDir() {
-			rootDirName = f.Name()
-			return archiver.ErrStopWalk
-		}
-		return nil
-	})
+	// extract the whole archive
+	// validation of the extraction happens inside extractArchive (zip slip protection)
+	rootDirName, err := extractArchive(archive.Name(), j.dir+".tmp")
 	if err != nil {
 		return err
 	}
 
-	// extract the whole archive. avoids https://github.com/mholt/archiver/issues/289
-	if err := archiver.Unarchive(archive.Name(), j.dir+".tmp"); err != nil {
-		return err
-	}
-	// another ugly hack because archiver can not extract without creating a directory
-	// and doing in manually with archiver.Walk is a pain. PRs welcome …
+	// we rename the extracted folder to the destination folder
+	// e.g. .tmp/jdk8u292-b10-jre -> 8-jre-openj9
 	if err := os.Rename(filepath.Join(j.dir+".tmp", rootDirName), j.dir); err != nil {
 		return err
 	}
