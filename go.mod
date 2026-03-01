@@ -24,7 +24,7 @@ require (
 	github.com/stoewer/go-strcase v1.3.1
 	github.com/zalando/go-keyring v0.2.6
 	golang.org/x/exp v0.0.0-20251219203646-944ab1f22d93
-	golang.org/x/oauth2 v0.34.0
+	golang.org/x/oauth2 v0.35.0
 	golang.org/x/time v0.14.0
 	gopkg.in/yaml.v3 v3.0.1
 )
