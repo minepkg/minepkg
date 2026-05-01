@@ -13,7 +13,7 @@ require (
 	github.com/jwalton/gchalk v1.3.0
 	github.com/magiconair/properties v1.8.10
 	github.com/manifoldco/promptui v0.9.0
-	github.com/mattn/go-isatty v0.0.20
+	github.com/mattn/go-isatty v0.0.22
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
 	github.com/pelletier/go-toml v1.9.5
 	github.com/pion/webrtc/v3 v3.3.6
